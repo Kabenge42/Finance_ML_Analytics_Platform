@@ -834,13 +834,13 @@ def summarize_inference_data(idata: Any) -> dict[str, Any]:
 
 
 def build_resampled_technical_inference_data(
-    equities_df: pd.DataFrame,
-    freq: str = "1ME",
-    prior_return_mean: float = 0.08,
-    prior_return_std: float = 0.20,
-    n_posterior_samples: int = 4000,
-    n_chains: int = 4,
-    random_seed: int = 42,
+        equities_df: pd.DataFrame,
+        freq: str = "1ME",
+        prior_return_mean: float = 0.08,
+        prior_return_std: float = 0.20,
+        n_posterior_samples: int = 4000,
+        n_chains: int = 4,
+        random_seed: int = 42,
 ) -> "az.InferenceData | xr.Dataset | None":
     """
     Build ArviZ InferenceData from resampled technical return posteriors.
@@ -879,4 +879,5 @@ def build_resampled_technical_inference_data(
         n_chains=n_chains,
         random_seed=random_seed,
     )
-    return resampler.build_inference_data(equities_df, freq=freq)
+    result_df = resampler.resample_returns(equities_df, freq=freq)
+    return resampler.build_inference_data(equities_df, freq=freq, result_df=result_df)

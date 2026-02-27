@@ -34,7 +34,7 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "R&D Expenses (-3FY)" > 0 AND "R&D Expenses (FY)" > 0
                THEN
-               (POWER(public.safe_divide("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-3FY)"::NUMERIC), 1.0 / 3.0) -
+               (safe_power(public.safe_divide("R&D Expenses (FY)"::NUMERIC, "R&D Expenses (-3FY)"::NUMERIC), 1.0 / 3.0) -
                 1) *
                100
            END                                                                                AS rnd_cagr_3y,

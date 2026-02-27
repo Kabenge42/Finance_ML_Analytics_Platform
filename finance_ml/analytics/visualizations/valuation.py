@@ -26,6 +26,7 @@ from finance_ml.analytics.visualizations._shared import (
     PLOTLY_TEMPLATE,
     COLORS,
     create_no_data_figure,
+    resolve_column,
 )
 
 # Default valuation metrics for analysis
@@ -50,6 +51,7 @@ METRIC_LABELS = {
     "price_to_sales": "Price/Sales",
     "price_to_fcf": "Price/FCF",
     "eps_growth_yoy": "EPS Growth YoY",
+    "eps_yoy_growth": "EPS Growth YoY",
     "revenue_growth_yoy": "Revenue Growth YoY",
     "revenue_yoy_growth": "Revenue Growth YoY",
 }
@@ -372,7 +374,7 @@ def create_relative_valuation_matrix(
 def create_valuation_vs_growth_quadrant(
     df: pd.DataFrame,
     valuation_metric: str = "p_e_ratio",
-    growth_metric: str = "eps_growth_yoy",
+    growth_metric: str = "eps_yoy_growth",
     color_by: str = "industry",
 ) -> go.Figure:
     """
@@ -384,7 +386,7 @@ def create_valuation_vs_growth_quadrant(
     - Bottom-Left: Cheap + Slow Growth (Value Trap Risk)
     - Bottom-Right: Cheap + Fast Growth (Opportunity)
 
-    Uses: p_e_ratio (or custom), eps_growth_yoy (or custom)
+    Uses: p_e_ratio (or custom), eps_yoy_growth (or custom)
 
     Parameters
     ----------
@@ -392,7 +394,7 @@ def create_valuation_vs_growth_quadrant(
         Input DataFrame with valuation and growth columns
     valuation_metric : str, default 'p_e_ratio'
         Valuation metric for Y-axis
-    growth_metric : str, default 'eps_growth_yoy'
+    growth_metric : str, default 'eps_yoy_growth'
         Growth metric for X-axis
     color_by : str, default 'industry'
         Column to color points by
@@ -407,6 +409,11 @@ def create_valuation_vs_growth_quadrant(
     >>> fig = create_valuation_vs_growth_quadrant(df, valuation_metric='ev_ebitda_ratio')
     >>> fig.show()
     """
+    # Resolve columns via _shared alias map
+    resolved_val = resolve_column(df, valuation_metric) or valuation_metric
+    resolved_growth = resolve_column(df, growth_metric) or growth_metric
+    valuation_metric = resolved_val
+    growth_metric = resolved_growth
     if valuation_metric not in df.columns or growth_metric not in df.columns:
         return create_no_data_figure("Valuation vs Growth Quadrant - No Data")
 

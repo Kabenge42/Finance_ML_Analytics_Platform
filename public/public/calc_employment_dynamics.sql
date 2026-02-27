@@ -15,7 +15,7 @@ SELECT "ISIN"                                             AS isin,
            WHEN "Full Time Employees (-1FY)" > 0 AND "Full Time Employees (-3FY)" > 0
                THEN (("Full Time Employees (FY)" - "Full Time Employees (-1FY)") /
                      NULLIF("Full Time Employees (-1FY)", 0)) -
-                    (POWER("Full Time Employees (FY)" / NULLIF("Full Time Employees (-3FY)", 0), 1.0 / 3.0) - 1)
+                    (safe_power("Full Time Employees (FY)" / NULLIF("Full Time Employees (-3FY)", 0), 1.0 / 3.0) - 1)
            END * 100                                      AS fte_acceleration,
        ABS(("Full Time Employees (FY)" - "Full Time Employees (-1FY)") /
            NULLIF("Full Time Employees (-1FY)", 0) -

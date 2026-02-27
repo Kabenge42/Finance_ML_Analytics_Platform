@@ -10,7 +10,7 @@ This module provides visualization functions for analyzing growth metrics:
 
 Feature Categories leveraged (from feature_registry.sql vw_features_growth):
 - revenue_yoy_growth, revenue_cagr_3y, revenue_cagr_5y
-- ebitda_growth_yoy, eps_growth_yoy, eps_cagr_3y
+- ebitda_growth_yoy, eps_yoy_growth, eps_cagr_3y
 - operating_income_growth, net_income_growth_yoy
 """
 
@@ -35,6 +35,7 @@ METRIC_LABELS = {
     "revenue_cagr_3y": "Revenue 3Y CAGR",
     "revenue_cagr_5y": "Revenue 5Y CAGR",
     "ebitda_growth_yoy": "EBITDA Growth YoY",
+    "eps_yoy_growth": "EPS Growth YoY",
     "eps_growth_yoy": "EPS Growth YoY",
     "eps_cagr_3y": "EPS 3Y CAGR",
     "operating_income_growth": "Operating Income Growth",
@@ -52,7 +53,7 @@ def create_growth_waterfall_chart(
     """
     Waterfall chart showing Revenue → EBITDA → EPS growth decomposition.
 
-    Uses: revenue_yoy_growth, ebitda_growth_yoy, eps_growth_yoy
+    Uses: revenue_yoy_growth, ebitda_growth_yoy, eps_yoy_growth
 
     Parameters
     ----------
@@ -76,7 +77,7 @@ def create_growth_waterfall_chart(
         "ebitda_growth_yoy",
         "operating_income_growth",
         "net_income_growth_yoy",
-        "eps_growth_yoy",
+        "eps_yoy_growth",
     ]
     available_cols = [col for col in growth_cols if col in df.columns]
 
@@ -136,7 +137,7 @@ def create_growth_consistency_matrix(
     Heatmap showing growth metrics consistency (YoY, 3Y CAGR, 5Y CAGR) by sector.
 
     Uses: revenue_yoy_growth, revenue_cagr_3y, revenue_cagr_5y,
-          eps_growth_yoy, eps_cagr_3y
+          eps_yoy_growth, eps_cagr_3y
 
     Parameters
     ----------
@@ -159,7 +160,7 @@ def create_growth_consistency_matrix(
         "revenue_yoy_growth",
         "revenue_cagr_3y",
         "revenue_cagr_5y",
-        "eps_growth_yoy",
+        "eps_yoy_growth",
         "eps_cagr_3y",
     ]
     available_cols = [col for col in growth_cols if col in df.columns]

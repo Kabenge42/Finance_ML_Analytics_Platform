@@ -183,8 +183,8 @@ def screen_earnings_quality(
 
 def screen_value_opportunities(
     df: pd.DataFrame,
-    max_pe_ratio: float = 25,
-    min_upside_potential: float = 25,
+    max_pe_ratio: float = 30,
+    min_upside_potential: float = 15,
     max_price_to_tangible_book: float = 2.0,
     min_quality_score: float = 50,
     require_positive_fcf: bool = True,
@@ -196,9 +196,9 @@ def screen_value_opportunities(
     ----------
     df : pd.DataFrame
         Input DataFrame
-    max_pe_ratio : float, default 25
+    max_pe_ratio : float, default 30
         Maximum P/E ratio
-    min_upside_potential : float, default 25
+    min_upside_potential : float, default 15
         Minimum analyst upside potential (%)
     max_price_to_tangible_book : float, default 2.0
         Maximum price to tangible book ratio

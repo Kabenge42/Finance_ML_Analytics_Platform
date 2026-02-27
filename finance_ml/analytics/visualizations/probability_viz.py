@@ -695,7 +695,7 @@ def _ruin_diagnostic_from_idata(idata, top_n, title) -> go.Figure:
 
 
 def create_mcse_convergence_panel(
-    idata: "az.InferenceData",
+    idata: "az.InferenceData | pd.DataFrame",
     var_name: str = "expected_return",
     title: Optional[str] = None,
 ) -> go.Figure:
@@ -703,12 +703,14 @@ def create_mcse_convergence_panel(
     Monte Carlo Standard Error convergence panel.
 
     Shows MCSE as a function of draw count, annotated with ESS and R-hat.
-    Requires ArviZ InferenceData; returns a no-data figure otherwise.
+    Requires ArviZ InferenceData; returns a no-data figure when the input
+    is not an InferenceData object or ArviZ is unavailable.
 
     Parameters
     ----------
-    idata : arviz.InferenceData
+    idata : arviz.InferenceData or pd.DataFrame
         Must contain a posterior group with *var_name*.
+        If a DataFrame is passed, a no-data placeholder is returned.
     var_name : str
         Variable to diagnose.
     title : str, optional

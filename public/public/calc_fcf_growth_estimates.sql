@@ -33,14 +33,14 @@ SELECT "ISIN"                                                                   
        -- 3-year estimated CAGR: (FY3E / LTM)^(1/3) - 1
        CASE
            WHEN "FCF (LTM)" > 0 AND "FCF - Est Avg (FY3E)" > 0
-               THEN (POWER("FCF - Est Avg (FY3E)" /
+               THEN (safe_power("FCF - Est Avg (FY3E)" /
                            NULLIF("FCF (LTM)", 0), 1.0 / 3.0) - 1) * 100
            END                                                                     AS fcf_est_cagr_3y,
 
        -- 5-year estimated CAGR: (FY5E / LTM)^(1/5) - 1
        CASE
            WHEN "FCF (LTM)" > 0 AND "FCF - Est Avg (FY5E)" > 0
-               THEN (POWER("FCF - Est Avg (FY5E)" /
+               THEN (safe_power("FCF - Est Avg (FY5E)" /
                            NULLIF("FCF (LTM)", 0), 1.0 / 5.0) - 1) * 100
            END                                                                     AS fcf_est_cagr_5y,
 

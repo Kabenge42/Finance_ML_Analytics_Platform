@@ -21,7 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS, create_no_data_figure
 
 def create_margin_waterfall_chart(
     df: pd.DataFrame, ticker: Optional[str] = None, show_median: bool = True
@@ -59,18 +59,7 @@ def create_margin_waterfall_chart(
     available_cols = [col for col in margin_cols if col in df.columns]
 
     if not available_cols:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No margin data available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Margin Waterfall Chart - No Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Margin Waterfall Chart - No Data")
 
     # Get values for the waterfall
     if ticker and "ticker" in df.columns:
@@ -180,20 +169,7 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
     available_cols = [col for col in required_cols if col in df.columns]
 
     if len(available_cols) < 2:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="Insufficient data for DuPont analysis",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(
-            title="DuPont Decomposition - Insufficient Data", template=PLOTLY_TEMPLATE
-        )
-        return fig
+        return create_no_data_figure("DuPont Decomposition - Insufficient Data")
 
     # Prepare data
     plot_df = df.copy()
@@ -379,18 +355,7 @@ def create_profitability_quadrant(
     """
     # Check required columns
     if x_metric not in df.columns or y_metric not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"Missing required columns: {x_metric} or {y_metric}",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Profitability Quadrant - Missing Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Profitability Quadrant - Missing Data")
 
     # Prepare data
     plot_df = df.dropna(subset=[x_metric, y_metric]).copy()

@@ -15,7 +15,7 @@ SELECT "ISIN"                     AS isin,
            WHEN "Net EPS - Basic (FY)" > 0 AND "Net EPS - Basic (-3FY)" > 0
                THEN public.safe_divide(
                    "P/E (LTM)"::NUMERIC,
-                   ((POWER(
+                   ((public.safe_power(
                              public.safe_divide("Net EPS - Basic (FY)"::NUMERIC, "Net EPS - Basic (-3FY)"::NUMERIC),
                              (1.0 / 3.0)::NUMERIC
                      ) - 1) * 100)::NUMERIC

@@ -206,7 +206,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ===================================================================
 CREATE OR REPLACE FUNCTION derive_earnings_report_frequency(
     income_statement_report_date DATE,
-    fy_end_date DATE
+    fy_end_date                  DATE
 )
     RETURNS TEXT AS
 $$
@@ -238,27 +238,27 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- Derives all calculations based on FY End Date reporting ranges
 -- ===================================================================
 CREATE OR REPLACE FUNCTION calculate_fiscal_info(
-    reference_date           DATE,
-    fy_end_date              DATE,
-    input_earnings_frequency TEXT DEFAULT NULL,
-    OUT fiscal_month         INTEGER,
-    OUT fiscal_quarter       INTEGER,
-    OUT fiscal_year          INTEGER,
-    OUT next_quarter         INTEGER,
-    OUT next_quarter_year    INTEGER,
-    OUT reporting_interval   INTEGER,
+    reference_date                DATE,
+    fy_end_date                   DATE,
+    input_earnings_frequency      TEXT DEFAULT NULL,
+    OUT fiscal_month              INTEGER,
+    OUT fiscal_quarter            INTEGER,
+    OUT fiscal_year               INTEGER,
+    OUT next_quarter              INTEGER,
+    OUT next_quarter_year         INTEGER,
+    OUT reporting_interval        INTEGER,
     OUT earnings_report_frequency TEXT,
     OUT next_earnings_report_type TEXT
 ) AS
 $$
 DECLARE
-    next_fy_end_date DATE;
-    fy_range_months  INTEGER;
+    next_fy_end_date    DATE;
+    fy_range_months     INTEGER;
     months_since_fy_end INTEGER;
-    interval_months  INTEGER;
-    periods_per_year INTEGER;
-    current_period   INTEGER;
-    next_period      INTEGER;
+    interval_months     INTEGER;
+    periods_per_year    INTEGER;
+    current_period      INTEGER;
+    next_period         INTEGER;
 BEGIN
     IF reference_date IS NULL OR fy_end_date IS NULL THEN
         RETURN;
@@ -356,7 +356,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ===================================================================
 CREATE OR REPLACE FUNCTION calculate_next_income_statement_report_date(
     income_statement_report_date DATE,
-    earnings_report_frequency TEXT
+    earnings_report_frequency    TEXT
 )
     RETURNS DATE AS
 $$
@@ -477,9 +477,9 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- HELPER FUNCTION: Calculate Reporting Lag
 -- ===================================================================
 CREATE OR REPLACE FUNCTION calculate_reporting_lag(
-    next_earnings             DATE,
+    next_earnings                DATE,
     income_statement_report_date DATE,
-    earnings_report_frequency TEXT DEFAULT 'Quarterly'
+    earnings_report_frequency    TEXT DEFAULT 'Quarterly'
 )
     RETURNS INTEGER AS
 $$
@@ -495,7 +495,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- HELPER FUNCTION: Calculate Expected Report Date
 -- ===================================================================
 CREATE OR REPLACE FUNCTION calculate_expected_report_date(
-    period_end_date DATE,
+    period_end_date           DATE,
     earnings_report_frequency TEXT
 )
     RETURNS DATE AS
@@ -512,8 +512,8 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- HELPER FUNCTION: Validate Fiscal Dates
 -- ===================================================================
 CREATE OR REPLACE FUNCTION validate_fiscal_dates(
-    fy_end_date DATE,
-    report_date DATE,
+    fy_end_date    DATE,
+    report_date    DATE,
     reference_date DATE DEFAULT CURRENT_DATE
 )
     RETURNS TABLE
@@ -1179,34 +1179,44 @@ CREATE TEMP TABLE screening_staging
     "Total Revenues (-4FQFQ)"                          TEXT, -- alias: total_revenues_4fqfq
     "Total Revenues (-2FY)"                            TEXT, -- alias: total_revenues_2fy
     "Total Revenues (-3FY)"                            TEXT, -- alias: total_revenues_3fy
-    "Total Revenues (-4FY)"                   TEXT,          -- alias: total_revenues_4fy
-    "Interest And Investment Income (LTM)"    TEXT,          -- alias: interest_and_investment_income_ltm
-    "Interest And Investment Income (FQ)"     TEXT,          -- alias: interest_and_investment_income_fq
-    "Interest And Investment Income (FY)"     TEXT,          -- alias: interest_and_investment_income_fy
-    "Interest And Investment Income (-1FQFQ)" TEXT,          -- alias: interest_and_investment_income_1fqfq
-    "Interest And Investment Income (-2FQFQ)" TEXT,          -- alias: interest_and_investment_income_2fqfq
-    "Interest And Investment Income (-3FQFQ)" TEXT,          -- alias: interest_and_investment_income_3fqfq
-    "Interest And Investment Income (-4FQFQ)" TEXT,          -- alias: interest_and_investment_income_4fqfq
-    "Interest And Investment Income (-1FY)"   TEXT,          -- alias: interest_and_investment_income_1fy
-    "Interest And Investment Income (-2FY)"   TEXT,          -- alias: interest_and_investment_income_2fy
-    "Interest And Investment Income (-3FY)"   TEXT,          -- alias: interest_and_investment_income_3fy
-    "Interest And Investment Income (-4FY)"   TEXT,           -- alias: interest_and_investment_income_4fy
-    "Effective Tax Rate - (Ratio) (LTM)"              TEXT,
-    "Effective Tax Rate - (Ratio) (FQ)"               TEXT,
-    "Effective Tax Rate - (Ratio) (-1FQFQ)"           TEXT,
-    "Effective Tax Rate - (Ratio) (-2FQFQ)"           TEXT,
-    "Effective Tax Rate - (Ratio) (-4FQFQ)"           TEXT,
-    "Effective Tax Rate - (Ratio) (-3FQFQ)"           TEXT,
-    "Effective Tax Rate - (Ratio) (FY)"               TEXT,
-    "Effective Tax Rate - (Ratio) (-1FY)"             TEXT,
-    "Effective Tax Rate - (Ratio) (-2FY)"             TEXT,
-    "Effective Tax Rate - (Ratio) (-3FY)"             TEXT,
-    "Effective Tax Rate - (Ratio) (-4FY)"             TEXT,
-    "FCF - Est Avg (FY1E)"                              TEXT,          -- alias: fcf_est_avg_fy1e
-    "FCF - Est Avg (FY2E)"                              TEXT,          -- alias: fcf_est_avg_fy2e
-    "FCF - Est Avg (FY3E)"                              TEXT,          -- alias: fcf_est_avg_fy3e
-    "FCF - Est Avg (FY4E)"                              TEXT,          -- alias: fcf_est_avg_fy4e
-    "FCF - Est Avg (FY5E)"                              TEXT           -- alias: fcf_est_avg_fy5e
+    "Total Revenues (-4FY)"                            TEXT, -- alias: total_revenues_4fy
+    "Interest And Investment Income (LTM)"             TEXT, -- alias: interest_and_investment_income_ltm
+    "Interest And Investment Income (FQ)"              TEXT, -- alias: interest_and_investment_income_fq
+    "Interest And Investment Income (FY)"              TEXT, -- alias: interest_and_investment_income_fy
+    "Interest And Investment Income (-1FQFQ)"          TEXT, -- alias: interest_and_investment_income_1fqfq
+    "Interest And Investment Income (-2FQFQ)"          TEXT, -- alias: interest_and_investment_income_2fqfq
+    "Interest And Investment Income (-3FQFQ)"          TEXT, -- alias: interest_and_investment_income_3fqfq
+    "Interest And Investment Income (-4FQFQ)"          TEXT, -- alias: interest_and_investment_income_4fqfq
+    "Interest And Investment Income (-1FY)"            TEXT, -- alias: interest_and_investment_income_1fy
+    "Interest And Investment Income (-2FY)"            TEXT, -- alias: interest_and_investment_income_2fy
+    "Interest And Investment Income (-3FY)"            TEXT, -- alias: interest_and_investment_income_3fy
+    "Interest And Investment Income (-4FY)"            TEXT, -- alias: interest_and_investment_income_4fy
+    "Effective Tax Rate - (Ratio) (LTM)"               TEXT,
+    "Effective Tax Rate - (Ratio) (FQ)"                TEXT,
+    "Effective Tax Rate - (Ratio) (-1FQFQ)"            TEXT,
+    "Effective Tax Rate - (Ratio) (-2FQFQ)"            TEXT,
+    "Effective Tax Rate - (Ratio) (-4FQFQ)"            TEXT,
+    "Effective Tax Rate - (Ratio) (-3FQFQ)"            TEXT,
+    "Effective Tax Rate - (Ratio) (FY)"                TEXT,
+    "Effective Tax Rate - (Ratio) (-1FY)"              TEXT,
+    "Effective Tax Rate - (Ratio) (-2FY)"              TEXT,
+    "Effective Tax Rate - (Ratio) (-3FY)"              TEXT,
+    "Effective Tax Rate - (Ratio) (-4FY)"              TEXT,
+    "FCF - Est Avg (FY1E)"                             TEXT, -- alias: fcf_est_avg_fy1e
+    "FCF - Est Avg (FY2E)"                             TEXT, -- alias: fcf_est_avg_fy2e
+    "FCF - Est Avg (FY3E)"                             TEXT, -- alias: fcf_est_avg_fy3e
+    "FCF - Est Avg (FY4E)"                             TEXT, -- alias: fcf_est_avg_fy4e
+    "FCF - Est Avg (FY5E)"                             TEXT,  -- alias: fcf_est_avg_fy5e
+    "Total Operating Expenses (FQ)"                    TEXT, -- alias: total_operating_expenses_fq
+    "Total Operating Expenses (FY)"                    TEXT, -- alias: total_operating_expenses_fy
+    "Total Operating Expenses (-1FQFQ)"                TEXT, -- alias: total_operating_expenses_1fqfq
+    "Total Operating Expenses (-2FQFQ)"                TEXT, -- alias: total_operating_expenses_2fqfq
+    "Total Operating Expenses (-3FQFQ)"                TEXT, -- alias: total_operating_expenses_3fqfq
+    "Total Operating Expenses (-4FQFQ)"                TEXT, -- alias: total_operating_expenses_4fqfq
+    "Total Operating Expenses (-1FY)"                  TEXT, -- alias: total_operating_expenses_1fy
+    "Total Operating Expenses (-2FY)"                  TEXT, -- alias: total_operating_expenses_2fy
+    "Total Operating Expenses (-3FY)"                  TEXT, -- alias: total_operating_expenses_3fy
+    "Total Operating Expenses (-4FY)"                  TEXT -- alias: total_operating_expenses_4fy
 );
 -- ===================================================================
 -- DATA IMPORT EXECUTION
@@ -1333,7 +1343,6 @@ INSERT INTO equities ("Ticker", -- alias: ticker
                       "Total Revenues (-1FY)", -- alias: total_revenues_1fy
                       "Total Revenues (FY)", -- alias: total_revenues_fy
                       "Total Revenues (LTM)", -- alias: total_revenues_ltm
-                      "Total Operating Expenses (LTM)", -- alias: total_operating_expenses_ltm
                       "Net Income/Adj. (-1FY)", -- alias: net_income_adj_1fy
                       "EBITDA (FQ)", -- alias: ebitda_fq
                       "EBITDA (LTM)", -- alias: ebitda_ltm
@@ -1880,25 +1889,36 @@ INSERT INTO equities ("Ticker", -- alias: ticker
                       "Interest And Investment Income (-2FY)", -- alias: interest_and_investment_income_2fy
                       "Interest And Investment Income (-3FY)", -- alias: interest_and_investment_income_3fy
                       "Interest And Investment Income (-4FY)", -- alias: interest_and_investment_income_4fy
-                       "Effective Tax Rate - (Ratio) (LTM)",
-                       "Effective Tax Rate - (Ratio) (FQ)",
-                       "Effective Tax Rate - (Ratio) (-1FQFQ)",
-                       "Effective Tax Rate - (Ratio) (-2FQFQ)",
-                       "Effective Tax Rate - (Ratio) (-4FQFQ)",
-                       "Effective Tax Rate - (Ratio) (-3FQFQ)",
-                       "Effective Tax Rate - (Ratio) (FY)",
-                       "Effective Tax Rate - (Ratio) (-1FY)",
-                       "Effective Tax Rate - (Ratio) (-2FY)",
-                       "Effective Tax Rate - (Ratio) (-3FY)",
-                       "Effective Tax Rate - (Ratio) (-4FY)",
-                       "FCF - Est Avg (FY1E)", -- alias: fcf_est_avg_fy1e
-                       "FCF - Est Avg (FY2E)", -- alias: fcf_est_avg_fy2e
-                       "FCF - Est Avg (FY3E)", -- alias: fcf_est_avg_fy3e
-                       "FCF - Est Avg (FY4E)", -- alias: fcf_est_avg_fy4e
-                       "FCF - Est Avg (FY5E)", -- alias: fcf_est_avg_fy5e
-                       "Fiscal Month", -- alias: fiscal_month
-                       "Fiscal Quarter", -- alias: fiscal_quarter
-                       "Fiscal Year", -- alias: fiscal_year
+                      "Effective Tax Rate - (Ratio) (LTM)",
+                      "Effective Tax Rate - (Ratio) (FQ)",
+                      "Effective Tax Rate - (Ratio) (-1FQFQ)",
+                      "Effective Tax Rate - (Ratio) (-2FQFQ)",
+                      "Effective Tax Rate - (Ratio) (-4FQFQ)",
+                      "Effective Tax Rate - (Ratio) (-3FQFQ)",
+                      "Effective Tax Rate - (Ratio) (FY)",
+                      "Effective Tax Rate - (Ratio) (-1FY)",
+                      "Effective Tax Rate - (Ratio) (-2FY)",
+                      "Effective Tax Rate - (Ratio) (-3FY)",
+                      "Effective Tax Rate - (Ratio) (-4FY)",
+                      "FCF - Est Avg (FY1E)", -- alias: fcf_est_avg_fy1e
+                      "FCF - Est Avg (FY2E)", -- alias: fcf_est_avg_fy2e
+                      "FCF - Est Avg (FY3E)", -- alias: fcf_est_avg_fy3e
+                      "FCF - Est Avg (FY4E)", -- alias: fcf_est_avg_fy4e
+                      "FCF - Est Avg (FY5E)", -- alias: fcf_est_avg_fy5e
+                      "Total Operating Expenses (LTM)", -- alias: total_operating_expenses_ltm
+                      "Total Operating Expenses (FQ)", -- alias: total_operating_expenses_fq
+                      "Total Operating Expenses (FY)", -- alias: total_operating_expenses_fy
+                      "Total Operating Expenses (-1FQFQ)", -- alias: total_operating_expenses_1fqfq
+                      "Total Operating Expenses (-2FQFQ)", -- alias: total_operating_expenses_2fqfq
+                      "Total Operating Expenses (-3FQFQ)", -- alias: total_operating_expenses_3fqfq
+                      "Total Operating Expenses (-4FQFQ)", -- alias: total_operating_expenses_4fqfq
+                      "Total Operating Expenses (-1FY)", -- alias: total_operating_expenses_1fy
+                      "Total Operating Expenses (-2FY)", -- alias: total_operating_expenses_2fy
+                      "Total Operating Expenses (-3FY)", -- alias: total_operating_expenses_3fy
+                      "Total Operating Expenses (-4FY)", -- alias: total_operating_expenses_4fy
+                      "Fiscal Month", -- alias: fiscal_month
+                      "Fiscal Quarter", -- alias: fiscal_quarter
+                      "Fiscal Year", -- alias: fiscal_year
                       "Reporting Lag") -- alias: reporting_lag
 SELECT NULLIF(TRIM(s."Ticker"), '')                                              AS ticker,
        NULLIF(TRIM(s."ISIN"), '')                                                AS isin,
@@ -2005,8 +2025,6 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."Total Revenues (-1FY)"), 0)              AS total_revenues_1fy,
        COALESCE(text_to_numeric_safe(s."Total Revenues (FY)"), 0)                AS total_revenues_fy,
        COALESCE(text_to_numeric_safe(s."Total Revenues (LTM)"), 0)               AS total_revenues_ltm,
-       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (LTM)"),
-                0)                                                               AS total_operating_expenses_ltm,
        COALESCE(text_to_numeric_safe(s."Net Income/Adj. (-1FY)"), 0)             AS net_income_adj_1fy,
        COALESCE(text_to_numeric_safe(s."EBITDA (FQ)"), 0)                        AS ebitda_fq,
        COALESCE(text_to_numeric_safe(s."EBITDA (LTM)"), 0)                       AS ebitda_ltm,
@@ -2515,7 +2533,7 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
        COALESCE(text_to_numeric_safe(s."# Hold Ratings"), 0)                     AS num_hold_ratings,
        COALESCE(text_to_numeric_safe(s."# Buys Ratings"), 0)                     AS num_buys_ratings,
        COALESCE(text_to_numeric_safe(s."# Sell Ratings"), 0)                     AS num_sell_ratings,
-       COALESCE(text_to_numeric_safe(s."# No Opinion Ratings"), 0) AS num_no_opinion_ratings,
+       COALESCE(text_to_numeric_safe(s."# No Opinion Ratings"), 0)               AS num_no_opinion_ratings,
        COALESCE(text_to_numeric_safe(s."Shrs Out"), 0)                           AS shares_outstanding,
        COALESCE(text_to_numeric_safe(s."Shrs Out (-1FY)"), 0)                    AS shrs_out_1fy,
        COALESCE(text_to_numeric_safe(s."Full Time Employees (FQ)"), 0)           AS full_time_employees_fq,
@@ -2691,6 +2709,28 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS fcf_est_avg_fy4e,
        COALESCE(text_to_numeric_safe(s."FCF - Est Avg (FY5E)"),
                 0)                                                               AS fcf_est_avg_fy5e,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (LTM)"),
+                0)                                                               AS total_operating_expenses_ltm,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (FQ)"),
+                0)                                                               AS total_operating_expenses_fq,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (FY)"),
+                0)                                                               AS total_operating_expenses_fy,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-1FQFQ)"),
+                0)                                                               AS total_operating_expenses_1fqfq,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-2FQFQ)"),
+                0)                                                               AS total_operating_expenses_2fqfq,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-3FQFQ)"),
+                0)                                                               AS total_operating_expenses_3fqfq,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-4FQFQ)"),
+                0)                                                               AS total_operating_expenses_4fqfq,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-1FY)"),
+                0)                                                               AS total_operating_expenses_1fy,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-2FY)"),
+                0)                                                               AS total_operating_expenses_2fy,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-3FY)"),
+                0)                                                               AS total_operating_expenses_3fy,
+       COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-4FY)"),
+                0)                                                               AS total_operating_expenses_4fy,
        report_fiscal.fiscal_month                                                AS fiscal_month,
        report_fiscal.fiscal_quarter                                              AS fiscal_quarter,
        report_fiscal.fiscal_year                                                 AS fiscal_year,
@@ -2702,18 +2742,18 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
 FROM screening_staging s,
      LATERAL (
          SELECT parse_fiscal_year_end_date(NULLIF(TRIM(s."FY End"), '')) AS fy_end_date
-         ) parsed,
+         )             parsed,
      LATERAL (
          SELECT calculate_next_fy_end_date(parsed.fy_end_date) AS next_fy_end_date
-         ) next_fy,
+         )             next_fy,
      LATERAL (
          SELECT * FROM calculate_fiscal_info(CURRENT_DATE::DATE, parsed.fy_end_date, NULL::TEXT)
-         ) current_fiscal,
+         )             current_fiscal,
      LATERAL (
          SELECT *
          FROM calculate_fiscal_info(NULLIF(TRIM(s."Income Statement Report Date"), '')::DATE, parsed.fy_end_date,
                                     NULL::TEXT)
-         ) report_fiscal
+         )             report_fiscal
 ON CONFLICT DO NOTHING;
 
 -- FINAL VALIDATION

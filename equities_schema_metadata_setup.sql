@@ -5,28 +5,28 @@ DROP TABLE IF EXISTS equities_schema_metadata CASCADE;
 -- Create a metadata table documenting available Equities schema columns
 CREATE TABLE IF NOT EXISTS equities_schema_metadata
 (
-    column_name    TEXT PRIMARY KEY,
-    column_alias   TEXT NOT NULL DEFAULT 'n/a',
-    role           TEXT NOT NULL,
-    column_count   INTEGER,
-    description    TEXT,
-    ddl_equivalent TEXT,
-    updated_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
+    column_name  TEXT PRIMARY KEY,
+    column_alias TEXT NOT NULL DEFAULT 'n/a',
+    role         TEXT NOT NULL,
+    column_count INTEGER,
+    description  TEXT,
+    column_type  TEXT,
+    updated_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Add index for role-based queries
 CREATE INDEX IF NOT EXISTS idx_equities_schema_metadata_role
     ON equities_schema_metadata (role);
 
--- Add index for ddl_equivalent lookups
+-- Add index for column_type lookups
 CREATE INDEX IF NOT EXISTS idx_equities_schema_metadata_ddl
-    ON equities_schema_metadata (ddl_equivalent);
+    ON equities_schema_metadata (column_type);
 
 -- Wrap upsert in transaction for atomicity
 BEGIN;
 
 -- Upsert all column metadata
-INSERT INTO equities_schema_metadata (column_name, column_alias, role, column_count, description, ddl_equivalent,
+INSERT INTO equities_schema_metadata (column_name, column_alias, role, column_count, description, column_type,
                                       updated_at)
 VALUES
     -- ===========================================
@@ -236,6 +236,36 @@ VALUES
      CURRENT_TIMESTAMP),
     ('Total Operating Expenses (LTM)', 'total_operating_expenses_ltm', 'income_statement', 1,
      'Total operating expenses (Last Twelve Months)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (FQ)', 'total_operating_expenses_fq', 'income_statement', 1,
+     'Total operating expenses (Fiscal Quarter)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (FY)', 'total_operating_expenses_fy', 'income_statement', 1,
+     'Total operating expenses (Fiscal Year)',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-1FQFQ)', 'total_operating_expenses_1fqfq', 'income_statement', 1,
+     'Total operating expenses 1 quarter ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-2FQFQ)', 'total_operating_expenses_2fqfq', 'income_statement', 1,
+     'Total operating expenses 2 quarters ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-3FQFQ)', 'total_operating_expenses_3fqfq', 'income_statement', 1,
+     'Total operating expenses 3 quarters ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-4FQFQ)', 'total_operating_expenses_4fqfq', 'income_statement', 1,
+     'Total operating expenses 4 quarters ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-1FY)', 'total_operating_expenses_1fy', 'income_statement', 1,
+     'Total operating expenses 1 fiscal year ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-2FY)', 'total_operating_expenses_2fy', 'income_statement', 1,
+     'Total operating expenses 2 fiscal years ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-3FY)', 'total_operating_expenses_3fy', 'income_statement', 1,
+     'Total operating expenses 3 fiscal years ago',
+     'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
+    ('Total Operating Expenses (-4FY)', 'total_operating_expenses_4fy', 'income_statement', 1,
+     'Total operating expenses 4 fiscal years ago',
      'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
     ('Net Income/Adj. (-1FY)', 'net_income_adj_1fy', 'income_statement', 1, 'Adjusted net income previous fiscal year',
      'NUMERIC DEFAULT 0', CURRENT_TIMESTAMP),
@@ -1695,12 +1725,12 @@ VALUES
     ('Reporting Lag', 'reporting_lag', 'feature', 1, 'Days between fiscal period end and report date', 'NUMERIC',
      CURRENT_TIMESTAMP)
 
-ON CONFLICT (column_name) DO UPDATE SET column_alias   = EXCLUDED.column_alias,
-                                        role           = EXCLUDED.role,
-                                        column_count   = EXCLUDED.column_count,
-                                        description    = EXCLUDED.description,
-                                        ddl_equivalent = EXCLUDED.ddl_equivalent,
-                                        updated_at     = CURRENT_TIMESTAMP;
+ON CONFLICT (column_name) DO UPDATE SET column_alias = EXCLUDED.column_alias,
+                                        role         = EXCLUDED.role,
+                                        column_count = EXCLUDED.column_count,
+                                        description  = EXCLUDED.description,
+                                        column_type  = EXCLUDED.column_type,
+                                        updated_at   = CURRENT_TIMESTAMP;
 
 COMMIT;
 

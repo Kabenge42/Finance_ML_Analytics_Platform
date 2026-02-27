@@ -30,7 +30,6 @@ from plotly.subplots import make_subplots
 from scipy import stats
 
 from finance_ml.analytics.data_utils import (
-    export_to_analytics_db,
     load_identifier_columns,
     reorder_with_identifiers,
     ExportConfig,
@@ -1235,6 +1234,9 @@ class EarningsBeatProbabilityModel:
                 record = _extract_identifiers(row)
                 record.update(
                     {
+                        "ticker": ticker,
+                        "name": name,
+                        "sector": sector,
                         "historical_beats": n_beats,
                         "total_reports": effective_total,
                         "dynamic_total_reports": dynamic_total,
@@ -1517,17 +1519,17 @@ class EPSStreakAnalyzer:
         )
 
     def analyze_dataframe(
-        self,
-        df: pd.DataFrame,
-        ticker_col: str = "ticker",
-        trajectory_col: str = "eps_trajectory_score",
-        streak_col: str = "eps_positive_streak",
-        improvement_col: str = "eps_improvement_count",
-        name_col: str = "name",
-        sector_col: str = "sector",
-        industry_col: str = "industry",
-        country_col: str = "country",
-        exchange_col: str = "exchange",
+            self,
+            df: pd.DataFrame,
+            ticker_col: str = "ticker",
+            trajectory_col: str = "eps_trajectory_score",
+            streak_col: str = "eps_positive_streak",
+            improvement_col: str = "eps_improvement_count",
+            name_col: str = "name",
+            sector_col: str = "sector",
+            industry_col: str = "industry",
+            country_col: str = "country",
+            exchange_col: str = "exchange",
     ) -> pd.DataFrame:
         """
         Analyze EPS streaks for entire DataFrame.
@@ -1550,6 +1552,20 @@ class EPSStreakAnalyzer:
         Returns:
             DataFrame with streak analysis
         """
+        # Define the expected output columns so an empty result retains the schema
+        _OUTPUT_COLS = [
+            "current_streak",
+            "streak_type",
+            "continuation_probability",
+            "mean_reversion_probability",
+            "expected_next_outcome",
+            "prediction_confidence",
+            "dynamic_total_reports",
+            "historical_beat_rate",
+            "gaap_revision_momentum",
+            "next_earnings_status",
+        ]
+
         # Check if forward/history columns are available
         has_history_cols = any(
             col in df.columns for col in EarningsBeatProbabilityModel._HISTORY_COL_MAP
@@ -1632,6 +1648,10 @@ class EPSStreakAnalyzer:
                 }
             )
             results.append(record)
+
+        if not results:
+            # Return empty DataFrame with expected columns to prevent downstream schema errors
+            return pd.DataFrame(columns=_OUTPUT_COLS)
 
         return pd.DataFrame(results)
 
@@ -1940,6 +1960,8 @@ class CreditRiskProbabilityModel:
             record = _extract_identifiers(row)
             record.update(
                 {
+                    "beta_stability_score": beta_stability,
+                    "combined_distress_score": combined_distress,
                     "distress_probability": prob,
                     "liquidity_stress_score": liquidity_stress,
                     "cash_runway_months": cash_runway,
@@ -2052,6 +2074,7 @@ class DividendCutProbabilityModel:
             record = _extract_identifiers(row)
             record.update(
                 {
+                    "high_yield_flag" : high_yield_flag,
                     "dividend_cut_probability": prob,
                     "fcf_dividend_coverage": fcf_coverage,
                     "payout_ratio": payout_ratio,
@@ -2159,6 +2182,7 @@ class PriceTargetAchievementModel:
             record = _extract_identifiers(row)
             record.update(
                 {
+                    "bullish_pct": bullish_pct,
                     "achievement_probability": prob,
                     "upside_potential": upside,
                     "price_target_spread_pct": spread,
@@ -2897,7 +2921,7 @@ class ResampledBeatProbabilityModel:
 
         return results
 
-    def analyze(
+    def analyze_dataframe(
         self,
         df: pd.DataFrame,
         sector_col: str = "sector",
@@ -3170,11 +3194,17 @@ def export_probability_analytics_results(
     missing_streak = required_streak_cols - set(streak_df.columns)
 
     if missing_prob or missing_streak:
-        logger.warning(
-            "Summary skipped — missing columns: prob=%s, streak=%s",
-            missing_prob or "none",
-            missing_streak or "none",
-        )
+        if streak_df.empty:
+            logger.warning(
+                "Summary skipped — streak_df is empty (no valid EPS trajectory data). "
+                "Ensure the input data contains 'eps_trajectory_score' values."
+            )
+        else:
+            logger.warning(
+                "Summary skipped — missing columns: prob=%s, streak=%s",
+                missing_prob or "none",
+                missing_streak or "none",
+                )
     else:
         try:
             summary_data = {

@@ -46,14 +46,14 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "Total Revenues (-3FY)" > 0 AND "Total Revenues (FY)" > 0
                THEN
-               (POWER(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC), 1.0 / 3.0) -
+               (safe_power(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC), 1.0 / 3.0) -
                 1) *
                100
            END                                                                                   AS revenue_cagr_3y,
        CASE
            WHEN "Total Revenues (-4FY)" > 0 AND "Total Revenues (FY)" > 0
                THEN
-               (POWER(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC), 1.0 / 4.0) -
+               (safe_power(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC), 1.0 / 4.0) -
                 1) *
                100
            END                                                                                   AS revenue_cagr_4y,

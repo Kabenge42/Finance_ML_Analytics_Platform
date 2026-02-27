@@ -228,7 +228,6 @@ def create_eps_trajectory_scatter(
 
 _DEFAULT_GROWTH_COLS = [
     "revenue_yoy_growth",
-    "revenue_growth_yoy",
     "ebitda_growth_yoy",
     "eps_yoy_growth",
     "fcf_growth_yoy",

@@ -27,7 +27,7 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "Total Debt (-3FY)" > 0
                THEN
-               (POWER(public.safe_divide("Total Debt (FY)"::NUMERIC, "Total Debt (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
+               (safe_power(public.safe_divide("Total Debt (FY)"::NUMERIC, "Total Debt (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
                100
            END                                                                        AS debt_3y_cagr,
        CASE

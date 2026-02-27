@@ -4828,7 +4828,7 @@ def generate_data_quality_dashboard(
         try:
             import sweetviz as sv
 
-            report = sv.analyze(df)
+            report = sv.analyze_dataframe(df)
             report.show_html(str(report_path), open_browser=False)
             logging.info(f"Generated sweetviz report: {report_path}")
             return report_path

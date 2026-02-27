@@ -99,6 +99,18 @@ class BayesianTechnicalResampler:
         "5Y": "price_5y_ago",
     }
 
+    # SQL-style column name fallbacks (as returned by PostgreSQL views)
+    _PRICE_SNAPSHOT_SQL_MAP: dict[str, str] = {
+        "5D": "Price (5D Ago)",
+        "1W": "Price (1W Ago)",
+        "1M": "Price (1M Ago)",
+        "3M": "Price (3M Ago)",
+        "6M": "Price (6M Ago)",
+        "1Y": "Price (1Y Ago)",
+        "3Y": "Price (3Y Ago)",
+        "5Y": "Price (5Y Ago)",
+    }
+
     _MOMENTUM_FEATURES: list[str] = [
         "price_momentum_1m",
         "price_momentum_3m",
@@ -157,7 +169,12 @@ class BayesianTechnicalResampler:
 
         for period, col in self._PRICE_SNAPSHOT_MAP.items():
             if col not in df.columns:
-                continue
+                # Fallback to SQL-style column name
+                sql_col = self._PRICE_SNAPSHOT_SQL_MAP.get(period)
+                if sql_col and sql_col in df.columns:
+                    col = sql_col
+                else:
+                    continue
             mask = df[last_price_col].notna() & df[col].notna() & (df[col] > 0)
             subset = df.loc[mask]
             if subset.empty:
@@ -289,18 +306,30 @@ class BayesianTechnicalResampler:
         return result_df
 
     def build_inference_data(
-        self,
-        df: pd.DataFrame,
-        freq: str = "1ME",
+            self,
+            df: pd.DataFrame,
+            freq: str = "1ME",
+            result_df: pd.DataFrame | None = None,
     ) -> "az.InferenceData | xr.Dataset | None":
         """
         Build ArviZ InferenceData from resampled posterior return distributions.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Equities data (used only if result_df is not provided).
+        freq : str
+            Resampling frequency.
+        result_df : pd.DataFrame, optional
+            Pre-computed output from ``resample_returns()``. When provided,
+            avoids recomputing the resampling step.
 
         Returns
         -------
         arviz.InferenceData, xr.Dataset, or None
         """
-        result_df = self.resample_returns(df, freq=freq)
+        if result_df is None or result_df.empty:
+            result_df = self.resample_returns(df, freq=freq)
         if result_df.empty:
             logger.warning("No resampled returns to build InferenceData")
             return None
@@ -364,12 +393,12 @@ class BayesianTechnicalResampler:
 
 
 def resampled_posterior_returns(
-    df: pd.DataFrame,
-    freq: str = "1ME",
-    prior_return_mean: float = 0.08,
-    prior_return_std: float = 0.20,
-    n_posterior_samples: int = 4000,
-    n_chains: int = 4,
+        df: pd.DataFrame,
+        freq: str = "1ME",
+        prior_return_mean: float = 0.08,
+        prior_return_std: float = 0.20,
+        n_posterior_samples: int = 4000,
+        n_chains: int = 4,
 ) -> tuple[pd.DataFrame, "az.InferenceData | xr.Dataset | None"]:
     """
     Convenience function: compute resampled posterior returns + InferenceData.
@@ -401,7 +430,7 @@ def resampled_posterior_returns(
         n_chains=n_chains,
     )
     result_df = resampler.resample_returns(df, freq=freq)
-    idata = resampler.build_inference_data(df, freq=freq)
+    idata = resampler.build_inference_data(df, freq=freq, result_df=result_df)
     return result_df, idata
 
 
@@ -727,6 +756,226 @@ def hierarchical_mcmc_by_sector(
     return results
 
 
+# ── Category columns available for hierarchical grouping ──
+_HIERARCHICAL_CATEGORY_COLS: list[str] = [
+    "region",
+    "country",
+    "trading_country",
+    "exchange",
+    "unit",
+    "sector",
+    "industry",
+    "style_class",
+    "size_class",
+]
+
+
+def hierarchical_mcmc_multi_level(
+    df: pd.DataFrame,
+    feature: str,
+    group_cols: list[str] | None = None,
+    n_samples: int = 8000,
+    min_group_size: int = 20,
+    shrinkage_strength: float = 10.0,
+) -> dict:
+    """
+    Multi-level hierarchical MCMC with nested category pooling.
+
+    Estimates group-level means for every available categorical column,
+    each shrunk toward its parent-level mean in a hierarchy:
+
+        global → region → country → exchange → sector → industry
+
+    Groups with fewer than ``min_group_size`` observations are pooled
+    more aggressively toward the parent mean (stronger shrinkage).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame with feature and categorical columns.
+    feature : str
+        Numeric feature to estimate (e.g. 'expected_upside_pct', 'roe').
+    group_cols : list[str], optional
+        Categorical columns to group by.  Defaults to all available
+        columns from ``_HIERARCHICAL_CATEGORY_COLS``.
+    n_samples : int, default 8000
+        Number of posterior MCMC draws per group.
+    min_group_size : int, default 20
+        Minimum observations per group. Smaller groups get stronger
+        shrinkage toward the parent mean.
+    shrinkage_strength : float, default 10.0
+        Controls the pooling intensity (higher = more shrinkage).
+        Effective shrinkage = n / (n + shrinkage_strength).
+
+    Returns
+    -------
+    dict
+        Nested dictionary with structure::
+
+            {
+                "global": { "mean": ..., "std": ..., "n_obs": ... },
+                "levels": {
+                    "region":   { "North America": { ... }, ... },
+                    "industry": { "Software": { ... }, ... },
+                    ...
+                },
+                "cross_level_summary": pd.DataFrame,
+                "inference_data": az.InferenceData  (if ArviZ available)
+            }
+
+    Examples
+    --------
+    >>> result = hierarchical_mcmc_multi_level(df, 'expected_upside_pct')
+    >>> result['levels']['region']['North America']['posterior_mean']
+    >>> result['levels']['sector']['Technology']['shrinkage']
+    """
+    if feature not in df.columns:
+        logger.warning("Feature '%s' not in DataFrame columns", feature)
+        return {}
+
+    global_data = df[feature].dropna()
+    if len(global_data) < 50:
+        logger.warning("Insufficient data for hierarchical MCMC (%d obs)", len(global_data))
+        return {}
+
+    global_mean = float(global_data.mean())
+    global_std = float(global_data.std())
+
+    # Resolve which categorical columns are actually present
+    if group_cols is None:
+        group_cols = [c for c in _HIERARCHICAL_CATEGORY_COLS if c in df.columns]
+    else:
+        group_cols = [c for c in group_cols if c in df.columns]
+
+    if not group_cols:
+        logger.warning("No categorical columns found for hierarchical grouping")
+        return {"global": {"mean": global_mean, "std": global_std, "n_obs": len(global_data)}}
+
+    # Define parent-child nesting for shrinkage inheritance
+    _PARENT_MAP: dict[str, str | None] = {
+        "region": None,
+        "country": "region",
+        "trading_country": "region",
+        "exchange": "country",
+        "unit": None,
+        "sector": "region",
+        "industry": "sector",
+        "style_class": None,
+        "size_class": None,
+    }
+
+    levels: dict[str, dict] = {}
+    all_samples_for_idata: dict[str, np.ndarray] = {}
+    all_coords_for_idata: dict[str, list[str]] = {}
+    cross_level_rows: list[dict] = []
+
+    for col in group_cols:
+        level_results: dict[str, dict] = {}
+        groups = df[col].dropna().unique()
+
+        # Determine parent-level means for nested shrinkage
+        parent_col = _PARENT_MAP.get(col)
+        parent_means: dict[str, float] = {}
+        if parent_col and parent_col in levels:
+            for group_val in groups:
+                group_mask = df[col] == group_val
+                if parent_col in df.columns:
+                    parent_vals = df.loc[group_mask, parent_col].dropna().mode()
+                    if len(parent_vals) > 0:
+                        parent_key = str(parent_vals.iloc[0])
+                        parent_info = levels[parent_col].get(parent_key)
+                        if parent_info:
+                            parent_means[str(group_val)] = parent_info["posterior_mean"]
+
+        for group_val in groups:
+            group_data = df[df[col] == group_val][feature].dropna().values
+            n = len(group_data)
+            if n < 3:
+                continue
+
+            group_mean = float(group_data.mean())
+            group_std = float(group_data.std()) if n > 1 else global_std
+
+            # Adaptive shrinkage: small groups shrink more
+            effective_strength = shrinkage_strength * max(1.0, 30.0 / max(n, 1))
+            shrinkage = n / (n + effective_strength)
+
+            # Determine shrinkage target (parent mean or global mean)
+            target_mean = parent_means.get(str(group_val), global_mean)
+
+            posterior_mean = shrinkage * group_mean + (1 - shrinkage) * target_mean
+            posterior_std = group_std / np.sqrt(n)
+
+            # MCMC posterior samples
+            samples = np.random.normal(posterior_mean, posterior_std, n_samples)
+
+            ci_95 = (
+                float(np.percentile(samples, 2.5)),
+                float(np.percentile(samples, 97.5)),
+            )
+            prob_positive = float((samples > 0).mean())
+
+            level_results[str(group_val)] = {
+                "raw_mean": group_mean,
+                "raw_std": group_std,
+                "posterior_mean": posterior_mean,
+                "posterior_std": posterior_std,
+                "shrinkage": shrinkage,
+                "shrinkage_target": target_mean,
+                "ci_95": ci_95,
+                "prob_positive": prob_positive,
+                "samples": samples,
+                "n_obs": n,
+            }
+
+            cross_level_rows.append({
+                "level": col,
+                "group": str(group_val),
+                "n_obs": n,
+                "raw_mean": group_mean,
+                "posterior_mean": posterior_mean,
+                "shrinkage": shrinkage,
+                "ci_95_low": ci_95[0],
+                "ci_95_high": ci_95[1],
+                "prob_positive": prob_positive,
+            })
+
+        levels[col] = level_results
+
+        # Collect for InferenceData
+        if level_results:
+            names = list(level_results.keys())
+            stacked = np.stack([level_results[s]["samples"] for s in names])
+            all_samples_for_idata[f"{col}_mu"] = stacked
+            all_coords_for_idata[col] = names
+
+    result: dict = {
+        "global": {"mean": global_mean, "std": global_std, "n_obs": len(global_data)},
+        "levels": levels,
+        "cross_level_summary": pd.DataFrame(cross_level_rows),
+    }
+
+    # Build unified InferenceData across all levels
+    if ARVIZ_AVAILABLE and az is not None and all_samples_for_idata:
+        try:
+            idata = az.from_dict(
+                posterior=all_samples_for_idata,
+                coords=all_coords_for_idata,
+                dims={k: [k.replace("_mu", "")] for k in all_samples_for_idata},
+            )
+            result["inference_data"] = idata
+        except Exception as e:
+            logger.debug("InferenceData construction failed for multi-level MCMC: %s", e)
+
+    logger.info(
+        "Multi-level hierarchical MCMC: %d levels, %d total groups for '%s'",
+        len(levels),
+        sum(len(v) for v in levels.values()),
+        feature,
+    )
+    return result
+
+
 def fit_distributions_by_category(
     df: pd.DataFrame, category: str, features: list, n_simulations: int = 10000
 ) -> dict:
@@ -834,16 +1083,22 @@ def fit_distributions_by_category(
 
 
 def calculate_ruin_probability(
-    df: pd.DataFrame,
-    initial_capital_col: str = "market_cap",
-    cash_burn_col: str = "cash_burn_rate",
-    volatility_col: str = "volatility_regime",
+        df: pd.DataFrame,
+        initial_capital_col: str = "market_cap",
+        cash_burn_col: str = "cash_burn_rate",
+        volatility_col: str = "volatility_regime",
 ) -> pd.DataFrame:
     """
     Calculate investor's ruin probability using modified Gambler's Ruin framework.
 
     P(ruin) ≈ exp(-2 * μ * W / σ²) for μ > 0 (drift)
-    where W = initial wealth, μ = expected return, σ = volatility
+    where W = wealth buffer (years of runway), μ = expected return, σ = volatility
+
+    Recalibrated to avoid systematic overestimation:
+    - Wealth buffer uses a log-transform with a floor to prevent near-zero values
+    - Drift blends FCF yield, EPS trajectory, AND distress score for robustness
+    - Volatility floor raised to prevent extreme σ² domination
+    - Negative-drift branch uses a bounded logistic instead of linear ramp
 
     Parameters
     ----------
@@ -860,55 +1115,69 @@ def calculate_ruin_probability(
     -------
     pd.DataFrame
         DataFrame with ruin probabilities and risk tiers
-
-    Examples
-    --------
-    >>> ruin_df = calculate_ruin_probability(df)
-    >>> high_risk = ruin_df[ruin_df['ruin_probability'] > 0.6]
     """
-    result = df[["ticker", "name", "industry", "market_cap", "distress_risk_score"]].copy()
+    base_cols = ["ticker", "name", "industry", "market_cap"]
+    optional_cols = ["distress_risk_score"]
+    use_cols = base_cols + [c for c in optional_cols if c in df.columns]
+    result = df[[c for c in use_cols if c in df.columns]].copy()
+    if "distress_risk_score" not in result.columns:
+        result["distress_risk_score"] = 50.0  # neutral default
 
-    # Proxy expected return from FCF yield and earnings trajectory
+    # ── 1. Expected drift: blend FCF yield, EPS trajectory, and distress score ──
     if "fcf_yield" in df.columns and "eps_trajectory_score" in df.columns:
         fcf_norm = df["fcf_yield"].clip(-20, 50) / 100
         eps_norm = df["eps_trajectory_score"] / 100
-        result["expected_drift"] = (fcf_norm * 0.6 + eps_norm * 0.4).fillna(0)
-    else:
-        result["expected_drift"] = 0.05  # Default 5% drift
 
-    # Volatility proxy
+        # Add distress-score contribution: higher distress_risk_score → healthier
+        distress_drift = df.get("distress_risk_score", pd.Series(50, index=df.index)) / 200  # 0–0.5
+        result["expected_drift"] = (
+                fcf_norm * 0.40 + eps_norm * 0.30 + distress_drift * 0.30
+        ).fillna(0.05)
+    else:
+        result["expected_drift"] = 0.08  # More realistic default drift
+
+    # ── 2. Volatility proxy: tighter floor to prevent σ² domination ──
     if volatility_col in df.columns:
-        result["volatility"] = df[volatility_col].abs().clip(5, 80) / 100
+        result["volatility"] = df[volatility_col].abs().clip(10, 60) / 100  # [0.10, 0.60]
     elif "beta_momentum" in df.columns:
-        result["volatility"] = (df["beta_momentum"].abs() * 0.2).clip(0.1, 0.8)
+        result["volatility"] = (df["beta_momentum"].abs() * 0.15 + 0.10).clip(0.10, 0.60)
     else:
-        result["volatility"] = 0.25
+        result["volatility"] = 0.20
 
-    # Cash runway as wealth buffer
+    # ── 3. Wealth buffer: log-scaled with a meaningful floor ──
     if "cash_runway_months" in df.columns:
-        result["wealth_buffer"] = df["cash_runway_months"].clip(0, 120) / 12
+        # After SQL fix, profitable companies have runway = 120 months (10 years)
+        raw_years = df["cash_runway_months"].clip(1, 120) / 12.0
+        # Log-transform: compresses extreme values, raises the floor
+        # log1p(1) = 0.69, log1p(10) = 2.40 → more separation in the useful range
+        result["wealth_buffer"] = np.log1p(raw_years)
     else:
-        result["wealth_buffer"] = 3  # Default 3 years
+        result["wealth_buffer"] = np.log1p(5.0)  # Default ~5 years → 1.79
 
-    # Calculate ruin probability
+    # ── 4. Ruin probability with recalibrated formula ──
     mu = result["expected_drift"]
     sigma = result["volatility"]
     W = result["wealth_buffer"]
 
-    sigma_sq = sigma**2 + 1e-6
+    sigma_sq = sigma ** 2 + 1e-6
+
+    # Positive drift: classical continuous-time ruin formula
+    # Negative drift: bounded logistic (avoids the linear ramp to 1.0)
+    positive_drift_ruin = np.exp(-2 * mu * W / sigma_sq).clip(0, 1)
+    negative_drift_ruin = (1.0 / (1.0 + np.exp(-10 * np.abs(mu)))).clip(0.5, 0.95)
 
     result["ruin_probability"] = np.where(
         mu > 0,
-        np.exp(-2 * mu * W / sigma_sq).clip(0, 1),
-        np.minimum(1.0, 0.5 + 0.5 * np.abs(mu) * W),
+        positive_drift_ruin,
+        negative_drift_ruin,
     )
 
     result["survival_probability"] = 1 - result["ruin_probability"]
 
-    # Risk tier classification
+    # ── 5. Risk tier classification (wider low-risk band) ──
     result["risk_tier"] = pd.cut(
         result["ruin_probability"],
-        bins=[0, 0.1, 0.3, 0.6, 1.0],
+        bins=[0, 0.15, 0.35, 0.60, 1.0],
         labels=["Low Risk", "Moderate Risk", "High Risk", "Critical Risk"],
     )
 

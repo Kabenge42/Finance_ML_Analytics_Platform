@@ -125,7 +125,6 @@ CREATE TABLE equities
     "Total Revenues (-1FY)"                            NUMERIC DEFAULT 0,            -- income_statement: Total Revenues (-1FY) | alias: total_revenues_1fy
     "Total Revenues (FY)"                              NUMERIC DEFAULT 0,            -- income_statement: Total revenues (Fiscal Year) | alias: total_revenues_fy
     "Total Revenues (LTM)"                             NUMERIC DEFAULT 0,            -- income_statement: Total revenues (Last Twelve Months) | alias: total_revenues_ltm
-    "Total Operating Expenses (LTM)"                   NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (LTM) | alias: total_operating_expenses_ltm
     "Net Income/Adj. (-1FY)"                           NUMERIC DEFAULT 0,            -- income_statement: Net Income/Adj. (-1FY) | alias: net_income_adj_1fy
     "EBITDA (FQ)"                                      NUMERIC DEFAULT 0,            -- income_statement: EBITDA (FQ) | alias: ebitda_fq
     "EBITDA (LTM)"                                     NUMERIC DEFAULT 0,            -- income_statement: EBITDA (Last Twelve Months) | alias: ebitda_ltm
@@ -712,6 +711,17 @@ CREATE TABLE equities
     "FCF - Est Avg (FY3E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY3E) | alias: fcf_est_avg_fy3e
     "FCF - Est Avg (FY4E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY4E) | alias: fcf_est_avg_fy4e
     "FCF - Est Avg (FY5E)"                             NUMERIC DEFAULT 0,            -- cash_flow: FCF - Est Avg (FY5E) | alias: fcf_est_avg_fy5e
+    "Total Operating Expenses (LTM)"                   NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (LTM) | alias: total_operating_expenses_ltm
+    "Total Operating Expenses (FQ)"                    NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (FQ) | alias: total_operating_expenses_fq
+    "Total Operating Expenses (FY)"                    NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (FY) | alias: total_operating_expenses_fy
+    "Total Operating Expenses (-1FQFQ)"                NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-1FQFQ) | alias: total_operating_expenses_1fqfq
+    "Total Operating Expenses (-2FQFQ)"                NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-2FQFQ) | alias: total_operating_expenses_2fqfq
+    "Total Operating Expenses (-3FQFQ)"                NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-3FQFQ) | alias: total_operating_expenses_3fqfq
+    "Total Operating Expenses (-4FQFQ)"                NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-4FQFQ) | alias: total_operating_expenses_4fqfq
+    "Total Operating Expenses (-1FY)"                  NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-1FY) | alias: total_operating_expenses_1fy
+    "Total Operating Expenses (-2FY)"                  NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-2FY) | alias: total_operating_expenses_2fy
+    "Total Operating Expenses (-3FY)"                  NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-3FY) | alias: total_operating_expenses_3fy
+    "Total Operating Expenses (-4FY)"                  NUMERIC DEFAULT 0,            -- income_statement: Total Operating Expenses (-4FY) | alias: total_operating_expenses_4fy
 
     -- ===========================================
     -- FEATURE role

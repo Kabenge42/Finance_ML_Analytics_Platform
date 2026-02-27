@@ -65,11 +65,11 @@ SELECT "ISIN"                                                                   
        -- NEW: Multi-year CAGR (3-year)
        CASE
            WHEN "EBIT (-3FY)" > 0 AND "EBIT (FY)" > 0
-               THEN (POWER("EBIT (FY)" / NULLIF("EBIT (-3FY)", 0), 1.0 / 3.0) - 1) * 100
+               THEN (safe_power("EBIT (FY)" / NULLIF("EBIT (-3FY)", 0), 1.0 / 3.0) - 1) * 100
            END                                                                   AS ebit_cagr_3y,
        CASE
            WHEN "EBITDA (-3FY)" > 0 AND "EBITDA (FY)" > 0
-               THEN (POWER("EBITDA (FY)" / NULLIF("EBITDA (-3FY)", 0), 1.0 / 3.0) - 1) * 100
+               THEN (safe_power("EBITDA (FY)" / NULLIF("EBITDA (-3FY)", 0), 1.0 / 3.0) - 1) * 100
            END                                                                   AS ebitda_cagr_3y,
        -- NEW: vs 5Y average
        "EBIT (LTM)" / NULLIF("EBIT (5YAVGLTM)", 0)                               AS ebit_vs_5y_avg,

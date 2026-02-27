@@ -39,6 +39,11 @@ MV_COLUMN_ALIASES: dict[str, list[str]] = {
     "beneish_m_score": ["accounting_quality_score", "accruals_quality"],
     "eps_beat_count": ["eps_positive_years"],
     "eps_total_reports": ["eps_positive_streak"],
+    "eps_growth_yoy": ["eps_yoy_growth", "eps_growth_yoy"],
+    "operating_income_growth": ["operating_income_growth_yoy", "operating_income_growth"],
+    "fcf_growth_yoy": ["fcf_growth_yoy", "fcf_yoy_growth"],
+    "eps_qoq_growth": ["eps_qoq_growth"],
+    "quality_composite_score": ["quality_momentum_score", "quality_composite_score"],
 }
 
 

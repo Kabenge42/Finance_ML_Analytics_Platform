@@ -14,7 +14,8 @@ This module provides visualization functions for analyzing earnings quality:
 Feature Categories leveraged (from feature_registry.sql vw_features_earnings):
 - eps_surprise_pct, eps_positive_years, eps_positive_streak, eps_trajectory_score
 - eps_positive_streak, eps_improvement_count, earnings_quality_composite
-- accruals_ratio, cash_earnings_ratio, earnings_persistence
+- earnings_quality_composite, ni_adjustment_ratio, eps_adjustment_ratio
+- accounting_quality_score, earnings_quality_impact
 - eps_revision_momentum, gaap_adj_eps_gap_pct, revision_trend_short/medium
 - posterior_beat_prob, quarterly_beat_streak, historical_beat_rate
 """
@@ -49,9 +50,6 @@ METRIC_LABELS = {
     "eps_adjustment_ratio": "EPS Adjustment Ratio",
     "accounting_quality_score": "Accounting Quality Score",
     "earnings_quality_impact": "Unusual Items Impact",
-    "accruals_ratio": "Accruals Ratio",
-    "cash_earnings_ratio": "Cash/Earnings Ratio",
-    "earnings_persistence": "Earnings Persistence",
 }
 
 

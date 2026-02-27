@@ -15,7 +15,7 @@ SELECT "ISIN"                                                              AS is
        NULLIF(ABS("Net EPS - Basic (-1FY)"), 0) * 100                      AS eps_growth_yoy,
        CASE
            WHEN "Net EPS - Basic (-3FY)" > 0 AND "Net EPS - Basic (FY)" > 0
-               THEN (POWER("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) * 100
+               THEN (safe_power("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) * 100
            END                                                             AS eps_cagr_3y,
        "EPS/Adj. (LTM)" / NULLIF("Net EPS - Basic (LTM)", 0)               AS eps_adjustment_ratio,
        (CASE WHEN "Net EPS - Basic (FY)" > 0 THEN 1 ELSE 0 END +

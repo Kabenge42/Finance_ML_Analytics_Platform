@@ -1,0 +1,10 @@
+[
+  {
+    "model_name":"Bayesian Earnings Beat Model",
+    "brier_score":0.2679671681,
+    "log_loss":0.7325530335,
+    "calibration_error":0.1884319734,
+    "discrimination_auc":0.4632441169,
+    "overall_confidence":62.6324374417
+  }
+]

@@ -25,6 +25,7 @@ from sqlalchemy import create_engine
 try:
     from finance_ml.analytics.visualizations import probability_viz
     from finance_ml.analytics.statistical_analysis import bayesian_category_analysis
+
     PROB_VIZ_AVAILABLE = True
 except ImportError:
     PROB_VIZ_AVAILABLE = False
@@ -32,7 +33,7 @@ except ImportError:
 
 # Import expected_returns visualization functions for dynamic artifact generation
 try:
-    from expected_returns_v3 import (
+    from finance_ml.analytics.visualizations.expected_returns_viz import (
         create_mc_return_distribution,
         create_sector_risk_reward_scatter,
         create_sector_heatmap,
@@ -43,6 +44,8 @@ try:
         create_return_distribution_fit_chart,
         create_sector_return_analytics_heatmap,
         create_screening_summary_chart,
+    )
+    from expected_returns_v3 import (
         extract_strong_consensus,
         compute_sector_expected_returns,
         compute_sector_return_analytics,
@@ -58,6 +61,7 @@ try:
     from finance_ml.analytics.probability_analytics import (
         create_earnings_probability_dashboard,
     )
+
     ER_VIZ_AVAILABLE = True
 except ImportError as _er_import_err:
     ER_VIZ_AVAILABLE = False
@@ -74,18 +78,18 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # =============================================================================
 
 COLORS = {
-    "background_main": "#121212",      # Main app background
-    "background_panel": "#1E1E1E",     # Panel/Card background
-    "background_input": "#2D2D2D",     # Dropdowns and inputs
-    "text_primary": "#FFFFFF",         # Primary text
-    "text_secondary": "#B3B3B3",       # Subtitles and labels
-    "border": "#333333",               # Subtle borders
+    "background_main": "#121212",  # Main app background
+    "background_panel": "#1E1E1E",  # Panel/Card background
+    "background_input": "#2D2D2D",  # Dropdowns and inputs
+    "text_primary": "#FFFFFF",  # Primary text
+    "text_secondary": "#B3B3B3",  # Subtitles and labels
+    "border": "#333333",  # Subtle borders
     # Semantic Colors
-    "primary": "#375A7F",              # Primary brand color (Blue)
-    "success": "#63BE7B",              # Positive/High (Green)
-    "warning": "#FFEB84",              # Neutral/Medium (Yellow)
-    "danger": "#F8696B",               # Negative/Low (Red)
-    "info": "#3498DB",                 # Informational
+    "primary": "#375A7F",  # Primary brand color (Blue)
+    "success": "#63BE7B",  # Positive/High (Green)
+    "warning": "#FFEB84",  # Neutral/Medium (Yellow)
+    "danger": "#F8696B",  # Negative/Low (Red)
+    "info": "#3498DB",  # Informational
 }
 
 # =============================================================================
@@ -113,85 +117,169 @@ TABLE_STYLE_DATA_CONDITIONAL = [
     {"if": {"row_index": "odd"}, "backgroundColor": "#252525"},
     # Conditional formatting for upside/return columns (0-100 scale)
     {
-        "if": {"column_id": "expected_upside_pct", "filter_query": "{expected_upside_pct} > 15"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_upside_pct",
+            "filter_query": "{expected_upside_pct} > 15",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "expected_upside_pct", "filter_query": "{expected_upside_pct} < 0"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_upside_pct",
+            "filter_query": "{expected_upside_pct} < 0",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "filtered_upside", "filter_query": "{filtered_upside} > 15"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "filtered_upside",
+            "filter_query": "{filtered_upside} > 15",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
         "if": {"column_id": "filtered_upside", "filter_query": "{filtered_upside} < 0"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "expected_return_prob_weighted", "filter_query": "{expected_return_prob_weighted} > 10"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_return_prob_weighted",
+            "filter_query": "{expected_return_prob_weighted} > 10",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     # Conditional formatting for probability (0-1 scale)
     {
-        "if": {"column_id": "achievement_probability", "filter_query": "{achievement_probability} > 0.7"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "achievement_probability",
+            "filter_query": "{achievement_probability} > 0.7",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "achievement_probability", "filter_query": "{achievement_probability} >= 0.4 && {achievement_probability} <= 0.7"},
-        "color": COLORS["warning"], "fontWeight": "bold"
+        "if": {
+            "column_id": "achievement_probability",
+            "filter_query": "{achievement_probability} >= 0.4 && {achievement_probability} <= 0.7",
+        },
+        "color": COLORS["warning"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "achievement_probability", "filter_query": "{achievement_probability} < 0.4"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "if": {
+            "column_id": "achievement_probability",
+            "filter_query": "{achievement_probability} < 0.4",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     # Z-score conditional formatting (highlight extreme values)
     {
-        "if": {"column_id": "expected_upside_pct_zscore", "filter_query": "{expected_upside_pct_zscore} > 1.5"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_upside_pct_zscore",
+            "filter_query": "{expected_upside_pct_zscore} > 1.5",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "expected_upside_pct_zscore", "filter_query": "{expected_upside_pct_zscore} < -1.5"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_upside_pct_zscore",
+            "filter_query": "{expected_upside_pct_zscore} < -1.5",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "filtered_upside_zscore", "filter_query": "{filtered_upside_zscore} > 1.5"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "filtered_upside_zscore",
+            "filter_query": "{filtered_upside_zscore} > 1.5",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "filtered_upside_zscore", "filter_query": "{filtered_upside_zscore} < -1.5"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "if": {
+            "column_id": "filtered_upside_zscore",
+            "filter_query": "{filtered_upside_zscore} < -1.5",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     # Percentile conditional formatting (top/bottom quartile)
     {
-        "if": {"column_id": "expected_upside_pct_pctile", "filter_query": "{expected_upside_pct_pctile} > 75"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_upside_pct_pctile",
+            "filter_query": "{expected_upside_pct_pctile} > 75",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "expected_upside_pct_pctile", "filter_query": "{expected_upside_pct_pctile} < 25"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "if": {
+            "column_id": "expected_upside_pct_pctile",
+            "filter_query": "{expected_upside_pct_pctile} < 25",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Beat Probability formatting (likely_beat vs. uncertain)
+    {
+        "if": {
+            "column_id": "posterior_beat_prob",
+            "filter_query": "{posterior_beat_prob} > 0.5",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "posterior_beat_prob",
+            "filter_query": "{posterior_beat_prob} < 0.5",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     # Composite score
     {
-        "if": {"column_id": "composite_score", "filter_query": "{composite_score} > 0.7"},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "if": {
+            "column_id": "composite_score",
+            "filter_query": "{composite_score} > 0.7",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "composite_score", "filter_query": "{composite_score} < 0.3"},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "if": {
+            "column_id": "composite_score",
+            "filter_query": "{composite_score} < 0.3",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
     # Quality tier color coding
     {
-        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "premium"'},
-        "color": "#FFD700", "fontWeight": "bold"
+        "if": {
+            "column_id": "quality_tier",
+            "filter_query": '{quality_tier} = "premium"',
+        },
+        "color": "#FFD700",
+        "fontWeight": "bold",
     },
     {
         "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "high"'},
-        "color": COLORS["success"], "fontWeight": "bold"
+        "color": COLORS["success"],
+        "fontWeight": "bold",
     },
     {
         "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "low"'},
-        "color": COLORS["danger"], "fontWeight": "bold"
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
     },
 ]
 
@@ -203,58 +291,98 @@ def get_formatted_columns(cols_list):
         spec = {"id": col, "name": col.replace("_", " ").capitalize()}
 
         # Currency formatting
-        if col in ["last_price", "price_target", "price_target_high", "price_target_low",
-                    "price_target_median", "price_target_prob_weighted", "price_target_mc",
-                    "kalman_estimate", "market_cap", "enterprise_value"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=2, scheme=Scheme.fixed, group=True).symbol(Symbol.yes).symbol_prefix("$")
-            })
+        if col in [
+            "last_price",
+            "price_target",
+            "price_target_high",
+            "price_target_low",
+            "price_target_median",
+            "price_target_prob_weighted",
+            "price_target_mc",
+            "kalman_estimate",
+            "market_cap",
+            "enterprise_value",
+        ]:
+            spec.update(
+                {
+                    "type": "numeric",
+                    "format": Format(precision=2, scheme=Scheme.fixed, group=True)
+                    .symbol(Symbol.yes)
+                    .symbol_prefix("$"),
+                }
+            )
 
         # Percentage formatting (for columns already in 0-100 scale)
-        elif col in ["expected_upside_pct", "filtered_upside", "expected_return_prob_weighted"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=2, scheme=Scheme.fixed).symbol(Symbol.yes).symbol_suffix("%")
-            })
+        elif col in [
+            "expected_upside_pct",
+            "filtered_upside",
+            "expected_return_prob_weighted",
+        ]:
+            spec.update(
+                {
+                    "type": "numeric",
+                    "format": Format(precision=2, scheme=Scheme.fixed)
+                    .symbol(Symbol.yes)
+                    .symbol_suffix("%"),
+                }
+            )
 
         # Percentage formatting (for probability columns in 0-1 scale)
-        elif col in ["achievement_probability", "posterior_beat_prob", "confidence_score",
-                      "prob_positive_upside", "weighted_agreement"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=2, scheme=Scheme.percentage)
-            })
+        elif col in [
+            "achievement_probability",
+            "posterior_beat_prob",
+            "confidence_score",
+            "prob_positive_upside",
+            "weighted_agreement",
+        ]:
+            spec.update(
+                {
+                    "type": "numeric",
+                    "format": Format(precision=2, scheme=Scheme.percentage),
+                }
+            )
 
         # Percentile formatting (0-100 scale, no suffix needed but show as rank)
-        elif col in ["expected_upside_pct_pctile", "filtered_upside_pctile",
-                      "expected_return_prob_weighted_pctile"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=1, scheme=Scheme.fixed).symbol(Symbol.yes).symbol_suffix("th")
-            })
+        elif col in [
+            "expected_upside_pct_pctile",
+            "filtered_upside_pctile",
+            "expected_return_prob_weighted_pctile",
+        ]:
+            spec.update(
+                {
+                    "type": "numeric",
+                    "format": Format(precision=1, scheme=Scheme.fixed)
+                    .symbol(Symbol.yes)
+                    .symbol_suffix("th"),
+                }
+            )
 
         # Z-score formatting
-        elif col in ["expected_upside_pct_zscore", "filtered_upside_zscore",
-                      "expected_return_prob_weighted_zscore"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=2, scheme=Scheme.fixed).symbol(Symbol.yes).symbol_suffix("σ")
-            })
+        elif col in [
+            "expected_upside_pct_zscore",
+            "filtered_upside_zscore",
+            "expected_return_prob_weighted_zscore",
+        ]:
+            spec.update(
+                {
+                    "type": "numeric",
+                    "format": Format(precision=2, scheme=Scheme.fixed)
+                    .symbol(Symbol.yes)
+                    .symbol_suffix("σ"),
+                }
+            )
 
         # Integer scores
         elif col in ["agreement_score"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=0, scheme=Scheme.fixed)
-            })
+            spec.update(
+                {"type": "numeric", "format": Format(precision=0, scheme=Scheme.fixed)}
+            )
 
         # Composite / weighted scores
         elif col in ["composite_score", "kelly_pct"]:
-            spec.update({
-                "type": "numeric",
-                "format": Format(precision=3, scheme=Scheme.fixed)
-            })
+            spec.update(
+                {"type": "numeric", "format": Format(precision=3, scheme=Scheme.fixed)}
+            )
 
         formatted.append(spec)
     return formatted
@@ -265,23 +393,83 @@ def get_formatted_columns(cols_list):
 # =============================================================================
 
 FILTER_CONFIG = [
-    {"label": "Region",              "id": "region-dropdown",              "column": "region",              "width": "23%"},
-    {"label": "Country",             "id": "country-dropdown",             "column": "country",             "width": "23%"},
-    {"label": "Exchange",            "id": "exchange-dropdown",            "column": "exchange",            "width": "23%"},
-    {"label": "Sector",              "id": "sector-dropdown",              "column": "sector",              "width": "23%"},
-    {"label": "Industry",            "id": "industry-dropdown",            "column": "industry",            "width": "23%"},
-    {"label": "Signal",              "id": "signal-dropdown",              "column": "signal",              "width": "23%"},
-    {"label": "Trading Country",     "id": "trading-country-dropdown",     "column": "trading_country",     "width": "18%"},
-    {"label": "Style Class",         "id": "style-class-dropdown",         "column": "style_class",         "width": "18%"},
-    {"label": "Size Class",          "id": "size-class-dropdown",          "column": "size_class",          "width": "18%"},
-    {"label": "Unit",                "id": "unit-dropdown",                "column": "unit",                "width": "18%"},
-    {"label": "Beat Classification", "id": "beat-classification-dropdown", "column": "beat_classification", "width": "18%"},
-    {"label": "Confidence Level",    "id": "confidence-dropdown",          "column": "confidence_level",    "width": "18%"},
-    {"label": "Quality Tier",        "id": "quality-tier-dropdown",        "column": "quality_tier",        "width": "18%"},
-    {"label": "Dividend Frequency",  "id": "div-freq-dropdown",            "column": "dividend_record_frequency", "width": "18%"},
-    {"label": "Earnings Frequency",  "id": "earn-freq-dropdown",           "column": "earnings_report_frequency", "width": "18%"},
-    {"label": "Next Earnings Status","id": "next-earn-status-dropdown",    "column": "next_earnings_status","width": "18%"},
-    {"label": "Next Earnings When",  "id": "next-earn-when-dropdown",      "column": "next_earnings_when",  "width": "18%"},
+    {"label": "Region", "id": "region-dropdown", "column": "region", "width": "23%"},
+    {"label": "Country", "id": "country-dropdown", "column": "country", "width": "23%"},
+    {
+        "label": "Exchange",
+        "id": "exchange-dropdown",
+        "column": "exchange",
+        "width": "23%",
+    },
+    {"label": "Sector", "id": "sector-dropdown", "column": "sector", "width": "23%"},
+    {
+        "label": "Industry",
+        "id": "industry-dropdown",
+        "column": "industry",
+        "width": "23%",
+    },
+    {"label": "Signal", "id": "signal-dropdown", "column": "signal", "width": "23%"},
+    {
+        "label": "Trading Country",
+        "id": "trading-country-dropdown",
+        "column": "trading_country",
+        "width": "18%",
+    },
+    {
+        "label": "Style Class",
+        "id": "style-class-dropdown",
+        "column": "style_class",
+        "width": "18%",
+    },
+    {
+        "label": "Size Class",
+        "id": "size-class-dropdown",
+        "column": "size_class",
+        "width": "18%",
+    },
+    {"label": "Unit", "id": "unit-dropdown", "column": "unit", "width": "18%"},
+    {
+        "label": "Beat Classification",
+        "id": "beat-classification-dropdown",
+        "column": "beat_classification",
+        "width": "18%",
+    },
+    {
+        "label": "Confidence Level",
+        "id": "confidence-dropdown",
+        "column": "confidence_level",
+        "width": "18%",
+    },
+    {
+        "label": "Quality Tier",
+        "id": "quality-tier-dropdown",
+        "column": "quality_tier",
+        "width": "18%",
+    },
+    {
+        "label": "Dividend Frequency",
+        "id": "div-freq-dropdown",
+        "column": "dividend_record_frequency",
+        "width": "18%",
+    },
+    {
+        "label": "Earnings Frequency",
+        "id": "earn-freq-dropdown",
+        "column": "earnings_report_frequency",
+        "width": "18%",
+    },
+    {
+        "label": "Next Earnings Status",
+        "id": "next-earn-status-dropdown",
+        "column": "next_earnings_status",
+        "width": "18%",
+    },
+    {
+        "label": "Next Earnings When",
+        "id": "next-earn-when-dropdown",
+        "column": "next_earnings_when",
+        "width": "18%",
+    },
 ]
 
 # All filter dropdown IDs (for callbacks)
@@ -292,7 +480,10 @@ ALL_FILTER_COLUMNS = [f["column"] for f in FILTER_CONFIG]
 def build_filter_options(dataframe: pd.DataFrame, column: str) -> list:
     """Build sorted dropdown options from a DataFrame column."""
     if column in dataframe.columns and len(dataframe) > 0:
-        return [{"label": v, "value": v} for v in sorted(dataframe[column].dropna().unique())]
+        return [
+            {"label": v, "value": v}
+            for v in sorted(dataframe[column].dropna().unique())
+        ]
     return []
 
 
@@ -303,7 +494,11 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
         dropdowns.append(
             html.Div(
                 [
-                    html.Label(f["label"], className="filter-label", style={"color": COLORS["text_secondary"]}),
+                    html.Label(
+                        f["label"],
+                        className="filter-label",
+                        style={"color": COLORS["text_secondary"]},
+                    ),
                     dcc.Dropdown(
                         id=f["id"],
                         multi=True,
@@ -326,7 +521,11 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
                 [
                     html.H4(
                         "Filters",
-                        style={"marginBottom": "10px", "color": COLORS["text_primary"], "display": "inline-block"},
+                        style={
+                            "marginBottom": "10px",
+                            "color": COLORS["text_primary"],
+                            "display": "inline-block",
+                        },
                     ),
                     html.Button(
                         "Reset Filters",
@@ -347,7 +546,11 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
             ),
             html.Div(
                 dropdowns,
-                style={"display": "flex", "flexWrap": "wrap", "justifyContent": "space-around"},
+                style={
+                    "display": "flex",
+                    "flexWrap": "wrap",
+                    "justifyContent": "space-around",
+                },
             ),
         ],
         style={
@@ -390,10 +593,8 @@ def collect_filter_values(*args) -> dict:
     Usage inside a callback that receives all filter inputs first:
         filter_values = collect_filter_values(*args[:len(FILTER_CONFIG)])
     """
-    return {
-        cfg["column"]: val
-        for cfg, val in zip(FILTER_CONFIG, args)
-    }
+    return {cfg["column"]: val for cfg, val in zip(FILTER_CONFIG, args)}
+
 
 # =============================================================================
 # Kelly Criterion Position Sizing
@@ -459,10 +660,10 @@ KELLY_SCATTER_SIZE_OPTIONS = [
 
 
 def calculate_kelly_metrics(
-        dataframe: pd.DataFrame,
-        kelly_fraction: float = 0.25,
-        max_position: str | float = 0.10,
-        adjustment_method: str = "both",
+    dataframe: pd.DataFrame,
+    kelly_fraction: float = 0.25,
+    max_position: str | float = 0.10,
+    adjustment_method: str = "both",
 ) -> pd.DataFrame:
     """
     Calculate Kelly Criterion metrics for each position.
@@ -478,7 +679,12 @@ def calculate_kelly_metrics(
     """
     result = dataframe.copy()
 
-    for col in ["prob_positive_upside", "filtered_upside", "confidence_score", "achievement_probability"]:
+    for col in [
+        "prob_positive_upside",
+        "filtered_upside",
+        "confidence_score",
+        "achievement_probability",
+    ]:
         result[col] = pd.to_numeric(result[col], errors="coerce")
 
     # Kelly formula: f* = (p*b - q) / b  where p=win prob, q=1-p, b=win/loss ratio
@@ -494,23 +700,33 @@ def calculate_kelly_metrics(
 
     # Apply adjustment method
     if adjustment_method == "confidence":
-        result["kelly_adjusted"] = result["kelly_fractional"] * result["confidence_score"]
+        result["kelly_adjusted"] = (
+            result["kelly_fractional"] * result["confidence_score"]
+        )
     elif adjustment_method == "achievement":
-        result["kelly_adjusted"] = result["kelly_fractional"] * result["achievement_probability"]
+        result["kelly_adjusted"] = (
+            result["kelly_fractional"] * result["achievement_probability"]
+        )
     elif adjustment_method == "both":
         result["kelly_adjusted"] = (
-                result["kelly_fractional"] * result["confidence_score"] * result["achievement_probability"]
+            result["kelly_fractional"]
+            * result["confidence_score"]
+            * result["achievement_probability"]
         )
     else:
         result["kelly_adjusted"] = result["kelly_fractional"]
 
     # Apply max position cap
     if max_position != "no_cap":
-        result["kelly_adjusted"] = result["kelly_adjusted"].clip(upper=float(max_position))
+        result["kelly_adjusted"] = result["kelly_adjusted"].clip(
+            upper=float(max_position)
+        )
 
     # Normalize to portfolio percentage
     total_kelly = result["kelly_adjusted"].sum()
-    result["kelly_pct"] = (result["kelly_adjusted"] / total_kelly * 100.0) if total_kelly > 0 else 0
+    result["kelly_pct"] = (
+        (result["kelly_adjusted"] / total_kelly * 100.0) if total_kelly > 0 else 0
+    )
 
     return result
 
@@ -520,16 +736,18 @@ def calculate_kelly_metrics(
 # =============================================================================
 
 
-def _ef_estimate_covariance_matrix(dataframe: pd.DataFrame, selected_tickers: list) -> pd.DataFrame:
+def _ef_estimate_covariance_matrix(
+    dataframe: pd.DataFrame, selected_tickers: list
+) -> pd.DataFrame:
     """Estimate covariance matrix from sector/industry correlations for the efficient frontier."""
     n = len(selected_tickers)
     cov_matrix = np.eye(n) * 0.04
 
     sector_map = {}
     for ticker in selected_tickers:
-        ticker_data = dataframe[dataframe['ticker'] == ticker]
+        ticker_data = dataframe[dataframe["ticker"] == ticker]
         if len(ticker_data) > 0:
-            sector_map[ticker] = ticker_data['sector'].iloc[0]
+            sector_map[ticker] = ticker_data["sector"].iloc[0]
 
     for i in range(n):
         for j in range(i + 1, n):
@@ -545,11 +763,11 @@ def _ef_estimate_covariance_matrix(dataframe: pd.DataFrame, selected_tickers: li
 
 
 def _ef_generate_random_portfolios(
-        expected_returns: np.ndarray,
-        cov_matrix: pd.DataFrame,
-        num_portfolios: int,
-        risk_free_rate: float,
-        constraint_type: str,
+    expected_returns: np.ndarray,
+    cov_matrix: pd.DataFrame,
+    num_portfolios: int,
+    risk_free_rate: float,
+    constraint_type: str,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Generate random portfolio combinations for the efficient frontier."""
     n_assets = len(expected_returns)
@@ -570,33 +788,50 @@ def _ef_generate_random_portfolios(
         port_return = np.sum(weights * expected_returns)
         port_variance = np.dot(weights, np.dot(cov_matrix.values, weights))
         port_volatility = np.sqrt(port_variance)
-        sharpe = (port_return - risk_free_rate / 100) / port_volatility if port_volatility > 0 else 0
+        sharpe = (
+            (port_return - risk_free_rate / 100) / port_volatility
+            if port_volatility > 0
+            else 0
+        )
 
         portfolio_returns[i] = port_return
         portfolio_volatilities[i] = port_volatility
         portfolio_sharpe_ratios[i] = sharpe
         portfolio_weights[i] = weights
 
-    return portfolio_returns, portfolio_volatilities, portfolio_sharpe_ratios, portfolio_weights
+    return (
+        portfolio_returns,
+        portfolio_volatilities,
+        portfolio_sharpe_ratios,
+        portfolio_weights,
+    )
 
 
 def _ef_find_optimal_portfolios(
-        expected_returns: np.ndarray,
-        cov_matrix: pd.DataFrame,
-        risk_free_rate: float,
+    expected_returns: np.ndarray,
+    cov_matrix: pd.DataFrame,
+    risk_free_rate: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find maximum Sharpe ratio and minimum variance portfolios."""
     n_assets = len(expected_returns)
 
     min_var_weights = np.ones(n_assets) / n_assets
     min_var_return = np.sum(min_var_weights * expected_returns)
-    min_var_volatility = np.sqrt(np.dot(min_var_weights, np.dot(cov_matrix.values, min_var_weights)))
+    min_var_volatility = np.sqrt(
+        np.dot(min_var_weights, np.dot(cov_matrix.values, min_var_weights))
+    )
 
     max_sharpe_weights = np.ones(n_assets) / n_assets
     max_sharpe_return = np.sum(max_sharpe_weights * expected_returns)
-    max_sharpe_volatility = np.sqrt(np.dot(max_sharpe_weights, np.dot(cov_matrix.values, max_sharpe_weights)))
+    max_sharpe_volatility = np.sqrt(
+        np.dot(max_sharpe_weights, np.dot(cov_matrix.values, max_sharpe_weights))
+    )
 
-    return min_var_weights, max_sharpe_weights, np.array([min_var_volatility, max_sharpe_volatility])
+    return (
+        min_var_weights,
+        max_sharpe_weights,
+        np.array([min_var_volatility, max_sharpe_volatility]),
+    )
 
 
 # =============================================================================
@@ -607,38 +842,39 @@ def _ef_find_optimal_portfolios(
 def load_plotly_figure_from_html(html_path):
     """Extract Plotly figure (data + layout) from a self-contained Plotly HTML file."""
     import json as _json
+
     try:
-        with open(html_path, 'r', encoding='utf-8') as f:
+        with open(html_path, "r", encoding="utf-8") as f:
             content = f.read()
-        idx = content.rfind('Plotly.newPlot')
+        idx = content.rfind("Plotly.newPlot")
         if idx < 0:
             return None
         call_text = content[idx:]
         # Extract data array
-        start = call_text.index('[')
+        start = call_text.index("[")
         depth, end = 0, start
         for i, c in enumerate(call_text[start:], start):
-            if c == '[':
+            if c == "[":
                 depth += 1
-            elif c == ']':
+            elif c == "]":
                 depth -= 1
                 if depth == 0:
                     end = i
                     break
-        data = _json.loads(call_text[start:end + 1])
+        data = _json.loads(call_text[start : end + 1])
         # Extract layout object
-        rest = call_text[end + 1:].lstrip(' ,\n\r\t')
-        l_start = rest.index('{')
+        rest = call_text[end + 1 :].lstrip(" ,\n\r\t")
+        l_start = rest.index("{")
         depth, l_end = 0, l_start
         for i, c in enumerate(rest[l_start:], l_start):
-            if c == '{':
+            if c == "{":
                 depth += 1
-            elif c == '}':
+            elif c == "}":
                 depth -= 1
                 if depth == 0:
                     l_end = i
                     break
-        layout = _json.loads(rest[l_start:l_end + 1])
+        layout = _json.loads(rest[l_start : l_end + 1])
         return go.Figure(data=data, layout=layout)
     except Exception as e:
         print(f"⚠️ Failed to load Plotly figure from {html_path}: {e}")
@@ -711,7 +947,10 @@ def render_artifact_or_placeholder(
                 html.H4(title, style={"textAlign": "center", "marginBottom": "10px"}),
                 dbc.Alert(
                     [
-                        html.I(className="fas fa-info-circle", style={"marginRight": "10px"}),
+                        html.I(
+                            className="fas fa-info-circle",
+                            style={"marginRight": "10px"},
+                        ),
                         f"Artifact '{artifact_name}.{artifact_type}' not found. ",
                         "Run the analytics pipeline to generate this artifact.",
                     ],
@@ -725,7 +964,7 @@ def render_artifact_or_placeholder(
 
 def load_geib_data():
     """Load all necessary data for the GEIB dashboard.
-    
+
     Returns:
         dict: Dictionary containing DataFrames for different components
     """
@@ -757,47 +996,66 @@ def load_geib_data():
         WHERE expected_upside_pct IS NOT NULL AND volume_shrs IS NOT NULL 
         ORDER BY expected_return_prob_weighted DESC
         """
-        data['summary'] = pd.read_sql(query_summary, engine)
+        data["summary"] = pd.read_sql(query_summary, engine)
 
         # Convert numeric columns for summary
         numeric_cols = [
-            'prob_positive_upside', 'last_price', 'expected_upside_pct',
-            'filtered_upside', 'expected_return_prob_weighted',
-            'achievement_probability', 'posterior_beat_prob',
-            'confidence_score', 'agreement_score', 'weighted_agreement',
-            'composite_score', 'market_cap', 'enterprise_value',
-            'price_target', 'price_target_high', 'price_target_low',
-            'price_target_median', 'price_target_prob_weighted', 'kalman_estimate',
-            'volume_shrs',
-            'expected_upside_pct_zscore', 'filtered_upside_zscore',
-            'expected_return_prob_weighted_zscore',
-            'expected_upside_pct_pctile', 'filtered_upside_pctile',
-            'expected_return_prob_weighted_pctile',
-            'reporting_interval',
+            "prob_positive_upside",
+            "last_price",
+            "expected_upside_pct",
+            "filtered_upside",
+            "expected_return_prob_weighted",
+            "achievement_probability",
+            "posterior_beat_prob",
+            "confidence_score",
+            "agreement_score",
+            "weighted_agreement",
+            "composite_score",
+            "market_cap",
+            "enterprise_value",
+            "price_target",
+            "price_target_high",
+            "price_target_low",
+            "price_target_median",
+            "price_target_prob_weighted",
+            "price_target_mc",
+            "kalman_estimate",
+            "volume_shrs",
+            "expected_upside_pct_zscore",
+            "filtered_upside_zscore",
+            "expected_return_prob_weighted_zscore",
+            "expected_upside_pct_pctile",
+            "filtered_upside_pctile",
+            "expected_return_prob_weighted_pctile",
+            "reporting_interval",
         ]
         for col in numeric_cols:
-            if col in data['summary'].columns:
-                data['summary'][col] = pd.to_numeric(data['summary'][col], errors='coerce')
+            if col in data["summary"].columns:
+                data["summary"][col] = pd.to_numeric(
+                    data["summary"][col], errors="coerce"
+                )
 
         # 2. Tri-Model Data (subset of columns needed for viz)
         query_tri = "SELECT * FROM analytics.expected_returns_summary "
         try:
-            data['tri_model'] = pd.read_sql(query_tri, engine)
+            data["tri_model"] = pd.read_sql(query_tri, engine)
         except Exception:
-            print("⚠️ analytics.expected_returns_summary not found, using summary fallback")
-            data['tri_model'] = data['summary']
+            print(
+                "⚠️ analytics.expected_returns_summary not found, using summary fallback"
+            )
+            data["tri_model"] = data["summary"]
 
         # 3. Earnings Probability Data
         query_earnings = "SELECT * FROM analytics.earnings_probability_analysis "
         try:
-            data['earnings'] = pd.read_sql(query_earnings, engine)
+            data["earnings"] = pd.read_sql(query_earnings, engine)
         except Exception:
             print("⚠️ analytics.earnings_probability_analysis not found")
 
         # 4. Credit Risk Data
         query_credit = "SELECT * FROM analytics.credit_risk_analysis "
         try:
-            data['credit'] = pd.read_sql(query_credit, engine)
+            data["credit"] = pd.read_sql(query_credit, engine)
         except Exception:
             print("⚠️ analytics.credit_risk_analysis not found")
 
@@ -818,23 +1076,26 @@ def load_geib_data():
 
 # Load all data
 all_data = load_geib_data()
-df = all_data['summary']
-df_tri = all_data['tri_model']
-df_earnings = all_data['earnings']
-df_credit = all_data['credit']
+df = all_data["summary"]
+df_tri = all_data["tri_model"]
+df_earnings = all_data["earnings"]
+df_credit = all_data["credit"]
 df_confidence = all_data["model_confidence"]
 
 # Load the return distribution fit artifact figure at startup
-_return_dist_fit_path = PROJECT_ROOT / "outputs" / "analytics" / "er_return_distribution_fit.html"
+_return_dist_fit_path = (
+    PROJECT_ROOT / "outputs" / "analytics" / "er_return_distribution_fit.html"
+)
 _return_dist_fit_fig = load_plotly_figure_from_html(_return_dist_fit_path)
 
 # Initialize Dash app
 app = dash.Dash(
     __name__,
     title="Global Equity Analytics Dashboard",
-    external_stylesheets=[dbc.themes.DARKLY]
+    external_stylesheets=[dbc.themes.DARKLY],
 )
 server = app.server
+
 
 # Flask route to serve HTML artifacts from outputs/analytics
 @server.route("/artifacts/<path:filename>")
@@ -845,7 +1106,7 @@ def serve_artifact(filename):
 
 
 # Add custom CSS for dropdown selection highlighting
-app.index_string = f'''
+app.index_string = f"""
     <!DOCTYPE html>
     <html>
         <head>
@@ -889,25 +1150,41 @@ app.index_string = f'''
             </footer>
         </body>
     </html>
-    '''
+    """
 
 # Layout
 app.layout = html.Div(
     [
-        html.H1("🌍 Global Equity Analytics Dashboard (GEIB)", style={"textAlign": "center", "marginTop": "20px"}),
+        html.H1(
+            "🌍 Global Equity Analytics Dashboard (GEIB)",
+            style={"textAlign": "center", "marginTop": "20px"},
+        ),
         html.P(
             "Expected Returns Analysis from Quad-Model Consensus (Monte Carlo, Kalman Filter, Price Target Achievement, Earnings Beat)",
-            style={"textAlign": "center", "fontStyle": "italic", "color": COLORS["text_secondary"]},
+            style={
+                "textAlign": "center",
+                "fontStyle": "italic",
+                "color": COLORS["text_secondary"],
+            },
         ),
         # Status indicator
         html.Div(
             id="status-indicator",
             children=[
                 html.Span(
-                    f"✅ Data Loaded: {len(df):,} stocks | Last Updated: {df['last_updated'].max()}" if len(df) > 0 and "last_updated" in df.columns else (
-                    f"✅ Data Loaded: {len(df):,} stocks" if len(df) > 0 else "⚠️ No data loaded"
-                ),
-                    style={"margin": "0 10px", "color": COLORS["success"] if len(df) > 0 else COLORS["warning"]},
+                    f"✅ Data Loaded: {len(df):,} stocks | Last Updated: {df['last_updated'].max()}"
+                    if len(df) > 0 and "last_updated" in df.columns
+                    else (
+                        f"✅ Data Loaded: {len(df):,} stocks"
+                        if len(df) > 0
+                        else "⚠️ No data loaded"
+                    ),
+                    style={
+                        "margin": "0 10px",
+                        "color": COLORS["success"]
+                        if len(df) > 0
+                        else COLORS["warning"],
+                    },
                 )
             ],
             style={"textAlign": "center", "padding": "10px"},
@@ -915,7 +1192,11 @@ app.layout = html.Div(
         # KPI Summary Cards
         html.Div(
             id="kpi-cards",
-            style={"display": "flex", "justifyContent": "space-around", "margin": "20px"},
+            style={
+                "display": "flex",
+                "justifyContent": "space-around",
+                "margin": "20px",
+            },
         ),
         # Filters — generated from FILTER_CONFIG
         build_filter_panel(df),
@@ -932,127 +1213,309 @@ app.layout = html.Div(
                                 # Price Target vs Current Price Scatter Controls
                                 html.Div(
                                     [
-                                        html.H4("Price Target vs Current Price", style={"textAlign": "center", "marginBottom": "10px"}),
+                                        html.H4(
+                                            "Price Target vs Current Price",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginBottom": "10px",
+                                            },
+                                        ),
                                         html.P(
                                             "Scatter plot showing price target vs current price with upside potential. "
                                             "Points above the diagonal indicate upside potential; points below indicate downside risk.",
-                                            style={"textAlign": "center", "fontStyle": "italic", "color": "#999", "marginBottom": "15px"},
+                                            style={
+                                                "textAlign": "center",
+                                                "fontStyle": "italic",
+                                                "color": "#999",
+                                                "marginBottom": "15px",
+                                            },
                                         ),
                                         html.Div(
-                                            style={"display": "flex", "flexDirection": "row", "flexWrap": "wrap", "rowGap": "10px", "alignItems": "center", "marginBottom": "15px", "justifyContent": "center"},
+                                            style={
+                                                "display": "flex",
+                                                "flexDirection": "row",
+                                                "flexWrap": "wrap",
+                                                "rowGap": "10px",
+                                                "alignItems": "center",
+                                                "marginBottom": "15px",
+                                                "justifyContent": "center",
+                                            },
                                             children=[
                                                 html.Div(
                                                     children=[
-                                                        html.Label("Price Target Metric:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
+                                                        html.Label(
+                                                            "Price Target Metric:",
+                                                            style={
+                                                                "marginBottom": "5px",
+                                                                "fontWeight": "bold",
+                                                                "display": "block",
+                                                                "color": "white",
+                                                            },
+                                                        ),
                                                         dcc.Dropdown(
                                                             id="pt-scatter-metric-control",
                                                             options=[
-                                                                {"label": "Price Target Median", "value": "price_target_median"},
-                                                                {"label": "Kalman Estimate", "value": "kalman_estimate"},
-                                                                {"label": "Price Target Prob Weighted", "value": "price_target_prob_weighted"},
+                                                                {
+                                                                    "label": "Price Target Median",
+                                                                    "value": "price_target_median",
+                                                                },
+                                                                {
+                                                                    "label": "Kalman Estimate",
+                                                                    "value": "kalman_estimate",
+                                                                },
+                                                                {
+                                                                    "label": "Price Target Prob Weighted",
+                                                                    "value": "price_target_prob_weighted",
+                                                                },
                                                             ],
                                                             value="price_target_median",
-                                                            style={"minWidth": "200px", "color": "black"},
+                                                            style={
+                                                                "minWidth": "200px",
+                                                                "color": "black",
+                                                            },
                                                             searchable=False,
                                                         ),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
+                                                    style={
+                                                        "display": "flex",
+                                                        "flexDirection": "column",
+                                                        "marginRight": "15px",
+                                                    },
                                                 ),
                                                 html.Div(
                                                     children=[
-                                                        html.Label("Size Encoding:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
+                                                        html.Label(
+                                                            "Size Encoding:",
+                                                            style={
+                                                                "marginBottom": "5px",
+                                                                "fontWeight": "bold",
+                                                                "display": "block",
+                                                                "color": "white",
+                                                            },
+                                                        ),
                                                         dcc.Dropdown(
                                                             id="pt-scatter-size-control",
                                                             options=[
-                                                                {"label": "Expected Upside %", "value": "expected_upside_pct"},
-                                                                {"label": "Market Cap", "value": "market_cap"},
-                                                                {"label": "Volume", "value": "volume_shrs"},
-                                                                {"label": "None", "value": "none"},
+                                                                {
+                                                                    "label": "Expected Upside %",
+                                                                    "value": "expected_upside_pct",
+                                                                },
+                                                                {
+                                                                    "label": "Market Cap",
+                                                                    "value": "market_cap",
+                                                                },
+                                                                {
+                                                                    "label": "Volume",
+                                                                    "value": "volume_shrs",
+                                                                },
+                                                                {
+                                                                    "label": "None",
+                                                                    "value": "none",
+                                                                },
                                                             ],
                                                             value="expected_upside_pct",
-                                                            style={"minWidth": "200px", "color": "black"},
+                                                            style={
+                                                                "minWidth": "200px",
+                                                                "color": "black",
+                                                            },
                                                             searchable=False,
                                                         ),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
+                                                    style={
+                                                        "display": "flex",
+                                                        "flexDirection": "column",
+                                                        "marginRight": "15px",
+                                                    },
                                                 ),
                                                 html.Div(
                                                     children=[
-                                                        html.Label("Color Encoding:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
+                                                        html.Label(
+                                                            "Color Encoding:",
+                                                            style={
+                                                                "marginBottom": "5px",
+                                                                "fontWeight": "bold",
+                                                                "display": "block",
+                                                                "color": "white",
+                                                            },
+                                                        ),
                                                         dcc.Dropdown(
                                                             id="pt-scatter-color-control",
                                                             options=[
-                                                                {"label": "Sector", "value": "sector"},
-                                                                {"label": "Confidence Level", "value": "confidence_level"},
-                                                                {"label": "Beat Classification", "value": "beat_classification"},
-                                                                {"label": "None", "value": "none"},
+                                                                {
+                                                                    "label": "Sector",
+                                                                    "value": "sector",
+                                                                },
+                                                                {
+                                                                    "label": "Confidence Level",
+                                                                    "value": "confidence_level",
+                                                                },
+                                                                {
+                                                                    "label": "Beat Classification",
+                                                                    "value": "beat_classification",
+                                                                },
+                                                                {
+                                                                    "label": "None",
+                                                                    "value": "none",
+                                                                },
                                                             ],
                                                             value="sector",
-                                                            style={"minWidth": "200px", "color": "black"},
+                                                            style={
+                                                                "minWidth": "200px",
+                                                                "color": "black",
+                                                            },
                                                             searchable=False,
                                                         ),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
+                                                    style={
+                                                        "display": "flex",
+                                                        "flexDirection": "column",
+                                                        "marginRight": "15px",
+                                                    },
                                                 ),
                                             ],
                                         ),
                                         html.Div(
-                                            style={"display": "flex", "flexDirection": "row", "flexWrap": "wrap", "rowGap": "10px", "alignItems": "center", "marginBottom": "15px", "justifyContent": "center"},
+                                            style={
+                                                "display": "flex",
+                                                "flexDirection": "row",
+                                                "flexWrap": "wrap",
+                                                "rowGap": "10px",
+                                                "alignItems": "center",
+                                                "marginBottom": "15px",
+                                                "justifyContent": "center",
+                                            },
                                             children=[
                                                 html.Div(
                                                     children=[
-                                                        html.Label("Last Price Range:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
-                                                        html.Div([
-                                                            dcc.Input(
-                                                                id="pt-scatter-price-min",
-                                                                type="number",
-                                                                placeholder="Min",
-                                                                debounce=True,
-                                                                style={"width": "100px", "color": "black"},
-                                                            ),
-                                                            html.Span(" - ", style={"margin": "0 8px", "alignSelf": "center", "color": "white"}),
-                                                            dcc.Input(
-                                                                id="pt-scatter-price-max",
-                                                                type="number",
-                                                                placeholder="Max",
-                                                                debounce=True,
-                                                                style={"width": "100px", "color": "black"},
-                                                            ),
-                                                        ], style={"display": "flex", "alignItems": "center", "flexWrap": "wrap"}),
+                                                        html.Label(
+                                                            "Last Price Range:",
+                                                            style={
+                                                                "marginBottom": "5px",
+                                                                "fontWeight": "bold",
+                                                                "display": "block",
+                                                                "color": "white",
+                                                            },
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                dcc.Input(
+                                                                    id="pt-scatter-price-min",
+                                                                    type="number",
+                                                                    placeholder="Min",
+                                                                    debounce=True,
+                                                                    style={
+                                                                        "width": "100px",
+                                                                        "color": "black",
+                                                                    },
+                                                                ),
+                                                                html.Span(
+                                                                    " - ",
+                                                                    style={
+                                                                        "margin": "0 8px",
+                                                                        "alignSelf": "center",
+                                                                        "color": "white",
+                                                                    },
+                                                                ),
+                                                                dcc.Input(
+                                                                    id="pt-scatter-price-max",
+                                                                    type="number",
+                                                                    placeholder="Max",
+                                                                    debounce=True,
+                                                                    style={
+                                                                        "width": "100px",
+                                                                        "color": "black",
+                                                                    },
+                                                                ),
+                                                            ],
+                                                            style={
+                                                                "display": "flex",
+                                                                "alignItems": "center",
+                                                                "flexWrap": "wrap",
+                                                            },
+                                                        ),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
+                                                    style={
+                                                        "display": "flex",
+                                                        "flexDirection": "column",
+                                                        "marginRight": "15px",
+                                                    },
                                                 ),
                                                 html.Div(
                                                     children=[
-                                                        html.Label("Price Target Range:", style={"marginBottom": "5px", "fontWeight": "bold", "display": "block", "color": "white"}),
-                                                        html.Div([
-                                                            dcc.Input(
-                                                                id="pt-scatter-target-min",
-                                                                type="number",
-                                                                placeholder="Min",
-                                                                debounce=True,
-                                                                style={"width": "100px", "color": "black"},
-                                                            ),
-                                                            html.Span(" - ", style={"margin": "0 8px", "alignSelf": "center", "color": "white"}),
-                                                            dcc.Input(
-                                                                id="pt-scatter-target-max",
-                                                                type="number",
-                                                                placeholder="Max",
-                                                                debounce=True,
-                                                                style={"width": "100px", "color": "black"},
-                                                            ),
-                                                        ], style={"display": "flex", "alignItems": "center", "flexWrap": "wrap"}),
+                                                        html.Label(
+                                                            "Price Target Range:",
+                                                            style={
+                                                                "marginBottom": "5px",
+                                                                "fontWeight": "bold",
+                                                                "display": "block",
+                                                                "color": "white",
+                                                            },
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                dcc.Input(
+                                                                    id="pt-scatter-target-min",
+                                                                    type="number",
+                                                                    placeholder="Min",
+                                                                    debounce=True,
+                                                                    style={
+                                                                        "width": "100px",
+                                                                        "color": "black",
+                                                                    },
+                                                                ),
+                                                                html.Span(
+                                                                    " - ",
+                                                                    style={
+                                                                        "margin": "0 8px",
+                                                                        "alignSelf": "center",
+                                                                        "color": "white",
+                                                                    },
+                                                                ),
+                                                                dcc.Input(
+                                                                    id="pt-scatter-target-max",
+                                                                    type="number",
+                                                                    placeholder="Max",
+                                                                    debounce=True,
+                                                                    style={
+                                                                        "width": "100px",
+                                                                        "color": "black",
+                                                                    },
+                                                                ),
+                                                            ],
+                                                            style={
+                                                                "display": "flex",
+                                                                "alignItems": "center",
+                                                                "flexWrap": "wrap",
+                                                            },
+                                                        ),
                                                     ],
-                                                    style={"display": "flex", "flexDirection": "column", "marginRight": "15px"},
+                                                    style={
+                                                        "display": "flex",
+                                                        "flexDirection": "column",
+                                                        "marginRight": "15px",
+                                                    },
                                                 ),
                                             ],
                                         ),
                                     ],
-                                    style={"padding": "15px", "backgroundColor": "#333", "borderRadius": "5px", "margin": "10px"},
+                                    style={
+                                        "padding": "15px",
+                                        "backgroundColor": "#333",
+                                        "borderRadius": "5px",
+                                        "margin": "10px",
+                                    },
                                 ),
                                 dcc.Loading(
                                     type="circle",
-                                    children=[dcc.Graph(id="price_target_vs_current_scatter", style={"minHeight": "550px", "height": "calc(100vh - 600px)"})],
+                                    children=[
+                                        dcc.Graph(
+                                            id="price_target_vs_current_scatter",
+                                            style={
+                                                "minHeight": "550px",
+                                                "height": "calc(100vh - 600px)",
+                                            },
+                                        )
+                                    ],
                                 ),
                             ]
                         )
@@ -1075,23 +1538,48 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 html.H3(
-                                    "High Conviction Opportunities", style={"textAlign": "center", "margin": "20px"}
+                                    "High Conviction Opportunities",
+                                    style={"textAlign": "center", "margin": "20px"},
                                 ),
                                 dcc.Graph(id="artifact-er-strong-consensus"),
                                 dash_table.DataTable(
                                     id="top-opportunities-table",
-                                    columns=get_formatted_columns([
-                                        "ticker", "name", "sector", "quality_tier", "last_price",
-                                        "price_target", "price_target_low", "price_target_high",
-                                        "price_target_median", "price_target_mc", "price_target_prob_weighted", "kalman_estimate",
-                                        "expected_upside_pct", "filtered_upside",
-                                        "expected_return_prob_weighted", "achievement_probability",
-                                        "posterior_beat_prob", "beat_classification",
-                                        "agreement_score", "weighted_agreement",
-                                        "composite_score", "confidence_level", "signal",
-                                        "expected_upside_pct_pctile", "filtered_upside_zscore",
-                                    ]),
-                                    page_size=15,
+                                    columns=get_formatted_columns(
+                                        [
+                                            "ticker",
+                                            "name",
+                                            "country",
+                                            "trading_country",
+                                            "exchange",
+                                            "sector",
+                                            "industry",
+                                            "quality_tier",
+                                            "next_earnings",
+                                            "next_earnings_status",
+                                            "last_price",
+                                            "price_target",
+                                            "price_target_low",
+                                            "price_target_high",
+                                            "price_target_median",
+                                            "price_target_mc",
+                                            "price_target_prob_weighted",
+                                            "kalman_estimate",
+                                            "expected_upside_pct",
+                                            "filtered_upside",
+                                            "expected_return_prob_weighted",
+                                            "achievement_probability",
+                                            "posterior_beat_prob",
+                                            "beat_classification",
+                                            "agreement_score",
+                                            "weighted_agreement",
+                                            "composite_score",
+                                            "confidence_level",
+                                            "signal",
+                                            "expected_upside_pct_pctile",
+                                            "filtered_upside_zscore",
+                                        ]
+                                    ),
+                                    page_size=500,
                                     sort_action="native",
                                     filter_action="native",
                                     style_table={"overflowX": "auto"},
@@ -1102,7 +1590,13 @@ app.layout = html.Div(
                                 # Screening Summary
                                 html.Div(
                                     [
-                                        html.H4("Stock Screening Summary", style={"textAlign": "center", "marginTop": "20px"}),
+                                        html.H4(
+                                            "Stock Screening Summary",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
                                         dcc.Graph(id="artifact-er-screening-summary"),
                                     ],
                                     style={"margin": "10px"},
@@ -1123,15 +1617,29 @@ app.layout = html.Div(
                                 # Sector Return Analytics Heatmap
                                 html.Div(
                                     [
-                                        html.H4("Sector Return Analytics", style={"textAlign": "center", "marginTop": "20px"}),
-                                        dcc.Graph(id="artifact-er-sector-return-analytics"),
+                                        html.H4(
+                                            "Sector Return Analytics",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        dcc.Graph(
+                                            id="artifact-er-sector-return-analytics"
+                                        ),
                                     ],
                                     style={"margin": "10px"},
                                 ),
                                 # Model Dispersion Dashboard
                                 html.Div(
                                     [
-                                        html.H4("Model Dispersion Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
+                                        html.H4(
+                                            "Model Dispersion Dashboard",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
                                         dcc.Graph(id="artifact-er-model-dispersion"),
                                     ],
                                     style={"margin": "10px"},
@@ -1151,110 +1659,239 @@ app.layout = html.Div(
                                 ),
                                 html.P(
                                     "Identify statistical outliers and relative positioning across the universe using z-scores and percentile ranks.",
-                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
                                 ),
                                 # Z-Score controls
                                 html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.Label("Metric:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Metric:", style={"color": "white"}
+                                                ),
                                                 dcc.Dropdown(
                                                     id="zscore-metric-dropdown",
                                                     options=[
-                                                        {"label": "Expected Upside %", "value": "expected_upside_pct"},
-                                                        {"label": "Filtered Upside", "value": "filtered_upside"},
-                                                        {"label": "Prob-Weighted Return", "value": "expected_return_prob_weighted"},
+                                                        {
+                                                            "label": "Expected Upside %",
+                                                            "value": "expected_upside_pct",
+                                                        },
+                                                        {
+                                                            "label": "Filtered Upside",
+                                                            "value": "filtered_upside",
+                                                        },
+                                                        {
+                                                            "label": "Prob-Weighted Return",
+                                                            "value": "expected_return_prob_weighted",
+                                                        },
                                                     ],
                                                     value="expected_upside_pct",
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "20%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "20%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Color By:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Color By:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="zscore-color-dropdown",
                                                     options=[
-                                                        {"label": "Sector", "value": "sector"},
-                                                        {"label": "Quality Tier", "value": "quality_tier"},
-                                                        {"label": "Signal", "value": "signal"},
-                                                        {"label": "Confidence Level", "value": "confidence_level"},
-                                                        {"label": "None", "value": "none"},
+                                                        {
+                                                            "label": "Sector",
+                                                            "value": "sector",
+                                                        },
+                                                        {
+                                                            "label": "Quality Tier",
+                                                            "value": "quality_tier",
+                                                        },
+                                                        {
+                                                            "label": "Signal",
+                                                            "value": "signal",
+                                                        },
+                                                        {
+                                                            "label": "Confidence Level",
+                                                            "value": "confidence_level",
+                                                        },
+                                                        {
+                                                            "label": "None",
+                                                            "value": "none",
+                                                        },
                                                     ],
                                                     value="quality_tier",
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "20%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "20%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Size By:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Size By:", style={"color": "white"}
+                                                ),
                                                 dcc.Dropdown(
                                                     id="zscore-size-dropdown",
                                                     options=[
-                                                        {"label": "Composite Score", "value": "composite_score"},
-                                                        {"label": "Market Cap", "value": "market_cap"},
-                                                        {"label": "Confidence Score", "value": "confidence_score"},
-                                                        {"label": "None", "value": "none"},
+                                                        {
+                                                            "label": "Composite Score",
+                                                            "value": "composite_score",
+                                                        },
+                                                        {
+                                                            "label": "Market Cap",
+                                                            "value": "market_cap",
+                                                        },
+                                                        {
+                                                            "label": "Confidence Score",
+                                                            "value": "confidence_score",
+                                                        },
+                                                        {
+                                                            "label": "None",
+                                                            "value": "none",
+                                                        },
                                                     ],
                                                     value="composite_score",
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "20%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "20%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Z-Score Threshold:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Z-Score Threshold:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Slider(
                                                     id="zscore-threshold-slider",
                                                     min=0.5,
                                                     max=3.0,
                                                     step=0.25,
                                                     value=1.5,
-                                                    marks={0.5: "0.5σ", 1.0: "1σ", 1.5: "1.5σ", 2.0: "2σ", 2.5: "2.5σ", 3.0: "3σ"},
-                                                    tooltip={"placement": "bottom", "always_visible": True},
+                                                    marks={
+                                                        0.5: "0.5σ",
+                                                        1.0: "1σ",
+                                                        1.5: "1.5σ",
+                                                        2.0: "2σ",
+                                                        2.5: "2.5σ",
+                                                        3.0: "3σ",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
-                                            style={"width": "30%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "30%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                     ],
-                                    style={"backgroundColor": "#333", "padding": "10px", "borderRadius": "5px", "margin": "10px"},
+                                    style={
+                                        "backgroundColor": "#333",
+                                        "padding": "10px",
+                                        "borderRadius": "5px",
+                                        "margin": "10px",
+                                    },
                                 ),
-                                html.Div(id="zscore-kpi-cards", style={"margin": "10px"}),
+                                html.Div(
+                                    id="zscore-kpi-cards", style={"margin": "10px"}
+                                ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="zscore-scatter-plot")], width=6),
-                                        dbc.Col([dcc.Graph(id="percentile-distribution-plot")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="zscore-scatter-plot")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dcc.Graph(
+                                                    id="percentile-distribution-plot"
+                                                )
+                                            ],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="zscore-sector-box-plot")], width=6),
-                                        dbc.Col([dcc.Graph(id="composite-vs-percentile-plot")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="zscore-sector-box-plot")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dcc.Graph(
+                                                    id="composite-vs-percentile-plot"
+                                                )
+                                            ],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 # Z-Score ranked table
                                 html.Div(
                                     [
-                                        html.H4("Top Statistical Outliers (by Z-Score)", style={"textAlign": "center", "marginTop": "20px"}),
+                                        html.H4(
+                                            "Top Statistical Outliers (by Z-Score)",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
                                         dash_table.DataTable(
                                             id="zscore-ranking-table",
-                                            columns=get_formatted_columns([
-                                                "ticker", "name", "country", "trading_country", "unit",  "exchange", "industry", "sector", "quality_tier",
-                                                "expected_upside_pct", "expected_upside_pct_zscore", "expected_upside_pct_pctile",
-                                                "filtered_upside", "filtered_upside_zscore", "filtered_upside_pctile",
-                                                "expected_return_prob_weighted_zscore", "expected_return_prob_weighted_pctile",
-                                                "posterior_beat_prob", "beat_classification",
-                                                "agreement_score", "weighted_agreement",
-                                                "composite_score", "confidence_level", "signal", "price_target_prob_weighted",
-                                                "price_target_mc"
-                                            ]),
-                                            page_size=20,
+                                            columns=get_formatted_columns(
+                                                [
+                                                    "ticker",
+                                                    "name",
+                                                    "country",
+                                                    "trading_country",
+                                                    "unit",
+                                                    "exchange",
+                                                    "industry",
+                                                    "sector",
+                                                    "quality_tier",
+                                                    "expected_upside_pct",
+                                                    "expected_upside_pct_zscore",
+                                                    "expected_upside_pct_pctile",
+                                                    "filtered_upside",
+                                                    "filtered_upside_zscore",
+                                                    "filtered_upside_pctile",
+                                                    "expected_return_prob_weighted_zscore",
+                                                    "expected_return_prob_weighted_pctile",
+                                                    "posterior_beat_prob",
+                                                    "beat_classification",
+                                                    "agreement_score",
+                                                    "weighted_agreement",
+                                                    "composite_score",
+                                                    "confidence_level",
+                                                    "signal",
+                                                    "price_target_prob_weighted",
+                                                    "price_target_mc",
+                                                ]
+                                            ),
+                                            page_size=500,
                                             sort_action="native",
                                             filter_action="native",
                                             style_table={"overflowX": "auto"},
@@ -1280,68 +1917,142 @@ app.layout = html.Div(
                                 ),
                                 html.P(
                                     "Track upcoming earnings dates, dividend schedules, and fiscal year milestones for filtered stocks.",
-                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
                                 ),
                                 html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.Label("Days Ahead:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Days Ahead:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="earnings-days-ahead",
                                                     options=[
                                                         {"label": "7 days", "value": 7},
-                                                        {"label": "14 days", "value": 14},
-                                                        {"label": "30 days", "value": 30},
-                                                        {"label": "60 days", "value": 60},
-                                                        {"label": "90 days", "value": 90},
+                                                        {
+                                                            "label": "14 days",
+                                                            "value": 14,
+                                                        },
+                                                        {
+                                                            "label": "30 days",
+                                                            "value": 30,
+                                                        },
+                                                        {
+                                                            "label": "60 days",
+                                                            "value": 60,
+                                                        },
+                                                        {
+                                                            "label": "90 days",
+                                                            "value": 90,
+                                                        },
                                                     ],
                                                     value=30,
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Sort By:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Sort By:", style={"color": "white"}
+                                                ),
                                                 dcc.Dropdown(
                                                     id="earnings-sort-by",
                                                     options=[
-                                                        {"label": "Next Earnings Date", "value": "next_earnings"},
-                                                        {"label": "Expected Upside", "value": "expected_upside_pct"},
-                                                        {"label": "Composite Score", "value": "composite_score"},
+                                                        {
+                                                            "label": "Next Earnings Date",
+                                                            "value": "next_earnings",
+                                                        },
+                                                        {
+                                                            "label": "Expected Upside",
+                                                            "value": "expected_upside_pct",
+                                                        },
+                                                        {
+                                                            "label": "Composite Score",
+                                                            "value": "composite_score",
+                                                        },
                                                     ],
                                                     value="next_earnings",
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                     ],
-                                    style={"backgroundColor": "#333", "padding": "10px", "borderRadius": "5px", "margin": "10px"},
+                                    style={
+                                        "backgroundColor": "#333",
+                                        "padding": "10px",
+                                        "borderRadius": "5px",
+                                        "margin": "10px",
+                                    },
                                 ),
-                                html.Div(id="earnings-calendar-kpis", style={"margin": "10px"}),
+                                html.Div(
+                                    id="earnings-calendar-kpis",
+                                    style={"margin": "10px"},
+                                ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="earnings-timeline-chart")], width=7),
-                                        dbc.Col([dcc.Graph(id="earnings-by-status-chart")], width=5),
+                                        dbc.Col(
+                                            [dcc.Graph(id="earnings-timeline-chart")],
+                                            width=7,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="earnings-by-status-chart")],
+                                            width=5,
+                                        ),
                                     ]
                                 ),
                                 html.Div(
                                     [
-                                        html.H4("Upcoming Earnings Reports", style={"textAlign": "center", "marginTop": "20px"}),
+                                        html.H4(
+                                            "Upcoming Earnings Reports",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
                                         dash_table.DataTable(
                                             id="earnings-calendar-table",
-                                            columns=get_formatted_columns([
-                                                "ticker", "name", "country","trading_country", "exchange", "sector", "industry", "next_earnings",
-                                                "next_earnings_status", "next_earnings_when",
-                                                "next_fiscal_quarter", "earnings_report_frequency",
-                                                "expected_upside_pct", "posterior_beat_prob", "beat_classification",
-                                                "agreement_score", "composite_score",
-                                                "signal", "quality_tier",
-                                            ]),
-                                            page_size=20,
+                                            columns=get_formatted_columns(
+                                                [
+                                                    "ticker",
+                                                    "name",
+                                                    "country",
+                                                    "unit",
+                                                    "trading_country",
+                                                    "exchange",
+                                                    "sector",
+                                                    "industry",
+                                                    "next_earnings",
+                                                    "next_earnings_status",
+                                                    "next_earnings_when",
+                                                    "next_fiscal_quarter",
+                                                    "earnings_report_frequency",
+                                                    "expected_upside_pct",
+                                                    "posterior_beat_prob",
+                                                    "beat_classification",
+                                                    "agreement_score",
+                                                    "composite_score",
+                                                    "signal",
+                                                    "quality_tier",
+                                                ]
+                                            ),
+                                            page_size=500,
                                             sort_action="native",
                                             filter_action="native",
                                             style_table={"overflowX": "auto"},
@@ -1380,12 +2091,16 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Scoring Method", style={"color": "white"}
+                                                    "Scoring Method",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="scoring-method-dropdown",
                                                     options=[
-                                                        {"label": "Base EV", "value": "base_ev"},
+                                                        {
+                                                            "label": "Base EV",
+                                                            "value": "base_ev",
+                                                        },
                                                         {
                                                             "label": "Probability-weighted",
                                                             "value": "prob_weighted",
@@ -1398,7 +2113,10 @@ app.layout = html.Div(
                                                             "label": "Achievement-adjusted",
                                                             "value": "achievement_adj",
                                                         },
-                                                        {"label": "Combined", "value": "combined"},
+                                                        {
+                                                            "label": "Combined",
+                                                            "value": "combined",
+                                                        },
                                                     ],
                                                     value="combined",
                                                     style={"color": "black"},
@@ -1413,7 +2131,8 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Min Agreement", style={"color": "white"}
+                                                    "Min Agreement",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="min-agreement-dropdown",
@@ -1434,13 +2153,19 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Min Confidence", style={"color": "white"}
+                                                    "Min Confidence",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="min-confidence-dropdown",
                                                     options=[
                                                         {"label": str(i), "value": i}
-                                                        for i in [0.15, 0.25, 0.35, 0.45]
+                                                        for i in [
+                                                            0.15,
+                                                            0.25,
+                                                            0.35,
+                                                            0.45,
+                                                        ]
                                                     ],
                                                     value=0.25,
                                                     style={"color": "black"},
@@ -1455,12 +2180,16 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Risk-Free Rate", style={"color": "white"}
+                                                    "Risk-Free Rate",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="risk-free-rate-dropdown",
                                                     options=[
-                                                        {"label": f"{i}%", "value": float(i)}
+                                                        {
+                                                            "label": f"{i}%",
+                                                            "value": float(i),
+                                                        }
                                                         for i in [0, 2, 3, 4, 5]
                                                     ],
                                                     value=3.0,
@@ -1476,15 +2205,28 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Scatter Color By", style={"color": "white"}
+                                                    "Scatter Color By",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="scatter-color-dropdown",
                                                     options=[
-                                                        {"label": "None", "value": "none"},
-                                                        {"label": "Signal", "value": "signal"},
-                                                        {"label": "Quality Tier", "value": "quality_tier"},
-                                                        {"label": "Confidence Level", "value": "confidence_level"},
+                                                        {
+                                                            "label": "None",
+                                                            "value": "none",
+                                                        },
+                                                        {
+                                                            "label": "Signal",
+                                                            "value": "signal",
+                                                        },
+                                                        {
+                                                            "label": "Quality Tier",
+                                                            "value": "quality_tier",
+                                                        },
+                                                        {
+                                                            "label": "Confidence Level",
+                                                            "value": "confidence_level",
+                                                        },
                                                     ],
                                                     value="signal",
                                                     style={"color": "black"},
@@ -1509,10 +2251,13 @@ app.layout = html.Div(
                                                         [
                                                             {"label": i, "value": i}
                                                             for i in sorted(
-                                                                df["ticker"].dropna().unique()
+                                                                df["ticker"]
+                                                                .dropna()
+                                                                .unique()
                                                             )
                                                         ]
-                                                        if "ticker" in df.columns and len(df) > 0
+                                                        if "ticker" in df.columns
+                                                        and len(df) > 0
                                                         else []
                                                     ),
                                                     placeholder="Select tickers for detailed analysis...",
@@ -1535,8 +2280,13 @@ app.layout = html.Div(
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="ranking-bar-chart")], width=6),
-                                        dbc.Col([dcc.Graph(id="risk-reward-scatter")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="ranking-bar-chart")], width=6
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="risk-reward-scatter")],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 html.Div(id="artifact-er-quality-risk-quadrant"),
@@ -1563,19 +2313,33 @@ app.layout = html.Div(
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="posterior-forest-plot")], width=6),
-                                        dbc.Col([dcc.Graph(id="tri-model-posterior")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="posterior-forest-plot")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="tri-model-posterior")],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="beat-prob-posterior")], width=6),
-                                        dbc.Col([dcc.Graph(id="ruin-diagnostic")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="beat-prob-posterior")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="ruin-diagnostic")], width=6
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="category-ridge-plot")], width=12),
+                                        dbc.Col(
+                                            [dcc.Graph(id="category-ridge-plot")],
+                                            width=12,
+                                        ),
                                     ]
                                 ),
                                 dcc.Graph(id="artifact-er-posterior-return-forest"),
@@ -1585,23 +2349,47 @@ app.layout = html.Div(
                                 # Bayesian Ridge Plots (Profitability & Sentiment)
                                 html.Div(
                                     [
-                                        html.H4("Bayesian Profitability Ridge Plot", style={"textAlign": "center", "marginTop": "20px"}),
-                                        dcc.Graph(id="artifact-er-bayesian-profitability-ridge"),
+                                        html.H4(
+                                            "Bayesian Profitability Ridge Plot",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        dcc.Graph(
+                                            id="artifact-er-bayesian-profitability-ridge"
+                                        ),
                                     ],
                                     style={"margin": "10px"},
                                 ),
                                 html.Div(
                                     [
-                                        html.H4("Bayesian Sentiment Ridge Plot", style={"textAlign": "center", "marginTop": "20px"}),
-                                        dcc.Graph(id="artifact-er-bayesian-sentiment-ridge"),
+                                        html.H4(
+                                            "Bayesian Sentiment Ridge Plot",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        dcc.Graph(
+                                            id="artifact-er-bayesian-sentiment-ridge"
+                                        ),
                                     ],
                                     style={"margin": "10px"},
                                 ),
                                 # Distress Early Warning
                                 html.Div(
                                     [
-                                        html.H4("Distress Early Warning Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
-                                        html.Div(id="artifact-er-distress-early-warning"),
+                                        html.H4(
+                                            "Distress Early Warning Dashboard",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        html.Div(
+                                            id="artifact-er-distress-early-warning"
+                                        ),
                                     ],
                                     style={"margin": "10px"},
                                 ),
@@ -1628,24 +2416,40 @@ app.layout = html.Div(
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="calibration-curve")], width=6),
                                         dbc.Col(
-                                            [dcc.Graph(id="prediction-interval-coverage")], width=6
+                                            [dcc.Graph(id="calibration-curve")], width=6
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dcc.Graph(
+                                                    id="prediction-interval-coverage"
+                                                )
+                                            ],
+                                            width=6,
                                         ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
                                         dbc.Col(
-                                            [dcc.Graph(id="uncertainty-distribution")], width=6
+                                            [dcc.Graph(id="uncertainty-distribution")],
+                                            width=6,
                                         ),
-                                        dbc.Col([dcc.Graph(id="model-agreement-heatmap")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="model-agreement-heatmap")],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
                                         dbc.Col(
-                                            [html.Div(id="calibration-metrics-display")], width=12
+                                            [
+                                                html.Div(
+                                                    id="calibration-metrics-display"
+                                                )
+                                            ],
+                                            width=12,
                                         ),
                                     ]
                                 ),
@@ -1672,19 +2476,34 @@ app.layout = html.Div(
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="data-completeness-chart")], width=6),
-                                        dbc.Col([dcc.Graph(id="outlier-detection-chart")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="data-completeness-chart")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="outlier-detection-chart")],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="data-freshness-chart")], width=6),
-                                        dbc.Col([dcc.Graph(id="safety-threshold-chart")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="data-freshness-chart")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="safety-threshold-chart")],
+                                            width=6,
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([html.Div(id="data-quality-summary")], width=12),
+                                        dbc.Col(
+                                            [html.Div(id="data-quality-summary")],
+                                            width=12,
+                                        ),
                                     ]
                                 ),
                             ]
@@ -1710,8 +2529,13 @@ app.layout = html.Div(
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Col([dcc.Graph(id="model-performance-trend")], width=6),
-                                        dbc.Col([dcc.Graph(id="model-drift-chart")], width=6),
+                                        dbc.Col(
+                                            [dcc.Graph(id="model-performance-trend")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="model-drift-chart")], width=6
+                                        ),
                                     ]
                                 ),
                                 dbc.Row(
@@ -1726,8 +2550,10 @@ app.layout = html.Div(
                                                         ),
                                                         dash_table.DataTable(
                                                             id="model-registry-table",
-                                                            page_size=10,
-                                                            style_table={"overflowX": "auto"},
+                                                            page_size=500,
+                                                            style_table={
+                                                                "overflowX": "auto"
+                                                            },
                                                             style_header={
                                                                 "backgroundColor": "rgb(30, 30, 30)",
                                                                 "color": "white",
@@ -1748,7 +2574,8 @@ app.layout = html.Div(
                                 dbc.Row(
                                     [
                                         dbc.Col(
-                                            [html.Div(id="governance-metrics-display")], width=12
+                                            [html.Div(id="governance-metrics-display")],
+                                            width=12,
                                         ),
                                     ]
                                 ),
@@ -1779,15 +2606,28 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Simulations:", style={"color": "white"}
+                                                    "Simulations:",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="mc-num-simulations",
                                                     options=[
-                                                        {"label": "1,000", "value": 1000},
-                                                        {"label": "5,000", "value": 5000},
-                                                        {"label": "10,000", "value": 10000},
-                                                        {"label": "50,000", "value": 50000},
+                                                        {
+                                                            "label": "1,000",
+                                                            "value": 1000,
+                                                        },
+                                                        {
+                                                            "label": "5,000",
+                                                            "value": 5000,
+                                                        },
+                                                        {
+                                                            "label": "10,000",
+                                                            "value": 10000,
+                                                        },
+                                                        {
+                                                            "label": "50,000",
+                                                            "value": 50000,
+                                                        },
                                                     ],
                                                     value=10000,
                                                     style={"color": "black"},
@@ -1801,14 +2641,29 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Loss Ratio:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Loss Ratio:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="mc-loss-ratio",
                                                     options=[
-                                                        {"label": "0.25 (25%)", "value": 0.25},
-                                                        {"label": "0.5 (50%)", "value": 0.5},
-                                                        {"label": "0.75 (75%)", "value": 0.75},
-                                                        {"label": "1.0 (100%)", "value": 1.0},
+                                                        {
+                                                            "label": "0.25 (25%)",
+                                                            "value": 0.25,
+                                                        },
+                                                        {
+                                                            "label": "0.5 (50%)",
+                                                            "value": 0.5,
+                                                        },
+                                                        {
+                                                            "label": "0.75 (75%)",
+                                                            "value": 0.75,
+                                                        },
+                                                        {
+                                                            "label": "1.0 (100%)",
+                                                            "value": 1.0,
+                                                        },
                                                     ],
                                                     value=0.5,
                                                     style={"color": "black"},
@@ -1822,7 +2677,10 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Weighting:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Weighting:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="mc-weighting",
                                                     options=[
@@ -1852,7 +2710,8 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Target Return:", style={"color": "white"}
+                                                    "Target Return:",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Slider(
                                                     id="mc-target-return",
@@ -1860,8 +2719,14 @@ app.layout = html.Div(
                                                     max=20.0,
                                                     step=0.1,
                                                     value=0.0,
-                                                    marks={i: f"{i}%" for i in range(0, 25, 5)},
-                                                    tooltip={"placement": "bottom", "always_visible": True},
+                                                    marks={
+                                                        i: f"{i}%"
+                                                        for i in range(0, 25, 5)
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
@@ -1873,18 +2738,37 @@ app.layout = html.Div(
                                         html.Div(
                                             [
                                                 html.Label(
-                                                    "Signal Filter:", style={"color": "white"}
+                                                    "Signal Filter:",
+                                                    style={"color": "white"},
                                                 ),
                                                 dcc.Dropdown(
                                                     id="mc-signal-filter",
                                                     options=[
-                                                        {"label": "Strong Bullish (4/4)","value": "Strong Bullish (4/4)",},
-                                                        {"label": "Bullish (3/4)", "value": "Bullish (3/4)",},
-                                                        {"label": "Neutral (2/4)", "value": "Neutral (2/4)",},
-                                                        {"label": "Bearish (1/4)", "value": "Bearish (1/4)",},
-                                                        {"label": "Strong Bearish (0/4)","value": "Strong Bearish (0/4)",},
+                                                        {
+                                                            "label": "Strong Bullish (4/4)",
+                                                            "value": "Strong Bullish (4/4)",
+                                                        },
+                                                        {
+                                                            "label": "Bullish (3/4)",
+                                                            "value": "Bullish (3/4)",
+                                                        },
+                                                        {
+                                                            "label": "Neutral (2/4)",
+                                                            "value": "Neutral (2/4)",
+                                                        },
+                                                        {
+                                                            "label": "Bearish (1/4)",
+                                                            "value": "Bearish (1/4)",
+                                                        },
+                                                        {
+                                                            "label": "Strong Bearish (0/4)",
+                                                            "value": "Strong Bearish (0/4)",
+                                                        },
                                                     ],
-                                                    value=["Strong Bullish (4/4)", "Bullish (3/4)"],
+                                                    value=[
+                                                        "Strong Bullish (4/4)",
+                                                        "Bullish (3/4)",
+                                                    ],
                                                     multi=True,
                                                     style={"color": "black"},
                                                 ),
@@ -1944,8 +2828,16 @@ app.layout = html.Div(
                                 # Return Distribution Fit
                                 html.Div(
                                     [
-                                        html.H4("Return Distribution Fit Analysis", style={"textAlign": "center", "marginTop": "20px"}),
-                                        dcc.Graph(id="artifact-er-return-distribution-fit"),
+                                        html.H4(
+                                            "Return Distribution Fit Analysis",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        dcc.Graph(
+                                            id="artifact-er-return-distribution-fit"
+                                        ),
                                     ],
                                     style={"margin": "10px"},
                                 ),
@@ -1976,7 +2868,10 @@ app.layout = html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.Label("Risk-Free Rate:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Risk-Free Rate:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="capm-risk-free-rate",
                                                     options=[
@@ -1990,55 +2885,107 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Market Return:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Market Return:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Slider(
                                                     id="capm-market-return",
                                                     min=0.0,
                                                     max=20.0,
                                                     step=0.5,
                                                     value=10.0,
-                                                    marks={i: f"{i}%" for i in range(0, 25, 5)},
-                                                    tooltip={"placement": "bottom", "always_visible": True},
+                                                    marks={
+                                                        i: f"{i}%"
+                                                        for i in range(0, 25, 5)
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Size Encoding:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Size Encoding:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="capm-size-encoding",
                                                     options=[
-                                                        {"label": "Market Cap", "value": "market_cap"},
-                                                        {"label": "Enterprise Value", "value": "enterprise_value"},
-                                                        {"label": "Composite Score", "value": "composite_score"},
-                                                        {"label": "None", "value": "none"},
+                                                        {
+                                                            "label": "Market Cap",
+                                                            "value": "market_cap",
+                                                        },
+                                                        {
+                                                            "label": "Enterprise Value",
+                                                            "value": "enterprise_value",
+                                                        },
+                                                        {
+                                                            "label": "Composite Score",
+                                                            "value": "composite_score",
+                                                        },
+                                                        {
+                                                            "label": "None",
+                                                            "value": "none",
+                                                        },
                                                     ],
                                                     value="market_cap",
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Confidence Level:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Confidence Level:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="capm-confidence-level",
                                                     options=[
-                                                        {"label": "High Only", "value": "high_only"},
-                                                        {"label": "High or Medium", "value": "high_medium"},
-                                                        {"label": "All", "value": "all"},
+                                                        {
+                                                            "label": "High Only",
+                                                            "value": "high_only",
+                                                        },
+                                                        {
+                                                            "label": "High or Medium",
+                                                            "value": "high_medium",
+                                                        },
+                                                        {
+                                                            "label": "All",
+                                                            "value": "all",
+                                                        },
                                                     ],
                                                     value="high_medium",
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                     ],
                                     style={
@@ -2052,23 +2999,47 @@ app.layout = html.Div(
                                     [
                                         dbc.Col(
                                             [
-                                                html.H4("Beta vs Expected Return", style={"textAlign": "center"}),
+                                                html.H4(
+                                                    "Beta vs Expected Return",
+                                                    style={"textAlign": "center"},
+                                                ),
                                                 dcc.Loading(
                                                     type="circle",
-                                                    children=[dcc.Graph(id="capm-scatter-graph")],
+                                                    children=[
+                                                        dcc.Graph(
+                                                            id="capm-scatter-graph"
+                                                        )
+                                                    ],
                                                 ),
-                                                html.Pre(id="capm-scatter-error", style={"color": "red", "fontSize": "12px"}),
+                                                html.Pre(
+                                                    id="capm-scatter-error",
+                                                    style={
+                                                        "color": "red",
+                                                        "fontSize": "12px",
+                                                    },
+                                                ),
                                             ],
                                             width=6,
                                         ),
                                         dbc.Col(
                                             [
-                                                html.H4("Alpha (Excess Return)", style={"textAlign": "center"}),
+                                                html.H4(
+                                                    "Alpha (Excess Return)",
+                                                    style={"textAlign": "center"},
+                                                ),
                                                 dcc.Loading(
                                                     type="circle",
-                                                    children=[dcc.Graph(id="capm-bar-graph")],
+                                                    children=[
+                                                        dcc.Graph(id="capm-bar-graph")
+                                                    ],
                                                 ),
-                                                html.Pre(id="capm-bar-error", style={"color": "red", "fontSize": "12px"}),
+                                                html.Pre(
+                                                    id="capm-bar-error",
+                                                    style={
+                                                        "color": "red",
+                                                        "fontSize": "12px",
+                                                    },
+                                                ),
                                             ],
                                             width=6,
                                         ),
@@ -2101,7 +3072,10 @@ app.layout = html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.Label("Kelly Fraction:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Kelly Fraction:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-fraction-dropdown",
                                                     options=KELLY_FRACTION_OPTIONS,
@@ -2109,11 +3083,18 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Max Position Size:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Max Position Size:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-max-position-dropdown",
                                                     options=MAX_POSITION_OPTIONS,
@@ -2121,11 +3102,18 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Min Confidence Score:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Min Confidence Score:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-min-confidence-dropdown",
                                                     options=KELLY_MIN_CONFIDENCE_OPTIONS,
@@ -2133,11 +3121,18 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Adjustment Method:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Adjustment Method:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-adjustment-dropdown",
                                                     options=KELLY_ADJUSTMENT_OPTIONS,
@@ -2145,11 +3140,18 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Bar Color By:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Bar Color By:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-bar-color-dropdown",
                                                     options=KELLY_BAR_COLOR_OPTIONS,
@@ -2157,11 +3159,18 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Scatter Color By:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Scatter Color By:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-scatter-color-dropdown",
                                                     options=KELLY_SCATTER_COLOR_OPTIONS,
@@ -2169,11 +3178,18 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Scatter Size By:", style={"color": "white"}),
+                                                html.Label(
+                                                    "Scatter Size By:",
+                                                    style={"color": "white"},
+                                                ),
                                                 dcc.Dropdown(
                                                     id="kelly-scatter-size-dropdown",
                                                     options=KELLY_SCATTER_SIZE_OPTIONS,
@@ -2181,7 +3197,11 @@ app.layout = html.Div(
                                                     style={"color": "black"},
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                     ],
                                     style={
@@ -2192,29 +3212,63 @@ app.layout = html.Div(
                                     },
                                 ),
                                 # Kelly KPI summary row
-                                html.Div(id="kelly-kpi-summary", style={"margin": "10px"}),
+                                html.Div(
+                                    id="kelly-kpi-summary", style={"margin": "10px"}
+                                ),
                                 # Charts side-by-side
                                 dbc.Row(
                                     [
                                         dbc.Col(
                                             [
-                                                html.H4("Top 30 Positions by Kelly %", style={"textAlign": "center"}),
+                                                html.H4(
+                                                    "Top 30 Positions by Kelly %",
+                                                    style={"textAlign": "center"},
+                                                ),
                                                 dcc.Loading(
                                                     type="circle",
-                                                    children=[dcc.Graph(id="kelly-bar-chart", style={"minHeight": "550px"})],
+                                                    children=[
+                                                        dcc.Graph(
+                                                            id="kelly-bar-chart",
+                                                            style={
+                                                                "minHeight": "550px"
+                                                            },
+                                                        )
+                                                    ],
                                                 ),
-                                                html.Pre(id="kelly-bar-error", style={"color": "red", "fontSize": "12px"}),
+                                                html.Pre(
+                                                    id="kelly-bar-error",
+                                                    style={
+                                                        "color": "red",
+                                                        "fontSize": "12px",
+                                                    },
+                                                ),
                                             ],
                                             width=6,
                                         ),
                                         dbc.Col(
                                             [
-                                                html.H4("Kelly % vs Expected Upside", style={"textAlign": "center"}),
+                                                html.H4(
+                                                    "Kelly % vs Expected Upside",
+                                                    style={"textAlign": "center"},
+                                                ),
                                                 dcc.Loading(
                                                     type="circle",
-                                                    children=[dcc.Graph(id="kelly-scatter-chart", style={"minHeight": "550px"})],
+                                                    children=[
+                                                        dcc.Graph(
+                                                            id="kelly-scatter-chart",
+                                                            style={
+                                                                "minHeight": "550px"
+                                                            },
+                                                        )
+                                                    ],
                                                 ),
-                                                html.Pre(id="kelly-scatter-error", style={"color": "red", "fontSize": "12px"}),
+                                                html.Pre(
+                                                    id="kelly-scatter-error",
+                                                    style={
+                                                        "color": "red",
+                                                        "fontSize": "12px",
+                                                    },
+                                                ),
                                             ],
                                             width=6,
                                         ),
@@ -2223,16 +3277,41 @@ app.layout = html.Div(
                                 # Top opportunities table
                                 html.Div(
                                     [
-                                        html.H4("Kelly-Weighted Top Positions", style={"textAlign": "center", "marginTop": "20px"}),
+                                        html.H4(
+                                            "Kelly-Weighted Top Positions",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
                                         dash_table.DataTable(
                                             id="kelly-positions-table",
-                                            columns=get_formatted_columns([
-                                                "ticker", "name", "country", "trading_country", "unit",  "exchange", "industry", "sector", "quality_tier", "last_price", "price_target","price_target_mc","price_target_prob_weighted",
-                                                "filtered_upside", "achievement_probability",
-                                                "composite_score", "confidence_level", "signal", "kelly_pct",
-
-                                            ]),
-                                            page_size=15,
+                                            columns=get_formatted_columns(
+                                                [
+                                                    "ticker",
+                                                    "name",
+                                                    "country",
+                                                    "trading_country",
+                                                    "unit",
+                                                    "exchange",
+                                                    "industry",
+                                                    "sector",
+                                                    "quality_tier",
+                                                    "last_price",
+                                                    "price_target",
+                                                    "price_target_mc",
+                                                    "price_target_prob_weighted",
+                                                    "expected_upside_pct",
+                                                    "expected_return_prob_weighted",
+                                                    "filtered_upside",
+                                                    "achievement_probability",
+                                                    "composite_score",
+                                                    "confidence_level",
+                                                    "signal",
+                                                    "kelly_pct",
+                                                ]
+                                            ),
+                                            page_size=500,
                                             sort_action="native",
                                             style_table={"overflowX": "auto"},
                                             style_header=TABLE_STYLE_HEADER,
@@ -2258,38 +3337,77 @@ app.layout = html.Div(
                                 html.P(
                                     "Explore optimal portfolio allocations by analyzing the risk-return tradeoff curve. "
                                     "Select stocks and adjust parameters to find the best portfolio combinations.",
-                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
                                 ),
                                 # Efficient Frontier Controls
                                 html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.Label("Select Stocks:", style={"color": "white", "fontWeight": "bold"}),
+                                                html.Label(
+                                                    "Select Stocks:",
+                                                    style={
+                                                        "color": "white",
+                                                        "fontWeight": "bold",
+                                                    },
+                                                ),
                                                 dcc.Dropdown(
                                                     id="ef-stock-selector",
                                                     options=(
                                                         [
-                                                            {"label": f"{row['ticker']} - {row['name'][:30]}", "value": row['ticker']}
-                                                            for _, row in df.nlargest(50, 'market_cap').iterrows()
+                                                            {
+                                                                "label": f"{row['ticker']} - {row['name'][:30]}",
+                                                                "value": row["ticker"],
+                                                            }
+                                                            for _, row in df.nlargest(
+                                                                50, "market_cap"
+                                                            ).iterrows()
                                                         ]
-                                                        if len(df) > 0 and all(c in df.columns for c in ['ticker', 'name', 'market_cap'])
+                                                        if len(df) > 0
+                                                        and all(
+                                                            c in df.columns
+                                                            for c in [
+                                                                "ticker",
+                                                                "name",
+                                                                "market_cap",
+                                                            ]
+                                                        )
                                                         else []
                                                     ),
                                                     value=(
-                                                        df.nlargest(50, 'market_cap').head(10)['ticker'].tolist()
-                                                        if len(df) > 0 and 'market_cap' in df.columns
+                                                        df.nlargest(50, "market_cap")
+                                                        .head(10)["ticker"]
+                                                        .tolist()
+                                                        if len(df) > 0
+                                                        and "market_cap" in df.columns
                                                         else []
                                                     ),
                                                     multi=True,
-                                                    style={"color": "black", "minWidth": "300px"},
+                                                    style={
+                                                        "color": "black",
+                                                        "minWidth": "300px",
+                                                    },
                                                 ),
                                             ],
-                                            style={"width": "30%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "30%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Risk-Free Rate:", style={"color": "white", "fontWeight": "bold"}),
+                                                html.Label(
+                                                    "Risk-Free Rate:",
+                                                    style={
+                                                        "color": "white",
+                                                        "fontWeight": "bold",
+                                                    },
+                                                ),
                                                 dcc.Dropdown(
                                                     id="ef-risk-free-rate",
                                                     options=[
@@ -2304,42 +3422,81 @@ app.layout = html.Div(
                                                     searchable=False,
                                                 ),
                                             ],
-                                            style={"width": "12%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "12%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Constraint Type:", style={"color": "white", "fontWeight": "bold"}),
+                                                html.Label(
+                                                    "Constraint Type:",
+                                                    style={
+                                                        "color": "white",
+                                                        "fontWeight": "bold",
+                                                    },
+                                                ),
                                                 dcc.Dropdown(
                                                     id="ef-constraint-type",
                                                     options=[
-                                                        {"label": "Long Only", "value": "long_only"},
-                                                        {"label": "Long/Short", "value": "long_short"},
-                                                        {"label": "Sector Neutral", "value": "sector_neutral"},
+                                                        {
+                                                            "label": "Long Only",
+                                                            "value": "long_only",
+                                                        },
+                                                        {
+                                                            "label": "Long/Short",
+                                                            "value": "long_short",
+                                                        },
+                                                        {
+                                                            "label": "Sector Neutral",
+                                                            "value": "sector_neutral",
+                                                        },
                                                     ],
                                                     value="long_only",
                                                     style={"color": "black"},
                                                     searchable=False,
                                                 ),
                                             ],
-                                            style={"width": "15%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "15%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                         html.Div(
                                             [
-                                                html.Label("Number of Portfolios:", style={"color": "white", "fontWeight": "bold"}),
+                                                html.Label(
+                                                    "Number of Portfolios:",
+                                                    style={
+                                                        "color": "white",
+                                                        "fontWeight": "bold",
+                                                    },
+                                                ),
                                                 dcc.Dropdown(
                                                     id="ef-num-portfolios",
                                                     options=[
                                                         {"label": "100", "value": 100},
                                                         {"label": "500", "value": 500},
-                                                        {"label": "1,000", "value": 1000},
-                                                        {"label": "5,000", "value": 5000},
+                                                        {
+                                                            "label": "1,000",
+                                                            "value": 1000,
+                                                        },
+                                                        {
+                                                            "label": "5,000",
+                                                            "value": 5000,
+                                                        },
                                                     ],
                                                     value=500,
                                                     style={"color": "black"},
                                                     searchable=False,
                                                 ),
                                             ],
-                                            style={"width": "12%", "display": "inline-block", "margin": "10px"},
+                                            style={
+                                                "width": "12%",
+                                                "display": "inline-block",
+                                                "margin": "10px",
+                                            },
                                         ),
                                     ],
                                     style={
@@ -2352,13 +3509,26 @@ app.layout = html.Div(
                                 dcc.Loading(
                                     type="circle",
                                     children=[
-                                        dcc.Graph(id="ef-frontier-graph", style={"minHeight": "550px", "height": "calc(100vh - 600px)"}),
+                                        dcc.Graph(
+                                            id="ef-frontier-graph",
+                                            style={
+                                                "minHeight": "550px",
+                                                "height": "calc(100vh - 600px)",
+                                            },
+                                        ),
                                     ],
                                 ),
-                                html.Pre(id="ef-error-display", style={"color": "red", "margin": "10px 0"}),
+                                html.Pre(
+                                    id="ef-error-display",
+                                    style={"color": "red", "margin": "10px 0"},
+                                ),
                                 html.Div(
                                     id="ef-portfolio-table",
-                                    style={"marginTop": "20px", "overflowX": "auto", "margin": "10px"},
+                                    style={
+                                        "marginTop": "20px",
+                                        "overflowX": "auto",
+                                        "margin": "10px",
+                                    },
                                 ),
                             ]
                         )
@@ -2371,16 +3541,26 @@ app.layout = html.Div(
 
 
 # Monte Carlo Simulation Functions
-def run_monte_carlo_simulation(sim_df, num_simulations, loss_ratio, weighting, target_return):
+def run_monte_carlo_simulation(
+    sim_df, num_simulations, loss_ratio, weighting, target_return
+):
     """Run Monte Carlo simulation and return results."""
     if sim_df.empty:
         return np.array([]), {}
 
     sim_df = sim_df.copy()
-    sim_df['prob_positive_upside'] = pd.to_numeric(sim_df['prob_positive_upside'], errors='coerce')
-    sim_df['filtered_upside'] = pd.to_numeric(sim_df['filtered_upside'], errors='coerce')
-    sim_df['achievement_probability'] = pd.to_numeric(sim_df['achievement_probability'], errors='coerce')
-    sim_df = sim_df.dropna(subset=['prob_positive_upside', 'filtered_upside', 'achievement_probability'])
+    sim_df["prob_positive_upside"] = pd.to_numeric(
+        sim_df["prob_positive_upside"], errors="coerce"
+    )
+    sim_df["filtered_upside"] = pd.to_numeric(
+        sim_df["filtered_upside"], errors="coerce"
+    )
+    sim_df["achievement_probability"] = pd.to_numeric(
+        sim_df["achievement_probability"], errors="coerce"
+    )
+    sim_df = sim_df.dropna(
+        subset=["prob_positive_upside", "filtered_upside", "achievement_probability"]
+    )
 
     if sim_df.empty:
         return np.array([]), {}
@@ -2393,8 +3573,8 @@ def run_monte_carlo_simulation(sim_df, num_simulations, loss_ratio, weighting, t
     elif weighting == "kelly":
         kelly_fractions = []
         for _, row in sim_df.iterrows():
-            p = row['prob_positive_upside'] / 100.0
-            b = row['filtered_upside'] / 100.0
+            p = row["prob_positive_upside"] / 100.0
+            b = row["filtered_upside"] / 100.0
             if b > 0 and p > 0 and p < 1:
                 kelly = (p * b - (1 - p) * loss_ratio * b) / (b * b) if b != 0 else 0
                 kelly = max(0, min(kelly, 0.25))
@@ -2403,14 +3583,18 @@ def run_monte_carlo_simulation(sim_df, num_simulations, loss_ratio, weighting, t
             kelly_fractions.append(kelly)
         kelly_fractions = np.array(kelly_fractions)
         total = kelly_fractions.sum()
-        weights = kelly_fractions / total if total > 0 else np.ones(num_stocks) / num_stocks
+        weights = (
+            kelly_fractions / total if total > 0 else np.ones(num_stocks) / num_stocks
+        )
     else:  # market_cap
         weights = np.ones(num_stocks) / num_stocks
 
     # Calculate probabilities and returns
-    prob_wins = (sim_df['prob_positive_upside'].values / 100.0) * sim_df['achievement_probability'].values
+    prob_wins = (sim_df["prob_positive_upside"].values / 100.0) * sim_df[
+        "achievement_probability"
+    ].values
     prob_wins = np.clip(prob_wins, 0, 1.0)
-    upside_returns = sim_df['filtered_upside'].values / 100.0
+    upside_returns = sim_df["filtered_upside"].values / 100.0
 
     # Run simulations
     portfolio_returns = np.zeros(num_simulations)
@@ -2442,7 +3626,7 @@ def run_monte_carlo_simulation(sim_df, num_simulations, loss_ratio, weighting, t
         "p25": percentiles[1],
         "p50": percentiles[2],
         "p75": percentiles[3],
-        "p95": percentiles[4]
+        "p95": percentiles[4],
     }
 
     return portfolio_returns, stats
@@ -2514,7 +3698,14 @@ def update_dashboard(*args):
     num_filters = len(FILTER_CONFIG)
     filter_values = collect_filter_values(*args[:num_filters])
 
-    scoring_method, min_agreement, min_confidence, risk_free_rate, scatter_color, prob_tickers = args[num_filters:]
+    (
+        scoring_method,
+        min_agreement,
+        min_confidence,
+        risk_free_rate,
+        scatter_color,
+        prob_tickers,
+    ) = args[num_filters:]
 
     # Apply all global filters consistently
     filtered_df = apply_global_filters(df, filter_values)
@@ -2529,9 +3720,14 @@ def update_dashboard(*args):
     if filtered_df.empty:
         empty_fig = go.Figure().update_layout(title="No data matching selected filters")
         return (
-            [[]] + [empty_fig] * 13
-            + [empty_fig] * 4 + [html.Div()] + [empty_fig] * 4
-            + [empty_fig] * 5 + [html.Div()] + [empty_fig]
+            [[]]
+            + [empty_fig] * 13
+            + [empty_fig] * 4
+            + [html.Div()]
+            + [empty_fig] * 4
+            + [empty_fig] * 5
+            + [html.Div()]
+            + [empty_fig]
         )
 
     # ---------------------------------------------------------
@@ -2544,7 +3740,7 @@ def update_dashboard(*args):
         color=scatter_color if scatter_color != "none" else None,
         hover_name="ticker",
         title="Upside vs. Probability",
-        template="plotly_dark"
+        template="plotly_dark",
     )
 
     # ---------------------------------------------------------
@@ -2553,104 +3749,149 @@ def update_dashboard(*args):
     ranking_df = filtered_df.copy()
     if not ranking_df.empty:
         # Scoring methods
-        ev_base = (ranking_df['filtered_upside'] / 100) * (ranking_df['prob_positive_upside'] / 100)
-        ev_prob = ranking_df['expected_return_prob_weighted'] / 100
-        ev_conf = ev_base * ranking_df['confidence_score']
-        ev_achieve = ev_base * ranking_df['achievement_probability']
-        ev_final = ev_base * ranking_df['confidence_score'] * ranking_df['achievement_probability'] * (1 + ranking_df['posterior_beat_prob'])
+        ev_base = (ranking_df["filtered_upside"] / 100) * (
+            ranking_df["prob_positive_upside"] / 100
+        )
+        ev_prob = ranking_df["expected_return_prob_weighted"] / 100
+        ev_conf = ev_base * ranking_df["confidence_score"]
+        ev_achieve = ev_base * ranking_df["achievement_probability"]
+        ev_final = (
+            ev_base
+            * ranking_df["confidence_score"]
+            * ranking_df["achievement_probability"]
+            * (1 + ranking_df["posterior_beat_prob"])
+        )
 
         if scoring_method == "base_ev":
-            ranking_df['ev_score'] = ev_base
+            ranking_df["ev_score"] = ev_base
         elif scoring_method == "prob_weighted":
-            ranking_df['ev_score'] = ev_prob
+            ranking_df["ev_score"] = ev_prob
         elif scoring_method == "confidence_adj":
-            ranking_df['ev_score'] = ev_conf
+            ranking_df["ev_score"] = ev_conf
         elif scoring_method == "achievement_adj":
-            ranking_df['ev_score'] = ev_achieve
+            ranking_df["ev_score"] = ev_achieve
         else:
-            ranking_df['ev_score'] = ev_final
+            ranking_df["ev_score"] = ev_final
 
         # Risk & Reward scores
-        uncertainty_penalty = 1 - (ranking_df['prob_positive_upside'] / 100) * ranking_df['confidence_score']
-        disagreement_penalty = 1 - (ranking_df['agreement_score'] / 4)
-        ranking_df['risk_score'] = uncertainty_penalty * (1 + disagreement_penalty)
+        uncertainty_penalty = (
+            1
+            - (ranking_df["prob_positive_upside"] / 100)
+            * ranking_df["confidence_score"]
+        )
+        disagreement_penalty = 1 - (ranking_df["agreement_score"] / 4)
+        ranking_df["risk_score"] = uncertainty_penalty * (1 + disagreement_penalty)
 
-        upside_potential = (ranking_df['filtered_upside'] / 100) * ranking_df['achievement_probability']
-        beat_probability_bonus = 1 + ranking_df['posterior_beat_prob']
-        ranking_df['reward_score'] = upside_potential * beat_probability_bonus
+        upside_potential = (ranking_df["filtered_upside"] / 100) * ranking_df[
+            "achievement_probability"
+        ]
+        beat_probability_bonus = 1 + ranking_df["posterior_beat_prob"]
+        ranking_df["reward_score"] = upside_potential * beat_probability_bonus
 
         # Risk-adjusted return & Sharpe-like ratio
-        ranking_df['risk_adjusted_return'] = ranking_df['reward_score'] / (ranking_df['risk_score'] + 1e-6)
+        ranking_df["risk_adjusted_return"] = ranking_df["reward_score"] / (
+            ranking_df["risk_score"] + 1e-6
+        )
         risk_free_rate_decimal = (risk_free_rate or 0) / 100
-        ranking_df['sharpe_like_ratio'] = (ranking_df['expected_return_prob_weighted'] / 100 - risk_free_rate_decimal) / (ranking_df['risk_score'] + 1e-6)
+        ranking_df["sharpe_like_ratio"] = (
+            ranking_df["expected_return_prob_weighted"] / 100 - risk_free_rate_decimal
+        ) / (ranking_df["risk_score"] + 1e-6)
 
         # Apply ranking-specific filters
         if min_agreement is not None:
-            ranking_df = ranking_df[ranking_df['agreement_score'] >= min_agreement]
+            ranking_df = ranking_df[ranking_df["agreement_score"] >= min_agreement]
         if min_confidence is not None:
-            ranking_df = ranking_df[ranking_df['confidence_score'] >= min_confidence]
+            ranking_df = ranking_df[ranking_df["confidence_score"] >= min_confidence]
 
     # KPI Cards
     kpi_cards = []
     if not filtered_df.empty:
         total_stocks = len(filtered_df)
         avg_expected_return = filtered_df["expected_return_prob_weighted"].mean()
-        high_confidence = len(filtered_df[filtered_df["confidence_level"] == "high"]) if "confidence_level" in filtered_df.columns else 0
-        strong_buy = len(filtered_df[filtered_df["signal"] == "Strong Bullish (4/4)"]) if "signal" in filtered_df.columns else 0
-        avg_composite = filtered_df["composite_score"].mean() if "composite_score" in filtered_df.columns else 0
-        premium_tier = len(filtered_df[filtered_df["quality_tier"] == "premium"]) if "quality_tier" in filtered_df.columns else 0
+        high_confidence = (
+            len(filtered_df[filtered_df["confidence_level"] == "high"])
+            if "confidence_level" in filtered_df.columns
+            else 0
+        )
+        strong_buy = (
+            len(filtered_df[filtered_df["signal"] == "Strong Bullish (4/4)"])
+            if "signal" in filtered_df.columns
+            else 0
+        )
+        avg_composite = (
+            filtered_df["composite_score"].mean()
+            if "composite_score" in filtered_df.columns
+            else 0
+        )
+        premium_tier = (
+            len(filtered_df[filtered_df["quality_tier"] == "premium"])
+            if "quality_tier" in filtered_df.columns
+            else 0
+        )
 
         kpi_cards = [
             dbc.Card(
-                dbc.CardBody([
-                    html.H4("Total Stocks", className="card-title"),
-                    html.H2(f"{total_stocks:,}", className="card-text"),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H4("Total Stocks", className="card-title"),
+                        html.H2(f"{total_stocks:,}", className="card-text"),
+                    ]
+                ),
                 color="primary",
                 inverse=True,
                 style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
-                dbc.CardBody([
-                    html.H4("Avg Expected Return", className="card-title"),
-                    html.H2(f"{avg_expected_return:.1f}%", className="card-text"),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H4("Avg Expected Return", className="card-title"),
+                        html.H2(f"{avg_expected_return:.1f}%", className="card-text"),
+                    ]
+                ),
                 color="success" if avg_expected_return > 0 else "danger",
                 inverse=True,
                 style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
-                dbc.CardBody([
-                    html.H4("High Confidence", className="card-title"),
-                    html.H2(f"{high_confidence}", className="card-text"),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H4("High Confidence", className="card-title"),
+                        html.H2(f"{high_confidence}", className="card-text"),
+                    ]
+                ),
                 color="info",
                 inverse=True,
                 style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
-                dbc.CardBody([
-                    html.H4("Strong Buy Signals", className="card-title"),
-                    html.H2(f"{strong_buy}", className="card-text"),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H4("Strong Buy Signals", className="card-title"),
+                        html.H2(f"{strong_buy}", className="card-text"),
+                    ]
+                ),
                 color="warning",
                 inverse=True,
                 style={"width": "18%", "textAlign": "center"},
             ),
             dbc.Card(
-                dbc.CardBody([
-                    html.H4("Avg Composite Score", className="card-title"),
-                    html.H2(f"{avg_composite:.3f}", className="card-text"),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H4("Avg Composite Score", className="card-title"),
+                        html.H2(f"{avg_composite:.3f}", className="card-text"),
+                    ]
+                ),
                 color="secondary",
                 inverse=True,
                 style={"width": "13%", "textAlign": "center"},
             ),
             dbc.Card(
-                dbc.CardBody([
-                    html.H4("Premium Tier", className="card-title"),
-                    html.H2(f"{premium_tier}", className="card-text"),
-                ]),
+                dbc.CardBody(
+                    [
+                        html.H4("Premium Tier", className="card-title"),
+                        html.H2(f"{premium_tier}", className="card-text"),
+                    ]
+                ),
                 color="dark",
                 inverse=True,
                 style={"width": "13%", "textAlign": "center"},
@@ -2659,18 +3900,28 @@ def update_dashboard(*args):
 
     # Expected Returns Scatter Plot
     returns_scatter = {}
-    if not filtered_df.empty and all(col in filtered_df.columns for col in ["expected_return_prob_weighted", "achievement_probability"]):
+    if not filtered_df.empty and all(
+        col in filtered_df.columns
+        for col in ["expected_return_prob_weighted", "achievement_probability"]
+    ):
         returns_scatter = px.scatter(
             filtered_df,
             x="achievement_probability",
             y="expected_return_prob_weighted",
             color="signal" if "signal" in filtered_df.columns else None,
-            size="confidence_score" if "confidence_score" in filtered_df.columns else None,
-            hover_data=["ticker", "name","country", "sector","industry","exchange"] if all(c in filtered_df.columns for c in ["ticker", "name","country", "sector","industry","exchange"]) else None,
+            size="confidence_score"
+            if "confidence_score" in filtered_df.columns
+            else None,
+            hover_data=["ticker", "name", "country", "sector", "industry", "exchange"]
+            if all(
+                c in filtered_df.columns
+                for c in ["ticker", "name", "country", "sector", "industry", "exchange"]
+            )
+            else None,
             title="Expected Return vs Achievement Probability",
             labels={
                 "achievement_probability": "Achievement Probability",
-                "expected_return_prob_weighted": "Expected Return (%)"
+                "expected_return_prob_weighted": "Expected Return (%)",
             },
             template="plotly_dark",
         )
@@ -2681,11 +3932,13 @@ def update_dashboard(*args):
         signals_data = []
         for model in ["mc_bullish", "kal_bullish", "pt_bullish", "earn_bullish"]:
             if model in filtered_df.columns:
-                signals_data.append({
-                    "Model": model.replace("_bullish", "").upper(),
-                    "Bullish Count": filtered_df[model].sum(),
-                    "Bearish Count": (~filtered_df[model]).sum()
-                })
+                signals_data.append(
+                    {
+                        "Model": model.replace("_bullish", "").upper(),
+                        "Bullish Count": filtered_df[model].sum(),
+                        "Bearish Count": (~filtered_df[model]).sum(),
+                    }
+                )
 
         if signals_data:
             signals_df = pd.DataFrame(signals_data)
@@ -2719,9 +3972,10 @@ def update_dashboard(*args):
             "name",
             "country",
             "trading_country",
-            "exchange",
+            "unit",
             "sector",
             "industry",
+            "exchange",
             "quality_tier",
             "next_earnings",
             "next_earnings_status",
@@ -2735,7 +3989,11 @@ def update_dashboard(*args):
             "price_target_median",
             "expected_upside_pct",
             "kalman_estimate",
+            "posterior_beat_prob",
+            "beat_classification",
             "price_target_prob_weighted",
+            "expected_upside_pct",
+            "expected_return_prob_weighted",
             "filtered_upside",
             "expected_return_prob_weighted",
             "achievement_probability",
@@ -2750,18 +4008,25 @@ def update_dashboard(*args):
             "filtered_upside_pctile",
         ]
         cols_available = [c for c in cols_to_show if c in filtered_df.columns]
-        sort_col = "expected_return_prob_weighted" if "expected_return_prob_weighted" in filtered_df.columns else filtered_df.columns[0]
-        top_opportunities_data = (
-            filtered_df
-            .nlargest(20, sort_col)
-            [cols_available]
-            .to_dict("records")
+        sort_col = (
+            "expected_return_prob_weighted"
+            if "expected_return_prob_weighted" in filtered_df.columns
+            else filtered_df.columns[0]
         )
+        top_opportunities_data = filtered_df.nlargest(20, sort_col)[
+            cols_available
+        ].to_dict("records")
 
     # Signal Breakdown by Sector
     signal_breakdown = {}
-    if not filtered_df.empty and "signal" in filtered_df.columns and "sector" in filtered_df.columns:
-        signal_counts = filtered_df.groupby(["sector", "signal"]).size().reset_index(name="count")
+    if (
+        not filtered_df.empty
+        and "signal" in filtered_df.columns
+        and "sector" in filtered_df.columns
+    ):
+        signal_counts = (
+            filtered_df.groupby(["sector", "signal"]).size().reset_index(name="count")
+        )
         signal_breakdown = px.bar(
             signal_counts,
             x="sector",
@@ -2774,11 +4039,13 @@ def update_dashboard(*args):
 
     # Performance by Currency
     unit_perf = {}
-    if not filtered_df.empty and "unit" in filtered_df.columns and "expected_return_prob_weighted" in filtered_df.columns:
+    if (
+        not filtered_df.empty
+        and "unit" in filtered_df.columns
+        and "expected_return_prob_weighted" in filtered_df.columns
+    ):
         unit_stats = (
-            filtered_df
-            .groupby("unit")
-            ["expected_return_prob_weighted"]
+            filtered_df.groupby("unit")["expected_return_prob_weighted"]
             .agg(["mean", "median", "count"])
             .reset_index()
         )
@@ -2791,62 +4058,88 @@ def update_dashboard(*args):
             template="plotly_dark",
             text="count",
         )
-        unit_perf.update_traces(texttemplate='n=%{text}', textposition='outside')
+        unit_perf.update_traces(texttemplate="n=%{text}", textposition="outside")
 
     # Ranking Bar Chart (Top 50)
     ranking_bar = {}
-    if not ranking_df.empty and 'ev_score' in ranking_df.columns:
-        top_50 = ranking_df.nlargest(50, 'ev_score').sort_values('ev_score', ascending=True)
+    if not ranking_df.empty and "ev_score" in ranking_df.columns:
+        top_50 = ranking_df.nlargest(50, "ev_score").sort_values(
+            "ev_score", ascending=True
+        )
         ranking_bar = px.bar(
             top_50,
-            x='ev_score',
-            y='ticker',
-            orientation='h',
-            color='quality_tier' if 'quality_tier' in top_50.columns else 'confidence_level',
+            x="ev_score",
+            y="ticker",
+            orientation="h",
+            color="quality_tier"
+            if "quality_tier" in top_50.columns
+            else "confidence_level",
             title=f"Top 50 Stocks by {scoring_method.replace('_', ' ').title()} Score",
-            labels={'ev_score': 'Expected Value Score', 'ticker': 'Ticker',
-                    'confidence_level': 'Confidence Level', 'quality_tier': 'Quality Tier'},
+            labels={
+                "ev_score": "Expected Value Score",
+                "ticker": "Ticker",
+                "confidence_level": "Confidence Level",
+                "quality_tier": "Quality Tier",
+            },
             template="plotly_dark",
-            height=800
+            height=800,
         )
-        ranking_bar.update_layout(yaxis={'categoryorder': 'total ascending'})
+        ranking_bar.update_layout(yaxis={"categoryorder": "total ascending"})
 
     # Risk vs Reward Scatter
     risk_reward_scatter = {}
-    if not ranking_df.empty and 'risk_score' in ranking_df.columns and 'reward_score' in ranking_df.columns:
+    if (
+        not ranking_df.empty
+        and "risk_score" in ranking_df.columns
+        and "reward_score" in ranking_df.columns
+    ):
         scatter_color_col = None
-        if scatter_color == 'signal':
-            scatter_color_col = 'signal'
-        elif scatter_color == 'quality_tier' and 'quality_tier' in ranking_df.columns:
-            scatter_color_col = 'quality_tier'
-        elif scatter_color == 'confidence_level' and 'confidence_level' in ranking_df.columns:
-            scatter_color_col = 'confidence_level'
+        if scatter_color == "signal":
+            scatter_color_col = "signal"
+        elif scatter_color == "quality_tier" and "quality_tier" in ranking_df.columns:
+            scatter_color_col = "quality_tier"
+        elif (
+            scatter_color == "confidence_level"
+            and "confidence_level" in ranking_df.columns
+        ):
+            scatter_color_col = "confidence_level"
 
         rr_size = None
-        if 'composite_score' in ranking_df.columns and ranking_df['composite_score'].min() >= 0:
-            rr_size = 'composite_score'
-        elif ranking_df['ev_score'].min() >= 0:
-            rr_size = 'ev_score'
+        if (
+            "composite_score" in ranking_df.columns
+            and ranking_df["composite_score"].min() >= 0
+        ):
+            rr_size = "composite_score"
+        elif ranking_df["ev_score"].min() >= 0:
+            rr_size = "ev_score"
 
         risk_reward_scatter = px.scatter(
             ranking_df,
-            x='risk_score',
-            y='reward_score',
+            x="risk_score",
+            y="reward_score",
             color=scatter_color_col,
             size=rr_size,
-            hover_data=['ticker', 'name', 'sector', 'quality_tier', 'composite_score',
-                        'ev_score', 'risk_adjusted_return', 'sharpe_like_ratio'],
+            hover_data=[
+                "ticker",
+                "name",
+                "sector",
+                "quality_tier",
+                "composite_score",
+                "ev_score",
+                "risk_adjusted_return",
+                "sharpe_like_ratio",
+            ],
             title="Risk vs Reward Analysis",
             labels={
-                'risk_score': 'Risk Score (Uncertainty & Disagreement)',
-                'reward_score': 'Reward Score (Upside & Beat Prob)',
-                'ev_score': 'Expected Value Score',
-                'risk_adjusted_return': 'Risk-Adj Return',
-                'sharpe_like_ratio': 'Sharpe-like Ratio',
-                'composite_score': 'Composite Score',
-                'quality_tier': 'Quality Tier'
+                "risk_score": "Risk Score (Uncertainty & Disagreement)",
+                "reward_score": "Reward Score (Upside & Beat Prob)",
+                "ev_score": "Expected Value Score",
+                "risk_adjusted_return": "Risk-Adj Return",
+                "sharpe_like_ratio": "Sharpe-like Ratio",
+                "composite_score": "Composite Score",
+                "quality_tier": "Quality Tier",
             },
-            template="plotly_dark"
+            template="plotly_dark",
         )
         if scatter_color_col:
             risk_reward_scatter.update_traces(marker=dict(sizemin=5))
@@ -2892,13 +4185,15 @@ def update_dashboard(*args):
         if not filtered_df.empty:
             try:
                 # Use Profitability features as example
-                prof_features = ['roe', 'roa', 'roic', 'operating_margin', 'net_margin']
+                prof_features = ["roe", "roa", "roic", "operating_margin", "net_margin"]
                 # Check which are available
                 available = [f for f in prof_features if f in filtered_df.columns]
                 if available:
                     # Run on-the-fly analysis for the Ridge plot
                     # Use a sample for speed if many stocks
-                    sample_df = filtered_df.sample(min(1000, len(filtered_df)), random_state=42)
+                    sample_df = filtered_df.sample(
+                        min(1000, len(filtered_df)), random_state=42
+                    )
                     analysis_results = bayesian_category_analysis(
                         sample_df, "Profitability", available
                     )
@@ -2924,7 +4219,10 @@ def update_dashboard(*args):
     art_summary_posterior = empty_artifact
     if ER_VIZ_AVAILABLE and not filtered_df.empty:
         try:
-            if "expected_upside_pct" in filtered_df.columns and "prob_positive_upside" in filtered_df.columns:
+            if (
+                "expected_upside_pct" in filtered_df.columns
+                and "prob_positive_upside" in filtered_df.columns
+            ):
                 art_summary_posterior = create_mc_return_distribution(filtered_df)
         except Exception as e:
             print(f"Error generating summary posterior: {e}")
@@ -2959,10 +4257,15 @@ def update_dashboard(*args):
     if ER_VIZ_AVAILABLE and not filtered_df.empty:
         try:
             qr_fig = create_quality_risk_quadrant(filtered_df)
-            art_quality_risk = html.Div([
-                html.H4("Quality-Risk Quadrant Analysis", style={"textAlign": "center", "marginTop": "20px"}),
-                dcc.Graph(figure=qr_fig),
-            ])
+            art_quality_risk = html.Div(
+                [
+                    html.H4(
+                        "Quality-Risk Quadrant Analysis",
+                        style={"textAlign": "center", "marginTop": "20px"},
+                    ),
+                    dcc.Graph(figure=qr_fig),
+                ]
+            )
         except Exception as e:
             print(f"Error generating quality-risk quadrant: {e}")
 
@@ -2981,8 +4284,10 @@ def update_dashboard(*args):
     if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_earnings.empty:
         try:
             art_beat_prob = probability_viz.create_beat_probability_posterior(
-                filtered_earnings, tickers=prob_tickers, top_n=12,
-                title="Beat Probability Posterior (Filtered)"
+                filtered_earnings,
+                tickers=prob_tickers,
+                top_n=12,
+                title="Beat Probability Posterior (Filtered)",
             )
         except Exception as e:
             print(f"Error generating beat probability posterior artifact: {e}")
@@ -3002,8 +4307,9 @@ def update_dashboard(*args):
     if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_credit.empty:
         try:
             art_ruin_diag = probability_viz.create_ruin_probability_diagnostic(
-                filtered_credit, top_n=20,
-                title="Ruin Probability Diagnostic (Filtered)"
+                filtered_credit,
+                top_n=20,
+                title="Ruin Probability Diagnostic (Filtered)",
             )
         except Exception as e:
             print(f"Error generating ruin diagnostic artifact: {e}")
@@ -3058,10 +4364,16 @@ def update_dashboard(*args):
             prof_features = ["roe", "roa", "roic", "operating_margin", "net_margin"]
             available_prof = [f for f in prof_features if f in filtered_df.columns]
             if available_prof:
-                sample = filtered_df.sample(min(1000, len(filtered_df)), random_state=42)
-                prof_results = bayesian_category_analysis(sample, "Profitability", available_prof)
-                art_bayesian_prof_ridge = probability_viz.create_bayesian_category_ridge(
-                    prof_results, category_name="Profitability"
+                sample = filtered_df.sample(
+                    min(1000, len(filtered_df)), random_state=42
+                )
+                prof_results = bayesian_category_analysis(
+                    sample, "Profitability", available_prof
+                )
+                art_bayesian_prof_ridge = (
+                    probability_viz.create_bayesian_category_ridge(
+                        prof_results, category_name="Profitability"
+                    )
                 )
         except Exception as e:
             print(f"Error generating bayesian profitability ridge: {e}")
@@ -3070,14 +4382,25 @@ def update_dashboard(*args):
     art_bayesian_sent_ridge = empty_artifact
     if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_df.empty:
         try:
-            sent_features = ["analyst_rating", "num_analysts", "short_interest_pct",
-                             "insider_ownership_pct", "institutional_ownership_pct"]
+            sent_features = [
+                "analyst_rating",
+                "num_analysts",
+                "short_interest_pct",
+                "insider_ownership_pct",
+                "institutional_ownership_pct",
+            ]
             available_sent = [f for f in sent_features if f in filtered_df.columns]
             if available_sent:
-                sample = filtered_df.sample(min(1000, len(filtered_df)), random_state=42)
-                sent_results = bayesian_category_analysis(sample, "Sentiment", available_sent)
-                art_bayesian_sent_ridge = probability_viz.create_bayesian_category_ridge(
-                    sent_results, category_name="Sentiment"
+                sample = filtered_df.sample(
+                    min(1000, len(filtered_df)), random_state=42
+                )
+                sent_results = bayesian_category_analysis(
+                    sample, "Sentiment", available_sent
+                )
+                art_bayesian_sent_ridge = (
+                    probability_viz.create_bayesian_category_ridge(
+                        sent_results, category_name="Sentiment"
+                    )
                 )
         except Exception as e:
             print(f"Error generating bayesian sentiment ridge: {e}")
@@ -3087,10 +4410,15 @@ def update_dashboard(*args):
     if ER_VIZ_AVAILABLE and not filtered_df.empty:
         try:
             dew_fig = create_distress_early_warning_dashboard(filtered_df)
-            art_distress_warning = html.Div([
-                html.H4("Distress Early Warning", style={"textAlign": "center", "marginTop": "10px"}),
-                dcc.Graph(figure=dew_fig),
-            ])
+            art_distress_warning = html.Div(
+                [
+                    html.H4(
+                        "Distress Early Warning",
+                        style={"textAlign": "center", "marginTop": "10px"},
+                    ),
+                    dcc.Graph(figure=dew_fig),
+                ]
+            )
         except Exception as e:
             print(f"Error generating distress early warning: {e}")
 
@@ -3163,13 +4491,27 @@ def update_price_target_scatter(*args):
     num_filters = len(FILTER_CONFIG)
     filter_values = collect_filter_values(*args[:num_filters])
 
-    price_target_metric, size_encoding, color_encoding, price_min, price_max, target_min, target_max = args[num_filters:]
+    (
+        price_target_metric,
+        size_encoding,
+        color_encoding,
+        price_min,
+        price_max,
+        target_min,
+        target_max,
+    ) = args[num_filters:]
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
         title="No data available",
         template="plotly_dark",
-        annotations=[{"text": "No data available to display", "showarrow": False, "font": {"size": 20}}],
+        annotations=[
+            {
+                "text": "No data available to display",
+                "showarrow": False,
+                "font": {"size": 20},
+            }
+        ],
     )
 
     try:
@@ -3185,18 +4527,37 @@ def update_price_target_scatter(*args):
         color_encoding = color_encoding or "sector"
 
         # Select required columns
-        required_cols = ["last_price", "price_target_median", "kalman_estimate",
-                         "price_target_prob_weighted", "expected_upside_pct",
-                         "market_cap", "volume_shrs", "sector", "confidence_level",
-                         "beat_classification", "ticker", "name", "industry",
-                         "country", "trading_country", "exchange"]
+        required_cols = [
+            "last_price",
+            "price_target_median",
+            "kalman_estimate",
+            "price_target_prob_weighted",
+            "expected_upside_pct",
+            "market_cap",
+            "volume_shrs",
+            "sector",
+            "confidence_level",
+            "beat_classification",
+            "ticker",
+            "name",
+            "industry",
+            "country",
+            "trading_country",
+            "exchange",
+        ]
         available_cols = [c for c in required_cols if c in filtered_df.columns]
         plot_df = filtered_df[available_cols].copy()
 
         # Ensure numeric types
-        for col in ["last_price", "price_target_median", "kalman_estimate",
-                     "price_target_prob_weighted", "expected_upside_pct",
-                     "market_cap", "volume_shrs"]:
+        for col in [
+            "last_price",
+            "price_target_median",
+            "kalman_estimate",
+            "price_target_prob_weighted",
+            "expected_upside_pct",
+            "market_cap",
+            "volume_shrs",
+        ]:
             if col in plot_df.columns:
                 plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce")
 
@@ -3222,7 +4583,13 @@ def update_price_target_scatter(*args):
             empty_range.update_layout(
                 title="No data available after filtering",
                 template="plotly_dark",
-                annotations=[{"text": "No data matches the selected filters", "showarrow": False, "font": {"size": 20}}],
+                annotations=[
+                    {
+                        "text": "No data matches the selected filters",
+                        "showarrow": False,
+                        "font": {"size": 20},
+                    }
+                ],
             )
             return empty_range
 
@@ -3239,7 +4606,9 @@ def update_price_target_scatter(*args):
                 max_val = plot_df["size_normalized"].max()
 
             if max_val > 0:
-                plot_df["size_normalized"] = (plot_df["size_normalized"] / max_val) * 20 + 4
+                plot_df["size_normalized"] = (
+                    plot_df["size_normalized"] / max_val
+                ) * 20 + 4
             else:
                 plot_df["size_normalized"] = 6
 
@@ -3278,13 +4647,19 @@ def update_price_target_scatter(*args):
         fig = px.scatter(**scatter_kwargs)
 
         # Add diagonal fair-value line (y = x)
-        max_val = max(plot_df["last_price"].max(), plot_df[price_target_metric].max()) * 1.05
-        min_val = min(plot_df["last_price"].min(), plot_df[price_target_metric].min()) * 0.95
+        max_val = (
+            max(plot_df["last_price"].max(), plot_df[price_target_metric].max()) * 1.05
+        )
+        min_val = (
+            min(plot_df["last_price"].min(), plot_df[price_target_metric].min()) * 0.95
+        )
 
         fig.add_shape(
             type="line",
-            x0=min_val, y0=min_val,
-            x1=max_val, y1=max_val,
+            x0=min_val,
+            y0=min_val,
+            x1=max_val,
+            y1=max_val,
             line=dict(color="gray", dash="dash", width=2),
             name="Fair Value (y=x)",
         )
@@ -3309,7 +4684,9 @@ def update_price_target_scatter(*args):
         error_fig.update_layout(
             title="Error in chart",
             template="plotly_dark",
-            annotations=[{"text": f"Error: {str(e)}", "showarrow": False, "font": {"size": 14}}],
+            annotations=[
+                {"text": f"Error: {str(e)}", "showarrow": False, "font": {"size": 14}}
+            ],
         )
         return error_fig
 
@@ -3343,18 +4720,28 @@ def update_zscore_tab(*args):
     metric, color_by, size_by, zscore_threshold = args[num_filters:]
 
     filtered_df = apply_global_filters(df, filter_values)
-    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
 
     if filtered_df.empty:
         return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig, []
 
     # Column mapping for selected metric
     metric_map = {
-        "expected_upside_pct": ("expected_upside_pct_zscore", "expected_upside_pct_pctile"),
+        "expected_upside_pct": (
+            "expected_upside_pct_zscore",
+            "expected_upside_pct_pctile",
+        ),
         "filtered_upside": ("filtered_upside_zscore", "filtered_upside_pctile"),
-        "expected_return_prob_weighted": ("expected_return_prob_weighted_zscore", "expected_return_prob_weighted_pctile"),
+        "expected_return_prob_weighted": (
+            "expected_return_prob_weighted_zscore",
+            "expected_return_prob_weighted_pctile",
+        ),
     }
-    zscore_col, pctile_col = metric_map.get(metric, ("expected_upside_pct_zscore", "expected_upside_pct_pctile"))
+    zscore_col, pctile_col = metric_map.get(
+        metric, ("expected_upside_pct_zscore", "expected_upside_pct_pctile")
+    )
 
     # KPI Cards
     kpi_cards = html.Div()
@@ -3363,16 +4750,89 @@ def update_zscore_tab(*args):
         below_threshold = (filtered_df[zscore_col] < -zscore_threshold).sum()
         top_quartile = (filtered_df[pctile_col] >= 75).sum()
         bottom_quartile = (filtered_df[pctile_col] <= 25).sum()
-        mean_composite = filtered_df["composite_score"].mean() if "composite_score" in filtered_df.columns else 0
+        mean_composite = (
+            filtered_df["composite_score"].mean()
+            if "composite_score" in filtered_df.columns
+            else 0
+        )
 
         kpi_cards = dbc.Row(
             [
-                dbc.Col(dbc.Card(dbc.CardBody([html.H5(f"Z > {zscore_threshold}σ (Outlier High)"), html.H3(f"{above_threshold:,}")]), color="success", inverse=True), width=2),
-                dbc.Col(dbc.Card(dbc.CardBody([html.H5(f"Z < -{zscore_threshold}σ (Outlier Low)"), html.H3(f"{below_threshold:,}")]), color="danger", inverse=True), width=2),
-                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Top Quartile (≥75th)"), html.H3(f"{top_quartile:,}")]), color="info", inverse=True), width=2),
-                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Bottom Quartile (≤25th)"), html.H3(f"{bottom_quartile:,}")]), color="warning", inverse=True), width=2),
-                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Mean Composite Score"), html.H3(f"{mean_composite:.3f}")]), color="primary", inverse=True), width=2),
-                dbc.Col(dbc.Card(dbc.CardBody([html.H5("Universe Size"), html.H3(f"{len(filtered_df):,}")]), color="secondary", inverse=True), width=2),
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
+                                html.H5(f"Z > {zscore_threshold}σ (Outlier High)"),
+                                html.H3(f"{above_threshold:,}"),
+                            ]
+                        ),
+                        color="success",
+                        inverse=True,
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
+                                html.H5(f"Z < -{zscore_threshold}σ (Outlier Low)"),
+                                html.H3(f"{below_threshold:,}"),
+                            ]
+                        ),
+                        color="danger",
+                        inverse=True,
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
+                                html.H5("Top Quartile (≥75th)"),
+                                html.H3(f"{top_quartile:,}"),
+                            ]
+                        ),
+                        color="info",
+                        inverse=True,
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
+                                html.H5("Bottom Quartile (≤25th)"),
+                                html.H3(f"{bottom_quartile:,}"),
+                            ]
+                        ),
+                        color="warning",
+                        inverse=True,
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
+                                html.H5("Mean Composite Score"),
+                                html.H3(f"{mean_composite:.3f}"),
+                            ]
+                        ),
+                        color="primary",
+                        inverse=True,
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [html.H5("Universe Size"), html.H3(f"{len(filtered_df):,}")]
+                        ),
+                        color="secondary",
+                        inverse=True,
+                    ),
+                    width=2,
+                ),
             ],
             style={"marginBottom": "10px"},
         )
@@ -3395,15 +4855,29 @@ def update_zscore_tab(*args):
             scatter_kwargs["color"] = color_by
         if size_by != "none" and size_by in filtered_df.columns:
             filtered_df_plot = filtered_df.copy()
-            filtered_df_plot[f"{size_by}_plot"] = filtered_df_plot[size_by].clip(lower=0.01)
+            filtered_df_plot[f"{size_by}_plot"] = filtered_df_plot[size_by].clip(
+                lower=0.01
+            )
             scatter_kwargs["data_frame"] = filtered_df_plot
             scatter_kwargs["size"] = f"{size_by}_plot"
 
         zscore_scatter = px.scatter(**scatter_kwargs)
         zscore_scatter.update_traces(marker=dict(sizemin=4))
-        zscore_scatter.add_hline(y=zscore_threshold, line_dash="dash", line_color=COLORS["success"], annotation_text=f"+{zscore_threshold}σ")
-        zscore_scatter.add_hline(y=-zscore_threshold, line_dash="dash", line_color=COLORS["danger"], annotation_text=f"-{zscore_threshold}σ")
-        zscore_scatter.update_layout(title=f"Z-Score vs Percentile: {metric.replace('_', ' ').title()}")
+        zscore_scatter.add_hline(
+            y=zscore_threshold,
+            line_dash="dash",
+            line_color=COLORS["success"],
+            annotation_text=f"+{zscore_threshold}σ",
+        )
+        zscore_scatter.add_hline(
+            y=-zscore_threshold,
+            line_dash="dash",
+            line_color=COLORS["danger"],
+            annotation_text=f"-{zscore_threshold}σ",
+        )
+        zscore_scatter.update_layout(
+            title=f"Z-Score vs Percentile: {metric.replace('_', ' ').title()}"
+        )
 
     # 2. Percentile distribution histogram
     pctile_hist = empty_fig
@@ -3417,7 +4891,9 @@ def update_zscore_tab(*args):
             template="plotly_dark",
             color_discrete_sequence=["#375a7f"],
         )
-        pctile_hist.add_vline(x=50, line_dash="dash", line_color="white", annotation_text="Median")
+        pctile_hist.add_vline(
+            x=50, line_dash="dash", line_color="white", annotation_text="Median"
+        )
 
     # 3. Z-Score box plot by sector
     sector_box = empty_fig
@@ -3456,22 +4932,51 @@ def update_zscore_tab(*args):
 
     # 5. Table data
     table_cols = [
-        "ticker", "name", "sector", "quality_tier",
-        "expected_upside_pct", "expected_upside_pct_zscore", "expected_upside_pct_pctile",
-        "filtered_upside", "filtered_upside_zscore", "filtered_upside_pctile",
-        "expected_return_prob_weighted_zscore", "expected_return_prob_weighted_pctile",
-        "composite_score", "confidence_level", "signal",
+        "ticker",
+        "name",
+        "country",
+        "trading_country",
+        "unit",
+        "sector",
+        "industry",
+        "exchange",
+        "quality_tier",
+        "expected_upside_pct",
+        "expected_upside_pct_zscore",
+        "expected_upside_pct_pctile",
+        "expected_upside_pct",
+        "expected_return_prob_weighted",
+        "filtered_upside",
+        "filtered_upside_zscore",
+        "filtered_upside_pctile",
+        "expected_return_prob_weighted_zscore",
+        "expected_return_prob_weighted_pctile",
+        "posterior_beat_prob",
+        "beat_classification",
+        "agreement_score",
+        "weighted_agreement",
+        "composite_score",
+        "confidence_level",
+        "signal",
+        "price_target_prob_weighted",
+        "price_target_mc"
     ]
     available_table_cols = [c for c in table_cols if c in filtered_df.columns]
-    sort_col = zscore_col if zscore_col in filtered_df.columns else "expected_upside_pct"
-    table_data = (
-        filtered_df
-        .nlargest(50, sort_col)
-        [available_table_cols]
-        .to_dict("records")
+    sort_col = (
+        zscore_col if zscore_col in filtered_df.columns else "expected_upside_pct"
+    )
+    table_data = filtered_df.nlargest(50, sort_col)[available_table_cols].to_dict(
+        "records"
     )
 
-    return kpi_cards, zscore_scatter, pctile_hist, sector_box, composite_pctile, table_data
+    return (
+        kpi_cards,
+        zscore_scatter,
+        pctile_hist,
+        sector_box,
+        composite_pctile,
+        table_data,
+    )
 
 
 # =============================================================================
@@ -3500,10 +5005,18 @@ def update_earnings_calendar(*args):
     days_ahead, sort_by = args[num_filters:]
 
     filtered_df = apply_global_filters(df, filter_values)
-    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
 
     if filtered_df.empty or "next_earnings" not in filtered_df.columns:
-        return html.Div("No earnings data available"), empty_fig, empty_fig, [], html.Div()
+        return (
+            html.Div("No earnings data available"),
+            empty_fig,
+            empty_fig,
+            [],
+            html.Div(),
+        )
 
     # Parse dates and filter to upcoming window
     earn_df = filtered_df.copy()
@@ -3518,16 +5031,59 @@ def update_earnings_calendar(*args):
 
     # KPI Cards
     total_upcoming = len(upcoming)
-    confirmed = (upcoming["next_earnings_status"] == "confirmed").sum() if "next_earnings_status" in upcoming.columns else 0
-    estimated = (upcoming["next_earnings_status"] == "estimated").sum() if "next_earnings_status" in upcoming.columns else 0
-    this_week = upcoming[upcoming["next_earnings"] <= today + pd.Timedelta(days=7)].shape[0]
+    confirmed = (
+        (upcoming["next_earnings_status"] == "confirmed").sum()
+        if "next_earnings_status" in upcoming.columns
+        else 0
+    )
+    estimated = (
+        (upcoming["next_earnings_status"] == "estimated").sum()
+        if "next_earnings_status" in upcoming.columns
+        else 0
+    )
+    this_week = upcoming[
+        upcoming["next_earnings"] <= today + pd.Timedelta(days=7)
+    ].shape[0]
 
     kpi_cards = dbc.Row(
         [
-            dbc.Col(dbc.Card(dbc.CardBody([html.H5(f"Reporting ({days_ahead}d)"), html.H3(f"{total_upcoming:,}")]), color="primary", inverse=True), width=3),
-            dbc.Col(dbc.Card(dbc.CardBody([html.H5("Confirmed"), html.H3(f"{confirmed:,}")]), color="success", inverse=True), width=3),
-            dbc.Col(dbc.Card(dbc.CardBody([html.H5("Estimated"), html.H3(f"{estimated:,}")]), color="warning", inverse=True), width=3),
-            dbc.Col(dbc.Card(dbc.CardBody([html.H5("This Week"), html.H3(f"{this_week:,}")]), color="info", inverse=True), width=3),
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.H5(f"Reporting ({days_ahead}d)"),
+                            html.H3(f"{total_upcoming:,}"),
+                        ]
+                    ),
+                    color="primary",
+                    inverse=True,
+                ),
+                width=3,
+            ),
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody([html.H5("Confirmed"), html.H3(f"{confirmed:,}")]),
+                    color="success",
+                    inverse=True,
+                ),
+                width=3,
+            ),
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody([html.H5("Estimated"), html.H3(f"{estimated:,}")]),
+                    color="warning",
+                    inverse=True,
+                ),
+                width=3,
+            ),
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody([html.H5("This Week"), html.H3(f"{this_week:,}")]),
+                    color="info",
+                    inverse=True,
+                ),
+                width=3,
+            ),
         ],
         style={"marginBottom": "10px"},
     )
@@ -3553,7 +5109,9 @@ def update_earnings_calendar(*args):
     # Status breakdown
     status_fig = empty_fig
     if not upcoming.empty and "next_earnings_status" in upcoming.columns:
-        status_counts = upcoming.groupby("next_earnings_status").size().reset_index(name="count")
+        status_counts = (
+            upcoming.groupby("next_earnings_status").size().reset_index(name="count")
+        )
         status_fig = px.pie(
             status_counts,
             values="count",
@@ -3566,17 +5124,33 @@ def update_earnings_calendar(*args):
     # Table data
     sort_by = sort_by or "next_earnings"
     table_cols = [
-        "ticker", "name", "country","trading_country", "exchange", "sector", "industry", "next_earnings",
-        "next_earnings_status", "next_earnings_when",
-        "next_fiscal_quarter", "earnings_report_frequency",
-        "expected_upside_pct", "composite_score",
-        "signal", "quality_tier",
+        "ticker",
+        "name",
+        "country",
+        "trading_country",
+        "exchange",
+        "sector",
+        "industry",
+        "next_earnings",
+        "next_earnings_status",
+        "next_earnings_when",
+        "next_fiscal_quarter",
+        "earnings_report_frequency",
+        "expected_upside_pct",
+        "composite_score",
+        "signal",
+        "quality_tier",
+        "posterior_beat_prob",
+        "beat_classification",
+        "agreement_score",
     ]
     available_cols = [c for c in table_cols if c in upcoming.columns]
 
     if sort_by in upcoming.columns:
         ascending = True if sort_by == "next_earnings" else False
-        table_df = upcoming.sort_values(sort_by, ascending=ascending)[available_cols].head(50)
+        table_df = upcoming.sort_values(sort_by, ascending=ascending)[
+            available_cols
+        ].head(50)
     else:
         table_df = upcoming[available_cols].head(50)
 
@@ -3591,13 +5165,21 @@ def update_earnings_calendar(*args):
     art_earnings_prob = html.Div()
     if ER_VIZ_AVAILABLE:
         filtered_earnings = apply_global_filters(df_earnings, filter_values)
-        if not filtered_earnings.empty and "posterior_beat_prob" in filtered_earnings.columns:
+        if (
+            not filtered_earnings.empty
+            and "posterior_beat_prob" in filtered_earnings.columns
+        ):
             try:
                 ep_fig = create_earnings_probability_dashboard(filtered_earnings)
-                art_earnings_prob = html.Div([
-                    html.H4("Earnings Probability Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
-                    dcc.Graph(figure=ep_fig),
-                ])
+                art_earnings_prob = html.Div(
+                    [
+                        html.H4(
+                            "Earnings Probability Dashboard",
+                            style={"textAlign": "center", "marginTop": "20px"},
+                        ),
+                        dcc.Graph(figure=ep_fig),
+                    ]
+                )
             except Exception as e:
                 print(f"Error generating earnings probability dashboard: {e}")
 
@@ -3626,7 +5208,9 @@ def update_monte_carlo(*args):
     num_filters = len(FILTER_CONFIG)
     filter_values = collect_filter_values(*args[:num_filters])
 
-    num_simulations, loss_ratio, weighting, target_return, signal_filter = args[num_filters:]
+    num_simulations, loss_ratio, weighting, target_return, signal_filter = args[
+        num_filters:
+    ]
 
     # Apply ALL global filters consistently
     mc_df = apply_global_filters(df, filter_values)
@@ -3642,7 +5226,9 @@ def update_monte_carlo(*args):
     target_return = target_return or 10.0
 
     # Run simulation
-    portfolio_returns, stats = run_monte_carlo_simulation(mc_df, num_simulations, loss_ratio, weighting, target_return)
+    portfolio_returns, stats = run_monte_carlo_simulation(
+        mc_df, num_simulations, loss_ratio, weighting, target_return
+    )
 
     # Create empty figures if no data
     if len(portfolio_returns) == 0:
@@ -3650,29 +5236,45 @@ def update_monte_carlo(*args):
         empty_fig.update_layout(
             title="No data available",
             template="plotly_dark",
-            annotations=[{"text": "No valid data for simulation", "showarrow": False, "font": {"size": 16}}]
+            annotations=[
+                {
+                    "text": "No valid data for simulation",
+                    "showarrow": False,
+                    "font": {"size": 16},
+                }
+            ],
         )
-        empty_artifact = go.Figure().update_layout(title="No data available", template="plotly_dark")
-        return empty_fig, empty_fig, html.Div("No data available for simulation", style={"color": "red"}), empty_artifact, empty_artifact
+        empty_artifact = go.Figure().update_layout(
+            title="No data available", template="plotly_dark"
+        )
+        return (
+            empty_fig,
+            empty_fig,
+            html.Div("No data available for simulation", style={"color": "red"}),
+            empty_artifact,
+            empty_artifact,
+        )
 
     # Percentile Distribution Chart
     percentiles = np.arange(0, 101, 1)
     percentile_values = np.percentile(portfolio_returns, percentiles)
 
     fig_percentile = go.Figure()
-    fig_percentile.add_trace(go.Scatter(
-        x=percentiles,
-        y=percentile_values,
-        mode="lines",
-        name="Portfolio Return",
-        line=dict(width=2, color="#00bc8c")
-    ))
+    fig_percentile.add_trace(
+        go.Scatter(
+            x=percentiles,
+            y=percentile_values,
+            mode="lines",
+            name="Portfolio Return",
+            line=dict(width=2, color="#00bc8c"),
+        )
+    )
     fig_percentile.update_layout(
         xaxis_title="Percentile",
         yaxis_title="Simulated Portfolio Return (%)",
         hovermode="x unified",
         margin=dict(l=60, r=20, t=20, b=60),
-        template="plotly_dark"
+        template="plotly_dark",
     )
 
     # Return Distribution Fit Chart — dynamically built from MC simulation results
@@ -3681,41 +5283,68 @@ def update_monte_carlo(*args):
         from scipy import stats as sp_stats
 
         # Histogram of simulated portfolio returns (probability density)
-        fig_distribution.add_trace(go.Histogram(
-            x=portfolio_returns, nbinsx=100, histnorm="probability density",
-            name="Observed", marker_color="#0A7EA4", opacity=0.6,
-        ))
+        fig_distribution.add_trace(
+            go.Histogram(
+                x=portfolio_returns,
+                nbinsx=100,
+                histnorm="probability density",
+                name="Observed",
+                marker_color="#0A7EA4",
+                opacity=0.6,
+            )
+        )
 
         # Fit parametric distributions to the simulated returns
         x_fit = np.linspace(portfolio_returns.min(), portfolio_returns.max(), 500)
 
         # Normal fit
         mu_n, sigma_n = sp_stats.norm.fit(portfolio_returns)
-        fig_distribution.add_trace(go.Scatter(
-            x=x_fit, y=sp_stats.norm.pdf(x_fit, mu_n, sigma_n),
-            mode="lines", name="Normal", line=dict(color="#00A878", width=2),
-        ))
+        fig_distribution.add_trace(
+            go.Scatter(
+                x=x_fit,
+                y=sp_stats.norm.pdf(x_fit, mu_n, sigma_n),
+                mode="lines",
+                name="Normal",
+                line=dict(color="#00A878", width=2),
+            )
+        )
 
         # Student-t fit
         df_t, loc_t, scale_t = sp_stats.t.fit(portfolio_returns)
-        fig_distribution.add_trace(go.Scatter(
-            x=x_fit, y=sp_stats.t.pdf(x_fit, df_t, loc_t, scale_t),
-            mode="lines", name="Student-t", line=dict(color="#6C63FF", width=2),
-        ))
+        fig_distribution.add_trace(
+            go.Scatter(
+                x=x_fit,
+                y=sp_stats.t.pdf(x_fit, df_t, loc_t, scale_t),
+                mode="lines",
+                name="Student-t",
+                line=dict(color="#6C63FF", width=2),
+            )
+        )
 
         # Skew-Normal fit
         a_sn, loc_sn, scale_sn = sp_stats.skewnorm.fit(portfolio_returns)
-        fig_distribution.add_trace(go.Scatter(
-            x=x_fit, y=sp_stats.skewnorm.pdf(x_fit, a_sn, loc_sn, scale_sn),
-            mode="lines", name="Skew-Normal", line=dict(color="#FF6B6B", width=2),
-        ))
+        fig_distribution.add_trace(
+            go.Scatter(
+                x=x_fit,
+                y=sp_stats.skewnorm.pdf(x_fit, a_sn, loc_sn, scale_sn),
+                mode="lines",
+                name="Skew-Normal",
+                line=dict(color="#FF6B6B", width=2),
+            )
+        )
     except Exception as e:
         print(f"Distribution fit failed, falling back to histogram: {e}")
         fig_distribution = go.Figure()
-        fig_distribution.add_trace(go.Histogram(
-            x=portfolio_returns, nbinsx=100, histnorm="probability density",
-            name="Observed", marker_color="#0A7EA4", opacity=0.6,
-        ))
+        fig_distribution.add_trace(
+            go.Histogram(
+                x=portfolio_returns,
+                nbinsx=100,
+                histnorm="probability density",
+                name="Observed",
+                marker_color="#0A7EA4",
+                opacity=0.6,
+            )
+        )
 
     fig_distribution.update_layout(
         title="MC Return Distribution — Parametric Fit Overlay",
@@ -3729,35 +5358,53 @@ def update_monte_carlo(*args):
     # Add target return vertical line when set
     if target_return and target_return > 0:
         fig_distribution.add_vline(
-            x=target_return, line_dash="dash", line_color="orange", line_width=2,
+            x=target_return,
+            line_dash="dash",
+            line_color="orange",
+            line_width=2,
             annotation_text=f"Target: {target_return:.1f}%",
             annotation_position="top right",
             annotation_font_color="orange",
         )
 
     # Stats Display
-    stats_content = html.Div([
-        html.B(f"Simulation Results ({stats['num_simulations']:,} runs, {stats['num_stocks']} stocks)"),
-        html.Br(),
-        html.Span(f"Value at Risk (5th percentile): {stats['var_5']:.2f}%"),
-        html.Br(),
-        html.Span(f"Conditional VaR (avg below 5th): {stats['cvar_5']:.2f}%"),
-        html.Br(),
-        html.Span(f"Median Return: {stats['median']:.2f}%"),
-        html.Br(),
-        html.Span(f"Probability of Positive Return: {stats['prob_positive']:.1f}%"),
-        html.Br(),
-        html.Span(f"Probability of Beating {stats['target_return']:.0f}% Target: {stats['prob_target']:.1f}%"),
-        html.Br(),
-        html.Span(f"Percentiles: 5th: {stats['p5']:.2f}% | 25th: {stats['p25']:.2f}% | 50th: {stats['p50']:.2f}% | 75th: {stats['p75']:.2f}% | 95th: {stats['p95']:.2f}%"),
-    ])
+    stats_content = html.Div(
+        [
+            html.B(
+                f"Simulation Results ({stats['num_simulations']:,} runs, {stats['num_stocks']} stocks)"
+            ),
+            html.Br(),
+            html.Span(f"Value at Risk (5th percentile): {stats['var_5']:.2f}%"),
+            html.Br(),
+            html.Span(f"Conditional VaR (avg below 5th): {stats['cvar_5']:.2f}%"),
+            html.Br(),
+            html.Span(f"Median Return: {stats['median']:.2f}%"),
+            html.Br(),
+            html.Span(f"Probability of Positive Return: {stats['prob_positive']:.2f}%"),
+            html.Br(),
+            html.Span(
+                f"Probability of Beating {stats['target_return']:.2f}% Target: {stats['prob_target']:.2f}%"
+            ),
+            html.Br(),
+            html.Span(
+                f"Percentiles: 5th: {stats['p5']:.2f}% | 25th: {stats['p25']:.2f}% | 50th: {stats['p50']:.2f}% | 75th: {stats['p75']:.2f}% | 95th: {stats['p95']:.2f}%"
+            ),
+        ]
+    )
 
     # Dynamic artifact: MC Return Distribution & VaR Analysis
-    art_mc_dist = go.Figure().update_layout(title="MC Distribution not available", template="plotly_dark")
-    art_var = go.Figure().update_layout(title="VaR Analysis not available", template="plotly_dark")
+    art_mc_dist = go.Figure().update_layout(
+        title="MC Distribution not available", template="plotly_dark"
+    )
+    art_var = go.Figure().update_layout(
+        title="VaR Analysis not available", template="plotly_dark"
+    )
     if ER_VIZ_AVAILABLE and not mc_df.empty:
         try:
-            if "expected_upside_pct" in mc_df.columns and "prob_positive_upside" in mc_df.columns:
+            if (
+                "expected_upside_pct" in mc_df.columns
+                and "prob_positive_upside" in mc_df.columns
+            ):
                 art_mc_dist = create_mc_return_distribution(mc_df)
         except Exception as e:
             print(f"Error generating MC distribution artifact: {e}")
@@ -3790,7 +5437,9 @@ def update_uncertainty_calibration(*args):
     filter_values = collect_filter_values(*args)
     filtered_df = apply_global_filters(df, filter_values)
 
-    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
 
     if filtered_df.empty:
         return empty_fig, empty_fig, empty_fig, empty_fig, html.Div("No data")
@@ -3804,7 +5453,12 @@ def update_uncertainty_calibration(*args):
         if "agreement_score" in filtered_df.columns:
             bin_stats = (
                 filtered_df.groupby("prob_bin", observed=True)
-                .agg({"posterior_beat_prob": "mean", "agreement_score": lambda x: (x >= 3).mean()})
+                .agg(
+                    {
+                        "posterior_beat_prob": "mean",
+                        "agreement_score": lambda x: (x >= 3).mean(),
+                    }
+                )
                 .dropna()
             )
 
@@ -3837,12 +5491,17 @@ def update_uncertainty_calibration(*args):
 
     # 2. Prediction Interval Coverage
     coverage_fig = go.Figure()
-    if all(col in filtered_df.columns for col in ["expected_upside_pct", "filtered_upside"]):
-        spread = filtered_df["expected_upside_pct"].std() if len(filtered_df) > 1 else 10
+    if all(
+        col in filtered_df.columns for col in ["expected_upside_pct", "filtered_upside"]
+    ):
+        spread = (
+            filtered_df["expected_upside_pct"].std() if len(filtered_df) > 1 else 10
+        )
         lower = filtered_df["expected_upside_pct"] - 1.96 * spread
         upper = filtered_df["expected_upside_pct"] + 1.96 * spread
         in_interval = (
-            (filtered_df["filtered_upside"] >= lower) & (filtered_df["filtered_upside"] <= upper)
+            (filtered_df["filtered_upside"] >= lower)
+            & (filtered_df["filtered_upside"] <= upper)
         ).mean() * 100
 
         coverage_fig = go.Figure(
@@ -3921,7 +5580,8 @@ def update_uncertainty_calibration(*args):
                                             html.H5("Mean Confidence Score"),
                                             html.H3(
                                                 f"{filtered_df['confidence_score'].mean():.3f}"
-                                                if "confidence_score" in filtered_df.columns
+                                                if "confidence_score"
+                                                in filtered_df.columns
                                                 else "N/A"
                                             ),
                                         ]
@@ -3942,7 +5602,8 @@ def update_uncertainty_calibration(*args):
                                             html.H5("Model Agreement Rate"),
                                             html.H3(
                                                 f"{(filtered_df['agreement_score'] >= 3).mean() * 100:.1f}%"
-                                                if "agreement_score" in filtered_df.columns
+                                                if "agreement_score"
+                                                in filtered_df.columns
                                                 else "N/A"
                                             ),
                                         ]
@@ -3963,7 +5624,8 @@ def update_uncertainty_calibration(*args):
                                             html.H5("High Confidence %"),
                                             html.H3(
                                                 f"{(filtered_df['confidence_level'] == 'high').mean() * 100:.1f}%"
-                                                if "confidence_level" in filtered_df.columns
+                                                if "confidence_level"
+                                                in filtered_df.columns
                                                 else "N/A"
                                             ),
                                         ]
@@ -3984,7 +5646,8 @@ def update_uncertainty_calibration(*args):
                                             html.H5("Likely Beat %"),
                                             html.H3(
                                                 f"{(filtered_df['beat_classification'] == 'likely_beat').mean() * 100:.1f}%"
-                                                if "beat_classification" in filtered_df.columns
+                                                if "beat_classification"
+                                                in filtered_df.columns
                                                 else "N/A"
                                             ),
                                         ]
@@ -4002,7 +5665,13 @@ def update_uncertainty_calibration(*args):
         style={"marginTop": "20px"},
     )
 
-    return calibration_fig, coverage_fig, uncertainty_fig, agreement_heatmap, metrics_display
+    return (
+        calibration_fig,
+        coverage_fig,
+        uncertainty_fig,
+        agreement_heatmap,
+        metrics_display,
+    )
 
 
 # =============================================================================
@@ -4025,7 +5694,9 @@ def update_safety_rails(*args):
     filter_values = collect_filter_values(*args)
     filtered_df = apply_global_filters(df, filter_values)
 
-    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
 
     if filtered_df.empty:
         return empty_fig, empty_fig, empty_fig, empty_fig, html.Div("No data")
@@ -4080,9 +5751,15 @@ def update_safety_rails(*args):
 
     # 2. Outlier Detection Chart
     outlier_fig = go.Figure()
-    numeric_cols = ["expected_upside_pct", "filtered_upside", "prob_positive_upside",
-                    "composite_score", "weighted_agreement",
-                    "expected_upside_pct_zscore", "filtered_upside_zscore"]
+    numeric_cols = [
+        "expected_upside_pct",
+        "filtered_upside",
+        "prob_positive_upside",
+        "composite_score",
+        "weighted_agreement",
+        "expected_upside_pct_zscore",
+        "filtered_upside_zscore",
+    ]
     outlier_data = []
     for col in numeric_cols:
         if col in filtered_df.columns:
@@ -4093,7 +5770,11 @@ def update_safety_rails(*args):
             upper = q3 + 1.5 * iqr
             outliers = ((filtered_df[col] < lower) | (filtered_df[col] > upper)).sum()
             outlier_data.append(
-                {"Column": col, "Outliers": outliers, "Pct": outliers / len(filtered_df) * 100}
+                {
+                    "Column": col,
+                    "Outliers": outliers,
+                    "Pct": outliers / len(filtered_df) * 100,
+                }
             )
 
     if outlier_data:
@@ -4134,15 +5815,21 @@ def update_safety_rails(*args):
 
     if "expected_upside_pct" in filtered_df.columns:
         extreme_upside = (filtered_df["expected_upside_pct"].abs() > 200).mean() * 100
-        safety_checks.append({"Check": "Extreme Upside (>200%)", "Violation %": extreme_upside})
+        safety_checks.append(
+            {"Check": "Extreme Upside (>200%)", "Violation %": extreme_upside}
+        )
 
     if "agreement_score" in filtered_df.columns:
         no_agreement = (filtered_df["agreement_score"] == 0).mean() * 100
-        safety_checks.append({"Check": "Zero Model Agreement", "Violation %": no_agreement})
+        safety_checks.append(
+            {"Check": "Zero Model Agreement", "Violation %": no_agreement}
+        )
 
     if "confidence_score" in filtered_df.columns:
         low_confidence = (filtered_df["confidence_score"] < 0.2).mean() * 100
-        safety_checks.append({"Check": "Very Low Confidence (<0.2)", "Violation %": low_confidence})
+        safety_checks.append(
+            {"Check": "Very Low Confidence (<0.2)", "Violation %": low_confidence}
+        )
 
     if safety_checks:
         safety_df = pd.DataFrame(safety_checks)
@@ -4171,7 +5858,10 @@ def update_safety_rails(*args):
                             dbc.Card(
                                 [
                                     dbc.CardBody(
-                                        [html.H5("Total Records"), html.H3(f"{total_rows:,}")]
+                                        [
+                                            html.H5("Total Records"),
+                                            html.H3(f"{total_rows:,}"),
+                                        ]
                                     )
                                 ],
                                 color="info",
@@ -4188,7 +5878,7 @@ def update_safety_rails(*args):
                                         [
                                             html.H5("Complete Records"),
                                             html.H3(
-                                                f"{complete_rows:,} ({complete_rows/total_rows*100:.1f}%)"
+                                                f"{complete_rows:,} ({complete_rows / total_rows * 100:.1f}%)"
                                                 if total_rows > 0
                                                 else "N/A"
                                             ),
@@ -4197,7 +5887,8 @@ def update_safety_rails(*args):
                                 ],
                                 color=(
                                     "success"
-                                    if total_rows > 0 and complete_rows / total_rows > 0.9
+                                    if total_rows > 0
+                                    and complete_rows / total_rows > 0.9
                                     else "warning"
                                 ),
                                 inverse=True,
@@ -4234,7 +5925,7 @@ def update_safety_rails(*args):
                                         [
                                             html.H5("Data Quality Score"),
                                             html.H3(
-                                                f"{min(100, np.mean([c['Completeness'] for c in completeness_data]) - sum(s['Violation %'] for s in safety_checks)/10):.0f}/100"
+                                                f"{min(100, np.mean([c['Completeness'] for c in completeness_data]) - sum(s['Violation %'] for s in safety_checks) / 10):.0f}/100"
                                                 if completeness_data
                                                 else "N/A"
                                             ),
@@ -4275,7 +5966,9 @@ def update_model_governance(*args):
     filter_values = collect_filter_values(*args)
     filtered_df = apply_global_filters(df, filter_values)
 
-    empty_fig = go.Figure().update_layout(title="No data available", template="plotly_dark")
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
 
     # 1. Model Performance Trend
     performance_fig = go.Figure()
@@ -4289,7 +5982,13 @@ def update_model_governance(*args):
         base_accuracy = 0.65 + i * 0.05
         accuracies = base_accuracy + np.random.normal(0, 0.02, len(dates))
         performance_fig.add_trace(
-            go.Scatter(x=dates, y=accuracies, mode="lines+markers", name=model, line=dict(width=2))
+            go.Scatter(
+                x=dates,
+                y=accuracies,
+                mode="lines+markers",
+                name=model,
+                line=dict(width=2),
+            )
         )
 
     performance_fig.update_layout(
@@ -4318,7 +6017,10 @@ def update_model_governance(*args):
         template="plotly_dark",
     )
     drift_fig.add_hline(
-        y=0.05, line_dash="dash", line_color="red", annotation_text="Drift Threshold (5%)"
+        y=0.05,
+        line_dash="dash",
+        line_color="red",
+        annotation_text="Drift Threshold (5%)",
     )
 
     # 3. Model Registry Table
@@ -4361,7 +6063,11 @@ def update_model_governance(*args):
                     dbc.Col(
                         [
                             dbc.Card(
-                                [dbc.CardBody([html.H5("Active Models"), html.H3("4")])],
+                                [
+                                    dbc.CardBody(
+                                        [html.H5("Active Models"), html.H3("4")]
+                                    )
+                                ],
                                 color="info",
                                 inverse=True,
                             )
@@ -4371,7 +6077,14 @@ def update_model_governance(*args):
                     dbc.Col(
                         [
                             dbc.Card(
-                                [dbc.CardBody([html.H5("Avg Model Accuracy"), html.H3("71.2%")])],
+                                [
+                                    dbc.CardBody(
+                                        [
+                                            html.H5("Avg Model Accuracy"),
+                                            html.H3("71.2%"),
+                                        ]
+                                    )
+                                ],
                                 color="success",
                                 inverse=True,
                             )
@@ -4381,7 +6094,11 @@ def update_model_governance(*args):
                     dbc.Col(
                         [
                             dbc.Card(
-                                [dbc.CardBody([html.H5("Models in Drift"), html.H3("0")])],
+                                [
+                                    dbc.CardBody(
+                                        [html.H5("Models in Drift"), html.H3("0")]
+                                    )
+                                ],
                                 color="success",
                                 inverse=True,
                             )
@@ -4391,7 +6108,11 @@ def update_model_governance(*args):
                     dbc.Col(
                         [
                             dbc.Card(
-                                [dbc.CardBody([html.H5("Last Audit"), html.H3("2026-02-15")])],
+                                [
+                                    dbc.CardBody(
+                                        [html.H5("Last Audit"), html.H3("2026-02-15")]
+                                    )
+                                ],
                                 color="primary",
                                 inverse=True,
                             )
@@ -4457,13 +6178,21 @@ def update_beta_capm(*args):
     num_filters = len(FILTER_CONFIG)
     filter_values = collect_filter_values(*args[:num_filters])
 
-    risk_free_rate, market_return, size_encoding, capm_confidence_level = args[num_filters:]
+    risk_free_rate, market_return, size_encoding, capm_confidence_level = args[
+        num_filters:
+    ]
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
         title="No data available",
         template="plotly_dark",
-        annotations=[{"text": "No data matches the selected filters", "showarrow": False, "font": {"size": 16}}],
+        annotations=[
+            {
+                "text": "No data matches the selected filters",
+                "showarrow": False,
+                "font": {"size": 16},
+            }
+        ],
     )
 
     scatter_fig = empty_fig
@@ -4479,7 +6208,9 @@ def update_beta_capm(*args):
         if capm_confidence_level == "high_only":
             filtered_df = filtered_df[filtered_df["confidence_level"] == "High"]
         elif capm_confidence_level == "high_medium":
-            filtered_df = filtered_df[filtered_df["confidence_level"].isin(["High", "Medium"])]
+            filtered_df = filtered_df[
+                filtered_df["confidence_level"].isin(["High", "Medium"])
+            ]
 
         if filtered_df.empty:
             return empty_fig, "", empty_fig, ""
@@ -4494,7 +6225,9 @@ def update_beta_capm(*args):
         filtered_df["capm_return"] = filtered_df["beta"].apply(
             lambda b: _calculate_capm_expected_return(b, rf, rm)
         )
-        filtered_df["alpha"] = filtered_df["expected_upside_pct"] - filtered_df["capm_return"]
+        filtered_df["alpha"] = (
+            filtered_df["expected_upside_pct"] - filtered_df["capm_return"]
+        )
 
         # --- Scatter Chart: Beta vs Expected Return ---
         scatter_kwargs = dict(
@@ -4552,10 +6285,16 @@ def update_beta_capm(*args):
         top_n = 15
         top_stocks = df_sorted.head(top_n)
         bottom_stocks = df_sorted.tail(top_n)
-        df_display = pd.concat([top_stocks, bottom_stocks]).drop_duplicates(subset=["ticker"]).sort_values("alpha", ascending=True)
+        df_display = (
+            pd.concat([top_stocks, bottom_stocks])
+            .drop_duplicates(subset=["ticker"])
+            .sort_values("alpha", ascending=True)
+        )
 
         df_display = df_display.copy()
-        df_display["alpha_color"] = df_display["alpha"].apply(lambda x: "Positive" if x > 0 else "Negative")
+        df_display["alpha_color"] = df_display["alpha"].apply(
+            lambda x: "Positive" if x > 0 else "Negative"
+        )
 
         bar_fig = px.bar(
             df_display,
@@ -4594,6 +6333,7 @@ def update_beta_capm(*args):
 
     return scatter_fig, scatter_error, bar_fig, bar_error
 
+
 # =============================================================================
 # Kelly Criterion Position Sizer Callback
 # =============================================================================
@@ -4618,7 +6358,7 @@ def update_beta_capm(*args):
         Input("kelly-scatter-color-dropdown", "value"),
         Input("kelly-scatter-size-dropdown", "value"),
     ],
-    )
+)
 def update_kelly_criterion(*args):
     """Update Kelly Criterion Position Sizer tab visualizations."""
     import traceback as tb
@@ -4649,7 +6389,13 @@ def update_kelly_criterion(*args):
     empty_fig.update_layout(
         title="No data available",
         template="plotly_dark",
-        annotations=[{"text": "No data matches the selected filters", "showarrow": False, "font": {"size": 16}}],
+        annotations=[
+            {
+                "text": "No data matches the selected filters",
+                "showarrow": False,
+                "font": {"size": 16},
+            }
+        ],
     )
 
     bar_fig = empty_fig
@@ -4671,7 +6417,14 @@ def update_kelly_criterion(*args):
             filtered_df = filtered_df[filtered_df["confidence_score"] >= min_confidence]
 
         if filtered_df.empty:
-            return empty_fig, "", empty_fig, "", html.Div("No data after confidence filter"), []
+            return (
+                empty_fig,
+                "",
+                empty_fig,
+                "",
+                html.Div("No data after confidence filter"),
+                [],
+            )
 
         # Calculate Kelly metrics
         kelly_df = calculate_kelly_metrics(
@@ -4686,59 +6439,96 @@ def update_kelly_criterion(*args):
         kelly_df = kelly_df[kelly_df["kelly_pct"] > 0]
 
         if kelly_df.empty:
-            return empty_fig, "", empty_fig, "", html.Div("No positions with positive Kelly %"), []
+            return (
+                empty_fig,
+                "",
+                empty_fig,
+                "",
+                html.Div("No positions with positive Kelly %"),
+                [],
+            )
 
         # ----- KPI Summary Cards -----
         total_positions = len(kelly_df)
         mean_kelly = kelly_df["kelly_pct"].mean()
         max_kelly = kelly_df["kelly_pct"].max()
-        top_ticker = kelly_df.nlargest(1, "kelly_pct")["ticker"].values[0] if total_positions > 0 else "N/A"
+        top_ticker = (
+            kelly_df.nlargest(1, "kelly_pct")["ticker"].values[0]
+            if total_positions > 0
+            else "N/A"
+        )
         total_kelly_raw_sum = kelly_df["kelly_raw"].sum()
 
         kpi_summary = dbc.Row(
             [
                 dbc.Col(
                     dbc.Card(
-                        dbc.CardBody([html.H5("Eligible Positions"), html.H3(f"{total_positions:,}")]),
-                        color="primary", inverse=True,
+                        dbc.CardBody(
+                            [
+                                html.H5("Eligible Positions"),
+                                html.H3(f"{total_positions:,}"),
+                            ]
+                        ),
+                        color="primary",
+                        inverse=True,
                     ),
                     width=2,
                 ),
                 dbc.Col(
                     dbc.Card(
-                        dbc.CardBody([html.H5("Mean Kelly %"), html.H3(f"{mean_kelly:.2f}%")]),
-                        color="info", inverse=True,
+                        dbc.CardBody(
+                            [html.H5("Mean Kelly %"), html.H3(f"{mean_kelly:.2f}%")]
+                        ),
+                        color="info",
+                        inverse=True,
                     ),
                     width=2,
                 ),
                 dbc.Col(
                     dbc.Card(
-                        dbc.CardBody([html.H5("Max Kelly %"), html.H3(f"{max_kelly:.2f}%")]),
-                        color="success", inverse=True,
+                        dbc.CardBody(
+                            [html.H5("Max Kelly %"), html.H3(f"{max_kelly:.2f}%")]
+                        ),
+                        color="success",
+                        inverse=True,
                     ),
                     width=2,
                 ),
                 dbc.Col(
                     dbc.Card(
-                        dbc.CardBody([html.H5("Top Position"), html.H3(f"{top_ticker}")]),
-                        color="warning", inverse=True,
+                        dbc.CardBody(
+                            [html.H5("Top Position"), html.H3(f"{top_ticker}")]
+                        ),
+                        color="warning",
+                        inverse=True,
                     ),
                     width=2,
                 ),
                 dbc.Col(
                     dbc.Card(
-                        dbc.CardBody([html.H5("Sum Raw Kelly"), html.H3(f"{total_kelly_raw_sum:.3f}")]),
-                        color="secondary", inverse=True,
+                        dbc.CardBody(
+                            [
+                                html.H5("Sum Raw Kelly"),
+                                html.H3(f"{total_kelly_raw_sum:.3f}"),
+                            ]
+                        ),
+                        color="secondary",
+                        inverse=True,
                     ),
                     width=2,
                 ),
                 dbc.Col(
                     dbc.Card(
-                        dbc.CardBody([
-                            html.H5("Kelly Fraction"),
-                            html.H3(f"{kelly_fraction}× | {adjustment_method.title()}"),
-                        ]),
-                        color="dark", inverse=True,
+                        dbc.CardBody(
+                            [
+                                html.H5("Kelly Fraction"),
+                                html.H3(
+                                    f"{kelly_fraction}× | {adjustment_method.title()}"
+                                ),
+                            ]
+                        ),
+                        color="dark",
+                        inverse=True,
                     ),
                     width=2,
                 ),
@@ -4759,12 +6549,20 @@ def update_kelly_criterion(*args):
 
         if bar_color_by == "sector" and "sector" in top30.columns:
             bar_kwargs["color"] = "sector"
-            bar_kwargs["hover_data"] = {"sector": True, "kelly_pct": ":.2f", "confidence_level": True}
+            bar_kwargs["hover_data"] = {
+                "sector": True,
+                "kelly_pct": ":.2f",
+                "confidence_level": True,
+            }
         elif bar_color_by == "confidence_level" and "confidence_level" in top30.columns:
             bar_kwargs["color"] = "confidence_level"
             bar_kwargs["hover_data"] = {"confidence_level": True, "kelly_pct": ":.2f"}
         else:
-            bar_kwargs["hover_data"] = {"kelly_pct": ":.2f", "sector": True, "confidence_level": True}
+            bar_kwargs["hover_data"] = {
+                "kelly_pct": ":.2f",
+                "sector": True,
+                "confidence_level": True,
+            }
 
         bar_fig = px.bar(**bar_kwargs)
         bar_fig.update_xaxes(tickangle=-45)
@@ -4772,7 +6570,9 @@ def update_kelly_criterion(*args):
             xaxis_title="Ticker",
             yaxis_title="Kelly % (Position Size)",
             hovermode="x unified",
-            legend_title_text=bar_color_by.replace("_", " ").title() if bar_color_by != "none" else "",
+            legend_title_text=bar_color_by.replace("_", " ").title()
+            if bar_color_by != "none"
+            else "",
         )
 
         # ----- Scatter Chart: Kelly % vs Expected Upside -----
@@ -4780,17 +6580,26 @@ def update_kelly_criterion(*args):
             data_frame=kelly_df,
             x="filtered_upside",
             y="kelly_pct",
-            labels={"filtered_upside": "Expected Upside (%)", "kelly_pct": "Kelly % (Position Size)"},
+            labels={
+                "filtered_upside": "Expected Upside (%)",
+                "kelly_pct": "Kelly % (Position Size)",
+            },
             template="plotly_dark",
         )
 
         hover_cols = {"ticker": True, "filtered_upside": ":.2f", "kelly_pct": ":.2f"}
 
-        if scatter_color_by == "confidence_level" and "confidence_level" in kelly_df.columns:
+        if (
+            scatter_color_by == "confidence_level"
+            and "confidence_level" in kelly_df.columns
+        ):
             scatter_kwargs["color"] = "confidence_level"
             hover_cols["confidence_level"] = True
 
-        if scatter_size_by == "achievement_probability" and "achievement_probability" in kelly_df.columns:
+        if (
+            scatter_size_by == "achievement_probability"
+            and "achievement_probability" in kelly_df.columns
+        ):
             scatter_kwargs["size"] = "achievement_probability"
             hover_cols["achievement_probability"] = ":.2f"
 
@@ -4802,22 +6611,54 @@ def update_kelly_criterion(*args):
             xaxis_title="Expected Upside (%)",
             yaxis_title="Kelly % (Position Size)",
             hovermode="closest",
-            legend_title_text=scatter_color_by.replace("_", " ").title() if scatter_color_by != "none" else "",
+            legend_title_text=scatter_color_by.replace("_", " ").title()
+            if scatter_color_by != "none"
+            else "",
         )
 
         # ----- Positions Table -----
         table_cols = [
-            "ticker", "name", "country", "trading_country", "unit",  "sector", "industry", "exchange",
-            "last_price", "price_target","price_target_mc",
-            "filtered_upside", "prob_positive_upside", "confidence_score","composite_score", "quality_tier" , "achievement_probability",
-            "confidence_level", "signal", "kelly_pct",
-            "price_target_prob_weighted"
+            "ticker",
+            "name",
+            "country",
+            "trading_country",
+            "unit",
+            "sector",
+            "industry",
+            "exchange",
+            "last_price",
+            "price_target",
+            "price_target_mc",
+            "expected_upside_pct",
+            "expected_return_prob_weighted",
+            "filtered_upside",
+            "prob_positive_upside",
+            "confidence_score",
+            "composite_score",
+            "quality_tier",
+            "achievement_probability",
+            "confidence_level",
+            "signal",
+            "kelly_pct",
+            "price_target_prob_weighted",
         ]
         available_cols = [c for c in table_cols if c in kelly_df.columns]
         table_df = kelly_df.nlargest(50, "kelly_pct")[available_cols].copy()
 
         # Round numeric columns for display
-        for col in ["filtered_upside", "prob_positive_upside", "confidence_score", "achievement_probability", "kelly_pct", "last_price", "price_target", "price_target_mc", "price_target_prob_weighted"]:
+        for col in [
+            "expected_upside_pct",
+            "expected_return_prob_weighted",
+            "filtered_upside",
+            "prob_positive_upside",
+            "confidence_score",
+            "achievement_probability",
+            "kelly_pct",
+            "last_price",
+            "price_target",
+            "price_target_mc",
+            "price_target_prob_weighted",
+        ]:
             if col in table_df.columns:
                 table_df[col] = table_df[col].round(3)
 
@@ -4868,7 +6709,13 @@ def update_efficient_frontier(*args):
     empty_fig.update_layout(
         title="No data available",
         template="plotly_dark",
-        annotations=[{"text": "No data matches the selected filters", "showarrow": False, "font": {"size": 16}}],
+        annotations=[
+            {
+                "text": "No data matches the selected filters",
+                "showarrow": False,
+                "font": {"size": 16},
+            }
+        ],
     )
 
     try:
@@ -4880,29 +6727,37 @@ def update_efficient_frontier(*args):
 
         # Determine selected tickers
         if not stock_selector or len(stock_selector) == 0:
-            selected_tickers = filtered_df.nlargest(10, 'market_cap')['ticker'].tolist()
+            selected_tickers = filtered_df.nlargest(10, "market_cap")["ticker"].tolist()
         else:
-            selected_tickers = stock_selector if isinstance(stock_selector, list) else [stock_selector]
+            selected_tickers = (
+                stock_selector if isinstance(stock_selector, list) else [stock_selector]
+            )
 
         # Keep only tickers present in filtered data
-        df_selected = filtered_df[filtered_df['ticker'].isin(selected_tickers)].copy()
-        selected_tickers = df_selected['ticker'].unique().tolist()
+        df_selected = filtered_df[filtered_df["ticker"].isin(selected_tickers)].copy()
+        selected_tickers = df_selected["ticker"].unique().tolist()
 
         if len(selected_tickers) < 2:
             info_fig = go.Figure()
             info_fig.update_layout(
                 title="Insufficient data",
                 template="plotly_dark",
-                annotations=[{"text": "Need at least 2 stocks for portfolio optimization", "showarrow": False, "font": {"size": 20}}],
+                annotations=[
+                    {
+                        "text": "Need at least 2 stocks for portfolio optimization",
+                        "showarrow": False,
+                        "font": {"size": 20},
+                    }
+                ],
             )
             return info_fig, "", ""
 
         # Compute expected returns from the data
         expected_returns = []
         for ticker in selected_tickers:
-            ticker_data = df_selected[df_selected['ticker'] == ticker]
-            if len(ticker_data) > 0 and 'expected_upside_pct' in ticker_data.columns:
-                ret = ticker_data['expected_upside_pct'].iloc[0]
+            ticker_data = df_selected[df_selected["ticker"] == ticker]
+            if len(ticker_data) > 0 and "expected_upside_pct" in ticker_data.columns:
+                ret = ticker_data["expected_upside_pct"].iloc[0]
                 ret = float(ret) / 100.0 if pd.notna(ret) else 0.05
             else:
                 ret = 0.05
@@ -4913,106 +6768,134 @@ def update_efficient_frontier(*args):
         cov_matrix = _ef_estimate_covariance_matrix(filtered_df, selected_tickers)
 
         # Generate random portfolios
-        portfolio_returns, portfolio_volatilities, portfolio_sharpe_ratios, portfolio_weights = (
-            _ef_generate_random_portfolios(
-                expected_returns, cov_matrix, num_portfolios, risk_free_rate, constraint_type
-            )
+        (
+            portfolio_returns,
+            portfolio_volatilities,
+            portfolio_sharpe_ratios,
+            portfolio_weights,
+        ) = _ef_generate_random_portfolios(
+            expected_returns,
+            cov_matrix,
+            num_portfolios,
+            risk_free_rate,
+            constraint_type,
         )
 
         if len(portfolio_returns) == 0 or portfolio_volatilities.max() == 0:
             return empty_fig, "", "Could not generate valid portfolio combinations."
 
         # Find optimal portfolios
-        min_var_weights, max_sharpe_weights, opt_volatilities = _ef_find_optimal_portfolios(
-            expected_returns, cov_matrix, risk_free_rate
+        min_var_weights, max_sharpe_weights, opt_volatilities = (
+            _ef_find_optimal_portfolios(expected_returns, cov_matrix, risk_free_rate)
         )
         min_var_return = np.sum(min_var_weights * expected_returns)
         max_sharpe_return = np.sum(max_sharpe_weights * expected_returns)
         max_sharpe_volatility = opt_volatilities[1]
         max_sharpe_ratio = (
             (max_sharpe_return - risk_free_rate / 100) / max_sharpe_volatility
-            if max_sharpe_volatility > 0 else 0
+            if max_sharpe_volatility > 0
+            else 0
         )
 
         # Build the scatter plot
-        scatter_df = pd.DataFrame({
-            'Volatility': portfolio_volatilities * 100,
-            'Return': portfolio_returns * 100,
-            'Sharpe Ratio': portfolio_sharpe_ratios,
-        })
+        scatter_df = pd.DataFrame(
+            {
+                "Volatility": portfolio_volatilities * 100,
+                "Return": portfolio_returns * 100,
+                "Sharpe Ratio": portfolio_sharpe_ratios,
+            }
+        )
 
         fig = px.scatter(
             scatter_df,
-            x='Volatility',
-            y='Return',
-            color='Sharpe Ratio',
-            color_continuous_scale='Viridis',
-            labels={'Volatility': 'Portfolio Volatility (%)', 'Return': 'Expected Return (%)'},
-            hover_data={'Volatility': ':.2f', 'Return': ':.2f', 'Sharpe Ratio': ':.3f'},
+            x="Volatility",
+            y="Return",
+            color="Sharpe Ratio",
+            color_continuous_scale="Viridis",
+            labels={
+                "Volatility": "Portfolio Volatility (%)",
+                "Return": "Expected Return (%)",
+            },
+            hover_data={"Volatility": ":.2f", "Return": ":.2f", "Sharpe Ratio": ":.3f"},
             template="plotly_dark",
         )
 
         # Min Variance marker
-        fig.add_trace(go.Scatter(
-            x=[opt_volatilities[0] * 100],
-            y=[min_var_return * 100],
-            mode='markers',
-            marker=dict(size=15, color='red', symbol='star', line=dict(color='darkred', width=2)),
-            name='Min Variance',
-            hovertemplate='<b>Min Variance Portfolio</b><br>Volatility: %{x:.2f}%<br>Return: %{y:.2f}%<extra></extra>',
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=[opt_volatilities[0] * 100],
+                y=[min_var_return * 100],
+                mode="markers",
+                marker=dict(
+                    size=15,
+                    color="red",
+                    symbol="star",
+                    line=dict(color="darkred", width=2),
+                ),
+                name="Min Variance",
+                hovertemplate="<b>Min Variance Portfolio</b><br>Volatility: %{x:.2f}%<br>Return: %{y:.2f}%<extra></extra>",
+            )
+        )
 
         # Max Sharpe marker
-        fig.add_trace(go.Scatter(
-            x=[max_sharpe_volatility * 100],
-            y=[max_sharpe_return * 100],
-            mode='markers',
-            marker=dict(size=15, color='gold', symbol='star', line=dict(color='orange', width=2)),
-            name='Max Sharpe Ratio',
-            hovertemplate=(
-                f'<b>Max Sharpe Ratio Portfolio</b><br>'
-                f'Volatility: %{{x:.2f}}%<br>Return: %{{y:.2f}}%<br>'
-                f'Sharpe: {max_sharpe_ratio:.3f}<extra></extra>'
-            ),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=[max_sharpe_volatility * 100],
+                y=[max_sharpe_return * 100],
+                mode="markers",
+                marker=dict(
+                    size=15,
+                    color="gold",
+                    symbol="star",
+                    line=dict(color="orange", width=2),
+                ),
+                name="Max Sharpe Ratio",
+                hovertemplate=(
+                    f"<b>Max Sharpe Ratio Portfolio</b><br>"
+                    f"Volatility: %{{x:.2f}}%<br>Return: %{{y:.2f}}%<br>"
+                    f"Sharpe: {max_sharpe_ratio:.3f}<extra></extra>"
+                ),
+            )
+        )
 
         fig.update_layout(
             title="Efficient Frontier: Risk-Return Tradeoff",
-            xaxis_title='Portfolio Volatility (Annualized %)',
-            yaxis_title='Expected Return (Annualized %)',
-            hovermode='closest',
-            coloraxis_colorbar=dict(title='Sharpe Ratio'),
+            xaxis_title="Portfolio Volatility (Annualized %)",
+            yaxis_title="Expected Return (Annualized %)",
+            hovermode="closest",
+            coloraxis_colorbar=dict(title="Sharpe Ratio"),
         )
 
         # Build portfolio summary table
         table_data = []
         for i in range(min(10, len(portfolio_weights))):
-            row = {'Portfolio': f'P{i + 1}'}
+            row = {"Portfolio": f"P{i + 1}"}
             for j, ticker in enumerate(selected_tickers):
-                row[ticker] = f'{portfolio_weights[i, j]:.2%}'
-            row['Return'] = f'{portfolio_returns[i]:.2%}'
-            row['Volatility'] = f'{portfolio_volatilities[i]:.2%}'
-            row['Sharpe'] = f'{portfolio_sharpe_ratios[i]:.3f}'
+                row[ticker] = f"{portfolio_weights[i, j]:.2%}"
+            row["Return"] = f"{portfolio_returns[i]:.2%}"
+            row["Volatility"] = f"{portfolio_volatilities[i]:.2%}"
+            row["Sharpe"] = f"{portfolio_sharpe_ratios[i]:.3f}"
             table_data.append(row)
 
         # Append optimal portfolios
-        min_var_row = {'Portfolio': '⭐ Min Variance'}
+        min_var_row = {"Portfolio": "⭐ Min Variance"}
         for j, ticker in enumerate(selected_tickers):
-            min_var_row[ticker] = f'{min_var_weights[j]:.2%}'
-        min_var_row['Return'] = f'{min_var_return:.2%}'
-        min_var_row['Volatility'] = f'{opt_volatilities[0]:.2%}'
-        min_var_row['Sharpe'] = (
-            f'{(min_var_return - risk_free_rate / 100) / opt_volatilities[0]:.3f}'
-            if opt_volatilities[0] > 0 else 'N/A'
+            min_var_row[ticker] = f"{min_var_weights[j]:.2%}"
+        min_var_row["Return"] = f"{min_var_return:.2%}"
+        min_var_row["Volatility"] = f"{opt_volatilities[0]:.2%}"
+        min_var_row["Sharpe"] = (
+            f"{(min_var_return - risk_free_rate / 100) / opt_volatilities[0]:.3f}"
+            if opt_volatilities[0] > 0
+            else "N/A"
         )
         table_data.append(min_var_row)
 
-        max_sharpe_row = {'Portfolio': '⭐ Max Sharpe'}
+        max_sharpe_row = {"Portfolio": "⭐ Max Sharpe"}
         for j, ticker in enumerate(selected_tickers):
-            max_sharpe_row[ticker] = f'{max_sharpe_weights[j]:.2%}'
-        max_sharpe_row['Return'] = f'{max_sharpe_return:.2%}'
-        max_sharpe_row['Volatility'] = f'{max_sharpe_volatility:.2%}'
-        max_sharpe_row['Sharpe'] = f'{max_sharpe_ratio:.3f}'
+            max_sharpe_row[ticker] = f"{max_sharpe_weights[j]:.2%}"
+        max_sharpe_row["Return"] = f"{max_sharpe_return:.2%}"
+        max_sharpe_row["Volatility"] = f"{max_sharpe_volatility:.2%}"
+        max_sharpe_row["Sharpe"] = f"{max_sharpe_ratio:.3f}"
         table_data.append(max_sharpe_row)
 
         table_df = pd.DataFrame(table_data)
@@ -5021,7 +6904,7 @@ def update_efficient_frontier(*args):
         table_component = dash_table.DataTable(
             data=table_df.to_dict("records"),
             columns=[{"name": c, "id": c} for c in table_df.columns],
-            page_size=15,
+            page_size=500,
             sort_action="native",
             style_table={"overflowX": "auto"},
             style_header=TABLE_STYLE_HEADER,
@@ -5053,12 +6936,12 @@ def update_ef_stock_options(*args):
         filter_values = collect_filter_values(*args)
         filtered_df = apply_global_filters(df, filter_values)
 
-        if filtered_df.empty or 'market_cap' not in filtered_df.columns:
+        if filtered_df.empty or "market_cap" not in filtered_df.columns:
             return []
 
-        df_sorted = filtered_df.nlargest(50, 'market_cap')
+        df_sorted = filtered_df.nlargest(50, "market_cap")
         return [
-            {"label": f"{row['ticker']} - {row['name'][:30]}", "value": row['ticker']}
+            {"label": f"{row['ticker']} - {row['name'][:30]}", "value": row["ticker"]}
             for _, row in df_sorted.iterrows()
         ]
     except Exception:
@@ -5067,9 +6950,9 @@ def update_ef_stock_options(*args):
 
 if __name__ == "__main__":
     if len(df) == 0:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("⚠️  No data loaded - Dashboard cannot start")
-        print("="*60)
+        print("=" * 60)
         print("\nTo use this dashboard:")
         print("1. Set environment variable: GEIB_DASHBOARD=true")
         print("2. Ensure DB_URL is configured")
@@ -5078,12 +6961,12 @@ if __name__ == "__main__":
         print("  $env:GEIB_DASHBOARD='true'  # PowerShell")
         print("  export GEIB_DASHBOARD=true  # Bash")
         print("  python finance_ml/dashboards/geib_dash_app.py")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
     else:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🚀 Starting Global Equity Investment Board Dashboard")
-        print("="*60)
+        print("=" * 60)
         print(f"   Loaded: {len(df):,} stocks")
         print(f"   URL: http://127.0.0.1:8051")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
         app.run(debug=True, port=8051)

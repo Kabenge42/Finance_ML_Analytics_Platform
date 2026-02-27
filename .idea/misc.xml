@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
@@ -5,6 +6,11 @@
     <option name="sdkName" value="Python 3.14 (Finance_Analytics_Platform)" />
   </component>
   <component name="ProjectResources">
+    <resource url="http://www.xbrl.org/2003/xbrl-linkbase-2003-12-31.xsd" location="$USER_HOME$/AppData/Local/JetBrains/PyCharm2025.3/extResources/53be2214_xbrl-linkbase-2003-12-31.xsd" />
+    <resource url="http://www.xbrl.org/2003/xl-2003-12-31.xsd" location="$USER_HOME$/AppData/Local/JetBrains/PyCharm2025.3/extResources/74ef87f0_xl-2003-12-31.xsd" />
+    <resource url="http://www.xbrl.org/2003/xlink-2003-12-31.xsd" location="$USER_HOME$/AppData/Local/JetBrains/PyCharm2025.3/extResources/df625ab6_xlink-2003-12-31.xsd" />
+    <resource url="http://www.xbrl.org/2008/concept-filter.xsd" location="$USER_HOME$/AppData/Local/JetBrains/PyCharm2025.3/extResources/1b20c5d5_concept-filter.xsd" />
+    <resource url="http://www.xbrl.org/2008/consistency-assertion.xsd" location="$USER_HOME$/AppData/Local/JetBrains/PyCharm2025.3/extResources/fd77624b_consistency-assertion.xsd" />
     <xml-schema-version>XMLSchema_1_1</xml-schema-version>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_25" project-jdk-name="Python 3.14 (Finance_Analytics_Platform)" project-jdk-type="Python SDK">
@@ -37,6 +43,5 @@
   </component>
   <component name="RuffConfiguration">
     <option name="enabled" value="true" />
-    <option name="inspections" value="false" />
   </component>
 </project>

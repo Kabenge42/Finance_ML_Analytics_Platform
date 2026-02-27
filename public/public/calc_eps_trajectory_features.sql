@@ -23,17 +23,17 @@ SELECT "ISIN"                                                                AS 
         CASE WHEN "Net EPS - Basic (-4FQFQ)" > 0 THEN 1 ELSE 0 END)::INTEGER AS eps_positive_streak,
        CASE
            WHEN "Net EPS - Basic (-3FY)" > 0 AND "Net EPS - Basic (FY)" > 0
-               THEN (POWER("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) * 100
+               THEN (safe_power("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) * 100
            END                                                               AS eps_cagr_3y,
        CASE
            WHEN "Net EPS - Basic (-5FY)" > 0 AND "Net EPS - Basic (FY)" > 0
-               THEN (POWER("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-5FY)", 0), 1.0 / 5.0) - 1) * 100
+               THEN (safe_power("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-5FY)", 0), 1.0 / 5.0) - 1) * 100
            END                                                               AS eps_cagr_5y,
        CASE
            WHEN "Net EPS - Basic (-3FY)" > 0 AND "Net EPS - Basic (-5FY)" > 0
                AND "Net EPS - Basic (FY)" > 0
-               THEN ((POWER("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) -
-                     (POWER("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-5FY)", 0), 1.0 / 5.0) - 1)) * 100
+               THEN ((safe_power("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-3FY)", 0), 1.0 / 3.0) - 1) -
+                     (safe_power("Net EPS - Basic (FY)" / NULLIF("Net EPS - Basic (-5FY)", 0), 1.0 / 5.0) - 1)) * 100
            END                                                               AS eps_growth_accel,
        CASE
            WHEN ABS(("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" + "Net EPS - Basic (-2FY)" +
@@ -61,27 +61,29 @@ SELECT "ISIN"                                                                AS 
                      "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0) > 0
                THEN 1.0 - LEAST(1.0,
                                 SQRT(
-                                        (POWER("Net EPS - Basic (FY)" -
+                                    GREATEST(0,
+                                        (safe_power("Net EPS - Basic (FY)" -
                                                (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
                                                  "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
                                                  "Net EPS - Basic (-4FY)") / 5.0), 2) +
-                                         POWER("Net EPS - Basic (-1FY)" -
+                                         safe_power("Net EPS - Basic (-1FY)" -
                                                (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
                                                  "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
                                                  "Net EPS - Basic (-4FY)") / 5.0), 2) +
-                                         POWER("Net EPS - Basic (-2FY)" -
+                                         safe_power("Net EPS - Basic (-2FY)" -
                                                (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
                                                  "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
                                                  "Net EPS - Basic (-4FY)") / 5.0), 2) +
-                                         POWER("Net EPS - Basic (-3FY)" -
+                                         safe_power("Net EPS - Basic (-3FY)" -
                                                (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
                                                  "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
                                                  "Net EPS - Basic (-4FY)") / 5.0), 2) +
-                                         POWER("Net EPS - Basic (-4FY)" -
+                                         safe_power("Net EPS - Basic (-4FY)" -
                                                (("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
                                                  "Net EPS - Basic (-2FY)" + "Net EPS - Basic (-3FY)" +
                                                  "Net EPS - Basic (-4FY)") / 5.0), 2)
                                             ) / 5.0
+                                    ) -- end GREATEST
                                 ) / NULLIF(ABS(("Net EPS - Basic (FY)" + "Net EPS - Basic (-1FY)" +
                                                 "Net EPS - Basic (-2FY)" +
                                                 "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0), 0)

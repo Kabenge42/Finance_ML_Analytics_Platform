@@ -20,7 +20,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS, create_no_data_figure
 
 def create_momentum_ribbon_chart(
     df: pd.DataFrame, top_n: int = 30, sort_by: str = "price_momentum_1y"
@@ -50,6 +50,7 @@ def create_momentum_ribbon_chart(
     >>> fig.show()
     """
     momentum_cols = [
+        "price_momentum_5d",
         "price_momentum_1m",
         "price_momentum_3m",
         "price_momentum_6m",
@@ -60,18 +61,7 @@ def create_momentum_ribbon_chart(
     available_cols = [col for col in momentum_cols if col in df.columns]
 
     if not available_cols:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No momentum data available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Momentum Ribbon Chart - No Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Momentum Ribbon Chart - No Data")
 
     # Prepare data
     plot_df = df.dropna(subset=available_cols[:2]).copy()  # Need at least 2 momentum cols
@@ -93,6 +83,7 @@ def create_momentum_ribbon_chart(
 
     # Color palette for different time periods
     colors = {
+        "price_momentum_5d": "rgb(214, 39, 40)",  # Red
         "price_momentum_1m": "rgb(255, 127, 14)",  # Orange
         "price_momentum_3m": "rgb(44, 160, 44)",  # Green
         "price_momentum_6m": "rgb(31, 119, 180)",  # Blue
@@ -102,6 +93,7 @@ def create_momentum_ribbon_chart(
     }
 
     period_labels = {
+        "price_momentum_5d": "5 Days",
         "price_momentum_1m": "1 Month",
         "price_momentum_3m": "3 Months",
         "price_momentum_6m": "6 Months",
@@ -165,18 +157,7 @@ def create_52w_range_distribution(df: pd.DataFrame, group_col: str = "industry")
     range_col = "range_52w_position"
 
     if range_col not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No 52-week range data available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="52-Week Range Distribution - No Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("52-Week Range Distribution - No Data")
 
     # Create subplots
     fig = make_subplots(
@@ -320,18 +301,7 @@ def create_trend_strength_matrix(
     >>> fig.show()
     """
     if trend_col not in df.columns or group_col not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"Missing required columns: {trend_col} or {group_col}",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Trend Strength Matrix - Missing Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Trend Strength Matrix - Missing Data")
 
     # Calculate statistics by group
     agg_dict = {trend_col: ["mean", "median", "std", "count"]}
@@ -360,20 +330,7 @@ def create_trend_strength_matrix(
     stats = stats[stats["stock_count"] >= 5].sort_values("avg_trend_score", ascending=False)
 
     if len(stats) == 0:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="Insufficient data for trend matrix",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(
-            title="Trend Strength Matrix - Insufficient Data", template=PLOTLY_TEMPLATE
-        )
-        return fig
+        return create_no_data_figure("Trend Strength Matrix - Insufficient Data")
 
     # Create heatmap data
     metrics = ["avg_trend_score", "median_trend_score", "trend_volatility"]
@@ -462,18 +419,7 @@ def create_momentum_divergence_scatter(
     >>> fig.show()
     """
     if short_term_col not in df.columns or long_term_col not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"Missing required columns: {short_term_col} or {long_term_col}",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Momentum Divergence - Missing Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Momentum Divergence - Missing Data")
 
     # Prepare data
     plot_df = df.dropna(subset=[short_term_col, long_term_col]).copy()

@@ -198,6 +198,143 @@ _DEFAULT_IDENTIFIER_COLS = [
 # Module-level cache for identifier columns loaded from the DB
 _identifier_cols_cache: list[str] | None = None
 
+# Module-level cache for equities schema metadata loaded from the DB
+_equities_schema_cache: dict[str, dict[str, str | int | None]] | None = None
+
+
+def load_equities_schema_from_db(
+        db_url: Optional[str] = None,
+        schema: str = "public",
+) -> dict[str, dict[str, str | int | None]]:
+    """
+    Load equities schema metadata from ``equities_schema_metadata`` table.
+
+    Returns the full column metadata mapping keyed by ``column_alias``,
+    with each entry containing the original column name, role, description,
+    DDL equivalent, and column count.
+
+    Falls back to an empty dict when the database is unreachable or
+    SQLAlchemy is not installed.
+
+    Parameters
+    ----------
+    db_url : str, optional
+        SQLAlchemy database URL. If *None*, reads from ``DB_URL``
+        environment variable.
+    schema : str, default "public"
+        Schema containing the ``equities_schema_metadata`` table.
+
+    Returns
+    -------
+    dict[str, dict[str, str | int | None]]
+        Mapping from ``column_alias`` to metadata dict with keys:
+        ``column_name``, ``role``, ``description``,
+        ``column_type``, ``column_count``.
+
+    Examples
+    --------
+    >>> schema_meta = load_equities_schema_from_db()
+    >>> schema_meta["last_price"]
+    {'column_name': 'Last Price', 'role': 'market_data', ...}
+    >>> market_data_cols = [k for k, v in schema_meta.items() if v["role"] == "market_data"]
+    """
+    if create_engine is None or text is None:
+        logging.warning("SQLAlchemy not available, cannot load equities schema metadata")
+        return {}
+
+    resolved_url = db_url or os.environ.get("DB_URL")
+    if not resolved_url:
+        logging.warning("DB_URL not configured, cannot load equities schema metadata")
+        return {}
+
+    query = text(f"""
+        SELECT column_name, column_alias, role, column_count, description, column_type
+        FROM {schema}.equities_schema_metadata
+        WHERE column_alias IS NOT NULL AND column_alias != 'n/a'
+        ORDER BY role, column_alias
+    """)
+
+    try:
+        engine = create_engine(resolved_url)
+        with engine.connect() as conn:
+            result = conn.execute(query)
+            rows = result.fetchall()
+
+        metadata: dict[str, dict[str, str | int | None]] = {}
+        for row in rows:
+            col_name, col_alias, role, col_count, description, ddl_eq = (
+                row[0], row[1], row[2], row[3], row[4], row[5],
+            )
+            metadata[col_alias] = {
+                "column_name": col_name,
+                "role": role,
+                "description": description,
+                "column_type": ddl_eq,
+                "column_count": col_count,
+            }
+
+        logging.info(
+            "Loaded %d column definitions from %s.equities_schema_metadata",
+            len(metadata),
+            schema,
+        )
+        return metadata
+
+    except Exception as e:
+        logging.warning(
+            "Could not load equities schema metadata from DB: %s", e,
+        )
+        return {}
+
+
+def get_equities_schema(
+        db_url: Optional[str] = None,
+        schema: str = "public",
+) -> dict[str, dict[str, str | int | None]]:
+    """
+    Load equities schema metadata from database, with process-level caching.
+
+    Delegates to :func:`load_equities_schema_from_db` on first call and
+    caches the result for the lifetime of the process, following the same
+    pattern as :func:`get_feature_categories` in ``expected_returns_v3``.
+
+    The returned dict is keyed by ``column_alias`` (the human-readable name
+    used in ``mv_equities`` and downstream DataFrames).  Each value is a
+    metadata dict containing the original column name, role, description,
+    DDL equivalent, and column count.
+
+    Parameters
+    ----------
+    db_url : str, optional
+        SQLAlchemy database URL. Falls back to ``DB_URL`` env var.
+    schema : str, default "public"
+        Schema containing the ``equities_schema_metadata`` table.
+
+    Returns
+    -------
+    dict[str, dict[str, str | int | None]]
+        Mapping from column alias to metadata dict.
+
+    Examples
+    --------
+    >>> schema = get_equities_schema()
+    >>> len(schema)
+    347
+    >>> [k for k, v in schema.items() if v["role"] == "id"]
+    ['ticker', 'isin', 'name', 'description']
+    >>> schema["market_cap"]["role"]
+    'market_data'
+    """
+    global _equities_schema_cache
+    if _equities_schema_cache is None:
+        _equities_schema_cache = load_equities_schema_from_db(db_url=db_url, schema=schema)
+        logging.info(
+            "Cached equities schema: %d columns across %d roles",
+            len(_equities_schema_cache),
+            len({v["role"] for v in _equities_schema_cache.values()}),
+        )
+    return _equities_schema_cache
+
 
 def load_identifier_columns(
     db_url: Optional[str] = None,
@@ -570,8 +707,8 @@ def _build_feature_query(
     base_sql = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '12 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '12 months') 
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') 
         ORDER BY next_earnings ASC
     """
     if limit is not None:
@@ -648,6 +785,93 @@ def load_feature_data_from_db(
             "lookahead_days": _EARNINGS_LOOKAHEAD_DAYS,
         },
     )
+
+    logging.info("Loaded %d rows from %s", len(df), view_ref)
+    return df
+
+
+def _build_equities_query(
+        view_ref: str,
+        limit: Optional[int] = None,
+) -> text:
+    """Build a parameterised SQL query for the equities materialized view."""
+    base_sql = f"""
+        SELECT *
+        FROM {view_ref}
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') 
+        ORDER BY next_earnings ASC
+    """
+    if limit is not None:
+        base_sql += f" LIMIT {int(limit)}"
+    return text(base_sql)
+
+
+def load_equities_data_from_db(
+        db_url: Optional[str] = None,
+        limit: Optional[int] = None,
+        schema: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Load equities data from PostgreSQL materialized view ``mv_equities``.
+
+    Loads the full aliased snapshot of the equities table from
+    ``public.mv_equities``, which contains identifier, market data,
+    income statement, balance sheet, cash flow, ratio, and other
+    columns with human-readable aliases.
+
+    Parameters
+    ----------
+    db_url : str, optional
+        SQLAlchemy database URL. If None, reads from DB_URL environment variable
+    limit : int, optional
+        Maximum number of rows to return
+    schema : str, optional
+        Database schema name. If None, reads from DB_EQUITIES_SCHEMA environment variable
+        or defaults to 'public'
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with equities data from mv_equities
+
+    Raises
+    ------
+    ImportError
+        If SQLAlchemy or psycopg2 not available
+    ValueError
+        If db_url is not provided and DB_URL environment variable is not set
+
+    Examples
+    --------
+    >>> df = load_equities_data_from_db()
+    >>> df = load_equities_data_from_db(db_url="postgresql+psycopg2://user:pass@host:5432/db")
+    >>> df = load_equities_data_from_db(limit=1000)
+    """
+    if create_engine is None:
+        raise ImportError(
+            "SQLAlchemy not available. Install psycopg2-binary and SQLAlchemy to use database loading."
+        )
+
+    db_url = _resolve_db_url(db_url)
+    schema = _resolve_schema(schema)
+    view_ref = f"{schema}.mv_equities"
+
+    safe_db_url = db_url.split("@")[-1] if "@" in db_url else db_url
+    logging.info(
+        "Loading equities data from %s (view: %s)",
+        safe_db_url,
+        view_ref,
+    )
+
+    engine = create_engine(db_url)
+
+    base_sql = f"SELECT * FROM {view_ref}"
+    if limit is not None:
+        base_sql += f" LIMIT {int(limit)}"
+    query = text(base_sql)
+
+    df = pd.read_sql(query, engine)
 
     logging.info("Loaded %d rows from %s", len(df), view_ref)
     return df
@@ -870,8 +1094,8 @@ def load_all_feature_views(
             query = f"""
         SELECT *
         FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '12 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '12 months') 
+        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
+          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') 
         ORDER BY next_earnings ASC
     """
             df_view = pd.read_sql(query, engine)
@@ -2079,10 +2303,24 @@ def _get_fallback_feature_categories() -> dict[str, list[str]]:
             "p_b_ratio",
             "ev_ebitda_ratio",
             "ev_sales_ratio",
-            "dividend_yield",
+            "valuation_dividend_yield",
             "peg_ratio",
             "price_to_tangible_book",
             "tangible_book_value_ltm",
+        ],
+        "Valuation Timeseries": [
+            "ev_sales_trend_1y",
+            "ev_ebitda_momentum",
+            "p_e_momentum_yoy",
+            "p_e_momentum_qoq",
+            "ev_sales_vs_3y_avg",
+            "ev_ebitda_vs_3y_avg",
+            "p_e_vs_3y_avg",
+            "p_e_vs_5y_avg",
+            "p_b_vs_5y_avg",
+            "valuation_mean_reversion",
+            "valuation_compression",
+            "forward_pe_premium",
         ],
         "Momentum & Technical": [
             "price_momentum_1m",
@@ -2091,9 +2329,23 @@ def _get_fallback_feature_categories() -> dict[str, list[str]]:
             "price_momentum_1y",
             "price_momentum_3y",
             "price_momentum_5y",
+            "price_momentum_5d",
             "range_52w_position",
             "long_term_trend_score",
             "secular_trend_flag",
+            "beta_momentum",
+            "volatility_regime",
+        ],
+        "Technical Analysis": [
+            "ema_slope_20d",
+            "ema_trend_consistency",
+            "price_vs_ema_100d",
+            "near_52w_high_flag",
+            "near_52w_low_flag",
+            "volume_momentum_score",
+            "breakout_signal",
+            "volatility_compression",
+            "volatility_term_structure",
         ],
         "Profitability": [
             "roe",
@@ -2103,88 +2355,182 @@ def _get_fallback_feature_categories() -> dict[str, list[str]]:
             "net_margin_pct",
             "ebitda_margin_pct",
             "roic",
+            "rnd_intensity",
+            "equity_multiplier",
+            "gross_margin_trend_yoy",
+            "operating_margin_trend",
             "net_margin_trend_yoy",
+            "ebitda_margin_trend",
+            "margin_expansion_flag",
+            "margin_stability_score",
+        ],
+        "Earnings Quality": [
+            "eps_surprise_pct",
+            "revenue_surprise_pct",
+            "eps_adjustment_ratio",
+            "gaap_adj_eps_gap_pct",
+            "ebitda_adjustment_ratio",
+            "eps_quarterly_trend",
+            "eps_yoy_growth",
+            "earnings_quality_score",
+            "earnings_quality_warning",
+            "earnings_quality_composite",
+            "gaap_revision_momentum",
+            "revision_quality_divergence",
+        ],
+        "EPS Trajectory": [
+            "eps_qoq_growth",
+            "eps_yoy_quarterly",
+            "eps_positive_streak",
+            "eps_cagr_3y",
+            "eps_cagr_5y",
+            "eps_growth_accel",
+            "eps_vs_5y_avg",
+            "eps_trajectory_score",
+            "eps_stability",
+        ],
+        "Growth Metrics": [
+            "revenue_growth_yoy",
+            "growth_ebitda_growth_yoy",
+            "operating_income_growth",
+            "fcf_growth",
+            "revenue_cagr_5y",
+            "forward_revenue_growth",
+            "revenue_vs_5y_avg",
+            "revenue_acceleration",
         ],
         "Quality & Risk": [
             "piotroski_f_score",
-            "distress_risk_score",
+            "has_goodwill_impairment",
+            "has_asset_writedown",
+            "has_restructuring",
+            "goodwill_to_assets_pct",
+            "intangible_intensity",
+            "exceptional_items_to_ebitda",
             "altman_z_score",
+            "altman_z_trend",
+            "current_ratio",
+            "quick_ratio",
             "accounting_quality_score",
-            "earnings_quality_composite",
-            "cash_flow_quality_score",
             "beta_stability_score",
+        ],
+        "Financial Distress": [
+            "distress_risk_score",
+            "liquidity_stress_score",
+            "working_capital_trend",
+            "cash_runway_months",
+            "combined_distress_score",
+            "wc_deteriorating_flag",
+            "accumulated_deficit_flag",
+            "adequate_cash_buffer",
+        ],
+        "Accounting Quality": [
+            "goodwill_change_rate",
+            "restructuring_intensity",
+            "exceptional_items_frequency",
+            "merger_impact_ratio",
+            "non_operating_income_share",
+            "asset_sale_boost",
+            "accounting_quality_score",
         ],
         "Leverage & Liquidity": [
             "debt_to_equity",
-            "current_ratio",
-            "quick_ratio",
+            "debt_to_assets",
+            "equity_ratio",
             "interest_coverage",
             "cash_ratio",
             "working_capital_ratio",
             "debt_deleveraging",
+            "debt_to_equity_trend",
+        ],
+        "Efficiency Ratios": [
+            "asset_turnover",
+            "inventory_turnover",
+            "receivables_days",
+            "working_capital_turns",
+        ],
+        "Balance Sheet": [
+            "assets_fq",
+            "assets_yoy_growth",
+            "assets_3y_cagr",
+            "asset_quality_score",
+            "balance_sheet_strength",
+            "cash_to_assets_pct",
+            "cash_vs_5y_avg",
+            "inventory_yoy_change",
+            "receivables_change_yoy",
+            "retained_earnings_vs_5y",
         ],
         "Analyst Sentiment": [
             "analyst_bullish_pct",
             "analyst_neutral_pct",
             "analyst_bearish_pct",
+            "analyst_conviction",
             "upside_potential",
+            "price_target_spread_pct",
+            "price_target_revision_1m",
+            "price_target_revision_3m",
             "analyst_rating_normalized",
+            "analyst_coverage_quality",
             "eps_revision_momentum",
         ],
-        "Earnings Quality": [
-            "eps_surprise_pct",
-            "eps_adjustment_ratio",
-            "gaap_adj_eps_gap_pct",
-            "eps_trajectory_score",
-            "earnings_quality_score",
-            "gaap_revision_momentum",
+        "Price Target Dynamics": [
+            "pt_momentum_1w",
+            "pt_momentum_1m",
+            "pt_momentum_3m",
+            "pt_momentum_6m",
+            "pt_momentum_1y",
+            "pt_consensus_convergence",
+            "analyst_coverage_change_1m",
+            "analyst_coverage_change_3m",
+            "analyst_coverage_trend",
         ],
-        "Growth Metrics": [
-            "revenue_growth_yoy",
-            "ebitda_growth_yoy",
-            "eps_yoy_growth",
-            "fcf_growth_yoy",
-            "revenue_cagr_5y",
-        ],
-        "Cash Flow": [
-            "fcf_positive_years",
-            "fcf_margin",
-            "fcf_yield",
-            "cfo_to_net_income",
-            "self_funding_ratio",
-            "cash_flow_quality_score",
-        ],
-        "Dividend Features": [
+        "Dividend Reliability": [
             "dividend_streak",
             "dividend_yield_ltm",
+            "dividend_yield_ntm",
             "dividend_payout_ratio",
             "fcf_dividend_coverage",
+            "buyback_yield",
             "total_shareholder_yield",
+            "dividend_consistency",
+            "dividend_yield_vs_5y_avg",
+            "sustainable_dividend_flag",
         ],
-        "R&D Investment": [
-            "rnd_intensity_ltm",
-            "rnd_yoy_growth",
-            "rnd_per_employee",
-            "high_rnd_intensity_flag",
+        "Cash Flow": [
+            "cfo_to_net_income",
+            "fcf_to_net_income",
+            "fcf_margin",
+            "cfo_growth_yoy",
+            "fcf_positive_ratio",
+            "self_funding_ratio",
+            "fcf_positive_years",
+            "fcf_yield",
+            "cash_flow_quality_score",
         ],
-        "Inventory Temporal": [
-            "inventory_days",
-            "inventory_turnover_mv",
-            "inventory_yoy_change",
-            "inventory_buildup_flag",
+        "Employee Productivity": [
+            "revenue_per_employee",
+            "profit_per_employee",
+            "ebitda_per_employee",
+            "assets_per_employee",
+            "fte_growth_1y_pct",
+            "fte_growth_3y_pct",
+            "workforce_stability",
+            "productivity_trend",
         ],
-        "Goodwill & M&A": [
-            "goodwill_concentration",
-            "goodwill_3y_growth",
-            "recent_acquisition_flag",
-            "impairment_risk_score",
+        "Efficiency": [
+            "asset_turnover",
+            "inventory_turnover",
+            "receivables_days",
+            "working_capital_turns",
+            "cost_efficiency_score",
+            "wc_efficiency_score",
         ],
-        "CapEx & Investment": [
-            "capex_yoy_growth",
-            "capex_vs_5y_avg",
-            "acquisitions_ltm_total",
-            "ma_intensity_score",
-            "investment_efficiency",
+        "Composite Scores": [
+            "piotroski_f_score",
+            "dilution_score",
+            "quality_momentum_score",
+            "earnings_quality_composite",
         ],
     }
 

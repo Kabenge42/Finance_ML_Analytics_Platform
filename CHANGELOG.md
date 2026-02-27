@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.4] - 2026-02-25
+
+### Added
+
+- Created `expected_returns_v3.py` (migration from v2.5): automated pipeline for expected returns analysis using the
+  v3.0+ analytics platform ([0e139f1](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0e139f1)).
+- Comprehensive unit tests for the analytics module covering probability scores, trajectory proxies, and Bayesian
+  confidence metrics ([0f3fac8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0f3fac8)).
+- Beta & CAPM Analysis tab integrated into the GEIB dashboard with CAPM-specific controls, sector beta calculation
+  helpers, and two new graphs ([825cc5b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/825cc5b)).
+- Price target vs. current price scatter plot added to the GEIB dashboard with log-scale axes, a diagonal fair-value
+  line, and controls for size, color, and price ranges ([825cc5b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/825cc5b)).
+
+### Changed
+
+- Updated and enhanced the Global Equity Investment Board (GEIB) Dashboard based on updated data
+  structure ([0e139f1](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0e139f1), [825cc5b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/825cc5b)).
+- Refactored and cleaned up `market_analytics.py` ([0e139f1](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0e139f1)).
+- SQL schema refactoring for dynamic identifier compatibility and analytics export
+  cleanup ([0f3fac8](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/0f3fac8)).
+
+### Removed
+
+- Removed agreement heatmap logic and outputs from the GEIB dashboard main callback, replaced by the new price target
+  scatter plot ([825cc5b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/825cc5b)).
+
+### Fixed
+
+- Reset-filters callback in the GEIB dashboard now returns the correct number of values matching its
+  outputs ([825cc5b](https://github.com/Kabenge42/Finance_ML_Analytics_Platform/commit/825cc5b)).
+
 ## [1.22.3] - 2026-01-23
 
 ### Changed

@@ -79,15 +79,15 @@ $$ LANGUAGE SQL;
 -- Used as the base for all feature views to ensure consistent identifier ordering
 
 CREATE OR REPLACE VIEW vw_identifier_columns AS
-SELECT e."ISIN"            AS isin,
-       e."Ticker"          AS ticker,
-       e."Name"            AS name,
-       e."Region"          AS region,
-       e."Country"         AS country,
-       e."Trading Country" AS trading_country,
-       e."Exchange"        AS exchange,
-       e."Sector"          AS sector,
-       e."Industry"        AS industry,
+SELECT e."ISIN"                              AS isin,
+       e."Ticker"                            AS ticker,
+       e."Name"                              AS name,
+       e."Region"                            AS region,
+       e."Country"                           AS country,
+       e."Trading Country"                   AS trading_country,
+       e."Exchange"                          AS exchange,
+       e."Sector"                            AS sector,
+       e."Industry"                          AS industry,
 
        -- CATEGORICAL columns from equities_schema_metadata
        e."Dividend Record (Frequency)"       AS dividend_record_frequency,
@@ -465,7 +465,7 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$ LANGUAGE SQL;
 
-CREATE OR REPLACE FUNCTION calc_financial_distress_features(p_isin TEXT DEFAULT NULL)
+CREATE OR REPLACE FUNCTION calc_financial_distress_features(p_isin TEXT DEFAULT NULL::TEXT)
     RETURNS TABLE
             (
                 isin                     TEXT,
@@ -481,46 +481,81 @@ CREATE OR REPLACE FUNCTION calc_financial_distress_features(p_isin TEXT DEFAULT 
             )
     STABLE
     PARALLEL SAFE
+    LANGUAGE sql
 AS
 $$
-SELECT "ISIN"                                                                            AS isin,
+SELECT "ISIN"                                                   AS isin,
+
+       -- distress_risk_score: unchanged
        GREATEST(0, LEAST(100,
-                         (("Altman Z-Score (LTM)" - 1.8) / NULLIF(3.0 - 1.8, 0) * 100))) AS distress_risk_score,
+                         (("Altman Z-Score (LTM)" - 1.8) / NULLIF(3.0 - 1.8, 0) * 100)
+                   ))                                           AS distress_risk_score,
+
+       -- liquidity_stress_score: add a graduated middle band
        CASE
+           WHEN "Current Ratio (LTM)" < 0.8 THEN 40.0
            WHEN "Current Ratio (LTM)" < 1.0 THEN 30.0
-           WHEN "Current Ratio (LTM)" < 1.5 THEN 15.0
+           WHEN "Current Ratio (LTM)" < 1.2 THEN 20.0
+           WHEN "Current Ratio (LTM)" < 1.5 THEN 10.0
            ELSE 0.0
-           END                                                                           AS liquidity_stress_score,
+           END                                                  AS liquidity_stress_score,
+
+       -- working_capital_trend: unchanged
        ("Working Capital (FQ)" - "Working Capital (FY)") /
-       NULLIF(ABS("Working Capital (FY)"), 0)                                            AS working_capital_trend,
-       "Cash And Equivalents (FQ)" /
-       NULLIF("Total Operating Expenses (LTM)" / 12.0, 0)                                AS cash_runway_months,
+       NULLIF(ABS("Working Capital (FY)"), 0)                   AS working_capital_trend,
+
+       -- cash_runway_months: use NET cash burn (OpEx - Revenue) with floor at 1
+       -- For profitable companies (Revenue > OpEx), runway is effectively infinite → cap at 120
+       CASE
+           WHEN "Total Operating Expenses (LTM)" - COALESCE("Total Revenues (LTM)", 0) <= 0
+               THEN 120.0 -- net cash-positive: no burn
+           ELSE GREATEST(0,
+                         "Cash And Equivalents (FQ)" /
+                         NULLIF(("Total Operating Expenses (LTM)" - COALESCE("Total Revenues (LTM)", 0)) / 12.0, 0)
+                )
+           END                                                  AS cash_runway_months,
+
+       -- combined_distress_score: unchanged formula (will benefit from improved sub-scores)
        GREATEST(0, LEAST(100,
                          (("Altman Z-Score (LTM)" - 1.8) / NULLIF(3.0 - 1.8, 0) * 70) +
                          (100 - CASE
+                                    WHEN "Current Ratio (LTM)" < 0.8 THEN 40.0
                                     WHEN "Current Ratio (LTM)" < 1.0 THEN 30.0
-                                    WHEN "Current Ratio (LTM)" < 1.5 THEN 15.0
+                                    WHEN "Current Ratio (LTM)" < 1.2 THEN 20.0
+                                    WHEN "Current Ratio (LTM)" < 1.5 THEN 10.0
                                     ELSE 0.0
-                             END) * 0.30))                                               AS combined_distress_score,
+                             END) * 0.30
+                   ))                                           AS combined_distress_score,
+
+       -- wc_deteriorating_flag: unchanged
        CASE
            WHEN ("Working Capital (FQ)" - "Working Capital (FY)") /
                 NULLIF(ABS("Working Capital (FY)"), 0) < -0.2
                THEN 1
            ELSE 0
-           END                                                                           AS wc_deteriorating_flag,
+           END                                                  AS wc_deteriorating_flag,
+
+       -- retained_earnings_growth: unchanged
        ("Retained Earnings (FQ)" - "Retained Earnings (FY)") /
-       NULLIF(ABS("Retained Earnings (FY)"), 0)                                          AS retained_earnings_growth,
-       CASE WHEN "Retained Earnings (FQ)" < 0 THEN 1 ELSE 0 END                          AS accumulated_deficit_flag,
+       NULLIF(ABS("Retained Earnings (FY)"), 0)                 AS retained_earnings_growth,
+
+       -- accumulated_deficit_flag: unchanged
+       CASE WHEN "Retained Earnings (FQ)" < 0 THEN 1 ELSE 0 END AS accumulated_deficit_flag,
+
+       -- adequate_cash_buffer: lower threshold to 3 months for net-burn basis
        CASE
+           WHEN "Total Operating Expenses (LTM)" - COALESCE("Total Revenues (LTM)", 0) <= 0
+               THEN 1 -- net cash-positive: always adequate
            WHEN "Cash And Equivalents (FQ)" /
-                NULLIF("Total Operating Expenses (LTM)" / 12.0, 0) > 6
+                NULLIF(("Total Operating Expenses (LTM)" - COALESCE("Total Revenues (LTM)", 0)) / 12.0, 0) > 6
                THEN 1
            ELSE 0
-           END                                                                           AS adequate_cash_buffer
+           END                                                  AS adequate_cash_buffer
+
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
-$$ LANGUAGE SQL;
+$$;
 
 CREATE OR REPLACE FUNCTION calc_accounting_quality_features(p_isin TEXT DEFAULT NULL)
     RETURNS TABLE
@@ -968,7 +1003,7 @@ SELECT "ISIN"                                                                AS 
                                                 "Net EPS - Basic (-2FY)" +
                                                 "Net EPS - Basic (-3FY)" + "Net EPS - Basic (-4FY)") / 5.0), 0)
                           )
-           END AS eps_stability -- 0 = chaotic, 1 = perfectly stable
+           END                                                               AS eps_stability -- 0 = chaotic, 1 = perfectly stable
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -1824,31 +1859,31 @@ CREATE OR REPLACE FUNCTION calc_fcf_growth_estimates(p_isin TEXT DEFAULT NULL)
                 fcf_est_fy5                 NUMERIC,
 
                 -- YoY estimated growth rates
-                fcf_est_growth_fy1_vs_ltm   NUMERIC,  -- FY1E vs current LTM
-                fcf_est_growth_fy2_vs_fy1   NUMERIC,  -- FY2E vs FY1E
-                fcf_est_growth_fy3_vs_fy2   NUMERIC,  -- FY3E vs FY2E
-                fcf_est_growth_fy4_vs_fy3   NUMERIC,  -- FY4E vs FY3E
-                fcf_est_growth_fy5_vs_fy4   NUMERIC,  -- FY5E vs FY4E
+                fcf_est_growth_fy1_vs_ltm   NUMERIC, -- FY1E vs current LTM
+                fcf_est_growth_fy2_vs_fy1   NUMERIC, -- FY2E vs FY1E
+                fcf_est_growth_fy3_vs_fy2   NUMERIC, -- FY3E vs FY2E
+                fcf_est_growth_fy4_vs_fy3   NUMERIC, -- FY4E vs FY3E
+                fcf_est_growth_fy5_vs_fy4   NUMERIC, -- FY5E vs FY4E
 
                 -- Multi-year estimated CAGRs
-                fcf_est_cagr_3y             NUMERIC,  -- (FY3E / LTM)^(1/3) - 1
-                fcf_est_cagr_5y             NUMERIC,  -- (FY5E / LTM)^(1/5) - 1
+                fcf_est_cagr_3y             NUMERIC, -- (FY3E / LTM)^(1/3) - 1
+                fcf_est_cagr_5y             NUMERIC, -- (FY5E / LTM)^(1/5) - 1
 
                 -- Forward FCF margin estimates
-                fcf_est_margin_fy1          NUMERIC,  -- FY1E FCF / LTM Revenue
-                fcf_est_yield_fy1           NUMERIC,  -- FY1E FCF / Market Cap
+                fcf_est_margin_fy1          NUMERIC, -- FY1E FCF / LTM Revenue
+                fcf_est_yield_fy1           NUMERIC, -- FY1E FCF / Market Cap
 
                 -- Growth acceleration / deceleration
-                fcf_est_growth_acceleration NUMERIC,  -- FY2-FY1 growth minus FY1-LTM growth
-                fcf_est_growth_deceleration INTEGER,   -- 1 if growth is slowing across estimates
+                fcf_est_growth_acceleration NUMERIC, -- FY2-FY1 growth minus FY1-LTM growth
+                fcf_est_growth_deceleration INTEGER, -- 1 if growth is slowing across estimates
 
                 -- Estimate spread (dispersion across forward years)
-                fcf_est_trajectory_score    NUMERIC,  -- Pct of forward years with positive FCF
-                fcf_est_always_positive     INTEGER,   -- All 5 forward estimates positive
+                fcf_est_trajectory_score    NUMERIC, -- Pct of forward years with positive FCF
+                fcf_est_always_positive     INTEGER, -- All 5 forward estimates positive
 
                 -- Conversion quality: estimated vs historical
-                fcf_est_vs_historical       NUMERIC,  -- FY1E growth vs last actual YoY growth
-                fcf_est_capex_implied_ratio NUMERIC   -- FY1E FCF / (LTM CFO - LTM CapEx proxy)
+                fcf_est_vs_historical       NUMERIC, -- FY1E growth vs last actual YoY growth
+                fcf_est_capex_implied_ratio NUMERIC  -- FY1E FCF / (LTM CFO - LTM CapEx proxy)
             )
     STABLE
     PARALLEL SAFE
@@ -1926,7 +1961,7 @@ SELECT "ISIN"                                                                   
         CASE WHEN "FCF - Est Avg (FY2E)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "FCF - Est Avg (FY3E)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "FCF - Est Avg (FY4E)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "FCF - Est Avg (FY5E)" > 0 THEN 1 ELSE 0 END) / 5.0 * 100       AS fcf_est_trajectory_score,
+        CASE WHEN "FCF - Est Avg (FY5E)" > 0 THEN 1 ELSE 0 END) / 5.0 * 100        AS fcf_est_trajectory_score,
 
        -- All 5 forward estimates positive
        CASE
@@ -3274,15 +3309,15 @@ SELECT "ISIN"                                                              AS is
                AND "EMA (50D)" > "EMA (250D)"
                THEN 1
            ELSE 0
-           END                                                          AS secular_trend_flag,
-       "Total Return (YTD)"                                             AS total_return_ytd,
-       "Total Return (5Y)"                                              AS total_return_5y,
-       "Total Return (10Y)"                                             AS total_return_10y,
-       "Tot. Return %/CAGR (3Y)"                                        AS return_cagr_3y,
-       "Tot. Return %/CAGR (10Y)"                                       AS return_cagr_10y,
+           END                                                             AS secular_trend_flag,
+       "Total Return (YTD)"                                                AS total_return_ytd,
+       "Total Return (5Y)"                                                 AS total_return_5y,
+       "Total Return (10Y)"                                                AS total_return_10y,
+       "Tot. Return %/CAGR (3Y)"                                           AS return_cagr_3y,
+       "Tot. Return %/CAGR (10Y)"                                          AS return_cagr_10y,
        "Tot. Return %/CAGR (3Y)" - public.pct_change("Last Price"::NUMERIC, "Price (3Y Ago)"::NUMERIC)
-                                                                        AS return_vs_price_momentum,
-       public.safe_divide("Tot. Return %/CAGR (3Y)", "Volatility (1Y)") AS return_consistency_score
+                                                                           AS return_vs_price_momentum,
+       public.safe_divide("Tot. Return %/CAGR (3Y)", "Volatility (1Y)")    AS return_consistency_score
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -3451,7 +3486,7 @@ SELECT "ISIN"                                                                   
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
                           ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
                            "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
-                          4.0) AS revenue_fq_vs_4q_avg,
+                          4.0)                                                                   AS revenue_fq_vs_4q_avg,
        -- Growth flag: 1 if growing YoY
        CASE
            WHEN "Total Revenues (FY)" > "Total Revenues (-1FY)" THEN 1
@@ -5594,7 +5629,7 @@ SELECT id.*,
 
 FROM vw_identifier_columns                         id
          LEFT JOIN calc_composite_scores()         cs USING (isin)
-         LEFT JOIN calc_eps_trajectory_features() etf USING (isin)
+         LEFT JOIN calc_eps_trajectory_features()  etf USING (isin)
          LEFT JOIN calc_net_income_comprehensive() nic USING (isin);
 
 COMMENT ON VIEW vw_features_composite_scores IS
@@ -6569,7 +6604,7 @@ FROM vw_identifier_columns                               id
 -- Section 6: Growth
          LEFT JOIN calc_growth_features()                gf ON id.isin = gf.isin
          LEFT JOIN calc_revenue_forecast_features()      rff ON id.isin = rff.isin
-         LEFT JOIN calc_revenue_estimate_consensus() rec ON id.isin = rec.isin
+         LEFT JOIN calc_revenue_estimate_consensus()     rec ON id.isin = rec.isin
          LEFT JOIN calc_revenue_quarterly_features()     rqf ON id.isin = rqf.isin
          LEFT JOIN calc_total_revenues_temporal()        trt ON id.isin = trt.isin
 
@@ -6876,15 +6911,15 @@ VALUES
      'FCF consistency, CapEx efficiency, M&A sustainability', 'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
     ('calc_cashflow_temporal_features', 'Cash Flow', 12, 'Quarterly CF trends, burn rate, volatility, momentum',
      'engineer_cashflow_temporal_features', CURRENT_TIMESTAMP),
-            ('calc_cashflow_comprehensive', 'Cash Flow', 14, 'CFO, CFI, CFF, FCF for all periods, quality score',
-             'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
-    
-            -- NEW: FCF Growth Estimates
-            ('calc_fcf_growth_estimates', 'Cash Flow', 20,
-             'Estimated FCF growth rates from consensus forecasts (FY1E-FY5E), CAGRs, forward margins/yields, growth acceleration, trajectory quality',
-             'engineer_fcf_growth_estimate_features', CURRENT_TIMESTAMP),
-    
-            -- Temporal Functions
+    ('calc_cashflow_comprehensive', 'Cash Flow', 14, 'CFO, CFI, CFF, FCF for all periods, quality score',
+     'engineer_cash_flow_quality_features', CURRENT_TIMESTAMP),
+
+    -- NEW: FCF Growth Estimates
+    ('calc_fcf_growth_estimates', 'Cash Flow', 20,
+     'Estimated FCF growth rates from consensus forecasts (FY1E-FY5E), CAGRs, forward margins/yields, growth acceleration, trajectory quality',
+     'engineer_fcf_growth_estimate_features', CURRENT_TIMESTAMP),
+
+    -- Temporal Functions
     ('calc_temporal_features', 'Temporal Patterns', 7, 'Fiscal calendar, earnings timing', 'engineer_temporal_features',
      CURRENT_TIMESTAMP),
     ('calc_fiscal_calendar_features', 'Temporal Patterns', 9, 'Days since report, quarter/FY flags, freshness score',

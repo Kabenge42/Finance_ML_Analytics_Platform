@@ -16,7 +16,7 @@ SELECT "ISIN",
        public.safe_divide("Interest And Investment Income (LTM)", "Total Revenues (LTM)"),
        CASE
            WHEN "Interest And Investment Income (-3FY)" > 0 AND "Interest And Investment Income (FY)" > 0
-               THEN (POWER(public.safe_divide("Interest And Investment Income (FY)",
+               THEN (safe_power(public.safe_divide("Interest And Investment Income (FY)",
                                               "Interest And Investment Income (-3FY)"), 1.0 / 3.0) - 1) * 100
            END,
        (CASE WHEN "Interest And Investment Income (FQ)" > 0 THEN 1 ELSE 0 END +

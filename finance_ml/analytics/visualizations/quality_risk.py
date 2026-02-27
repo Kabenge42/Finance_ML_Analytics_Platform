@@ -11,8 +11,8 @@ This module provides visualization functions for analyzing quality and risk metr
 
 Feature Categories leveraged (from feature_registry.sql vw_features_quality_risk):
 - piotroski_f_score, altman_z_score, beneish_m_score
-- distress_risk_score, quality_composite_score
-- accounting_quality_flag, manipulation_probability
+- distress_risk_score, accounting_quality_score
+- quality_momentum_score, combined_distress_score
 """
 
 from __future__ import annotations
@@ -36,9 +36,9 @@ METRIC_LABELS = {
     "altman_z_score": "Altman Z-Score",
     "beneish_m_score": "Beneish M-Score",
     "distress_risk_score": "Distress Risk Score",
-    "quality_composite_score": "Quality Composite",
-    "accounting_quality_flag": "Accounting Quality Flag",
-    "manipulation_probability": "Manipulation Probability",
+    "quality_momentum_score": "Quality Momentum Score",
+    "combined_distress_score": "Combined Distress Score",
+    "accounting_quality_score": "Accounting Quality Score",
 }
 
 
