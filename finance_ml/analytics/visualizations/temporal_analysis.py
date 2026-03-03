@@ -21,7 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS, create_no_data_figure, resolve_column
 
 def create_earnings_calendar_heatmap(
     df: pd.DataFrame,
@@ -261,22 +261,13 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
     >>> fig = create_inventory_cycle_analysis(df)
     >>> fig.show()
     """
-    inventory_cols = ["inventory_days", "inventory_turnover_itf", "inventory_yoy_change"]
+    # Resolve inventory_turnover via alias map (may be inventory_turnover_itf or inventory_turnover)
+    turnover_col = resolve_column(df, "inventory_turnover") or "inventory_turnover_itf"
+    inventory_cols = ["inventory_days", turnover_col, "inventory_yoy_change"]
     available_cols = [col for col in inventory_cols if col in df.columns]
 
     if not available_cols:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No inventory data available",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Inventory Cycle Analysis - No Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Inventory Cycle Analysis - No Data")
 
     # Create subplots
     fig = make_subplots(
@@ -315,10 +306,10 @@ def create_inventory_cycle_analysis(df: pd.DataFrame, group_col: str = "industry
         )
 
     # 2. Inventory turnover by sector
-    if "inventory_turnover_itf" in df.columns and group_col in df.columns:
+    if turnover_col in df.columns and group_col in df.columns:
         sectors = df[group_col].dropna().unique()[:8]
         for sector in sectors:
-            sector_data = df[df[group_col] == sector]["inventory_turnover_itf"].dropna()
+            sector_data = df[df[group_col] == sector][turnover_col].dropna()
             sector_data = sector_data[sector_data.between(0, 50)]  # Filter outliers
             if len(sector_data) > 5:
                 fig.add_trace(

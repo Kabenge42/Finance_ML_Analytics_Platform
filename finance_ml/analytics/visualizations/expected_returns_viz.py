@@ -24,6 +24,11 @@ from finance_ml.analytics.visualizations._shared import (
     COLORS,
     create_no_data_figure,
 )
+from finance_ml.analytics.inference_schema import (
+    IdentifierCoordinates,
+    EquitiesMaterializedViewSpec,
+    EquitiesSchemaMetadata,
+)
 
 # Signal labels for tri-model agreement (duplicated from expected_returns_v3
 # to avoid circular imports)
@@ -37,6 +42,9 @@ _SIGNAL_LABELS = {
 
 def create_mc_return_distribution(mc: pd.DataFrame) -> go.Figure:
     """Two-panel figure: expected upside histogram + P(positive) bar chart."""
+    if mc.empty or "expected_upside_pct" not in mc.columns:
+        return create_no_data_figure("MC Return Distribution — No Data")
+
     fig = make_subplots(
         rows=2,
         cols=1,
@@ -100,8 +108,16 @@ def create_mc_return_distribution(mc: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def create_sector_risk_reward_scatter(mc: pd.DataFrame) -> go.Figure:
-    """Sector-level bubble scatter: VaR 5% vs expected upside."""
+def create_sector_risk_reward_scatter(
+    mc: pd.DataFrame,
+    identifier_coords: Optional[IdentifierCoordinates] = None,
+) -> go.Figure:
+    """Sector-level bubble scatter with optional region/trading_country grouping."""
+    if identifier_coords is not None and len(identifier_coords.regions) > 0:
+        mc = mc.copy()
+        if "region" not in mc.columns:
+            ticker_to_region = dict(zip(identifier_coords.tickers, identifier_coords.regions))
+            mc["region"] = mc["ticker"].map(ticker_to_region)
     sector = (
         mc.groupby("industry")
         .agg(
@@ -246,6 +262,7 @@ def create_strong_consensus_bar(strong: pd.DataFrame) -> go.Figure:
 def create_sector_heatmap(
     tri: pd.DataFrame,
     compute_sector_fn=None,
+    schema_metadata: Optional[EquitiesSchemaMetadata] = None,
 ) -> go.Figure:
     """Sector expected returns heatmap across all models.
 
@@ -256,6 +273,8 @@ def create_sector_heatmap(
     compute_sector_fn : callable, optional
         Function to compute sector expected returns from *tri*.
         When ``None``, a lightweight fallback aggregation is used.
+    schema_metadata : EquitiesSchemaMetadata, optional
+        Schema metadata for column validation.
     """
     if compute_sector_fn is not None:
         sector = compute_sector_fn(tri)
@@ -334,6 +353,9 @@ def _default_sector_aggregation(tri: pd.DataFrame) -> pd.DataFrame:
 
 def create_var_analysis(mc: pd.DataFrame) -> go.Figure:
     """Two-panel VaR analysis: distribution + VaR vs upside scatter."""
+    if mc.empty or "var_5_pct" not in mc.columns or "expected_upside_pct" not in mc.columns:
+        return create_no_data_figure("VaR Analysis — No Data")
+
     fig = make_subplots(
         rows=2,
         cols=1,
@@ -499,7 +521,7 @@ def create_model_dispersion_dashboard(summary: pd.DataFrame) -> go.Figure:
     if group_col in summary.columns and "agreement_score" in summary.columns:
         consensus = (
             summary.groupby(group_col)["agreement_score"]
-            .apply(lambda x: (x == 4).mean() * 100)
+            .apply(lambda x: (x == 3).mean() * 100)
             .sort_values(ascending=True)
             .tail(20)
         )
@@ -605,7 +627,8 @@ def create_return_distribution_fit_chart(mc: pd.DataFrame) -> go.Figure:
 
 def create_sector_return_analytics_heatmap(sector_analytics: pd.DataFrame) -> go.Figure:
     """Enhanced sector heatmap with confidence intervals, consensus rates, and beat probs."""
-    if sector_analytics.empty or "sector" not in sector_analytics.columns:
+    group_col = "industry" if "industry" in sector_analytics.columns else "sector"
+    if sector_analytics.empty or group_col not in sector_analytics.columns:
         return create_no_data_figure("Sector Return Analytics — No Data")
 
     display_cols = [
@@ -625,7 +648,7 @@ def create_sector_return_analytics_heatmap(sector_analytics: pd.DataFrame) -> go
     if not display_cols:
         return go.Figure()
 
-    heatmap_data = sector_analytics.set_index("sector")[display_cols]
+    heatmap_data = sector_analytics.set_index(group_col)[display_cols]
     rename_map = {
         "mc_mean": "MC Mean %",
         "mc_median": "MC Median %",
@@ -681,5 +704,92 @@ def create_screening_summary_chart(screens: dict[str, pd.DataFrame]) -> go.Figur
         xaxis_title="Number of Stocks Passing",
         template=PLOTLY_TEMPLATE,
         height=max(400, len(names) * 40),
+    )
+    return fig
+
+
+def create_price_target_drift_dashboard(
+    mv_equities_df: pd.DataFrame,
+    mv_spec: Optional[EquitiesMaterializedViewSpec] = None,
+) -> go.Figure:
+    """Dashboard showing price target drift across historical snapshots.
+
+    Uses ``mv_spec.price_target_columns`` (when available) to identify
+    price-target horizons and creates a multi-line chart showing
+    PT median/high/low drift over 1W/1M/3M/6M/1Y.
+
+    Parameters
+    ----------
+    mv_equities_df : pd.DataFrame
+        Data from mv_equities (or equivalent).
+    mv_spec : EquitiesMaterializedViewSpec, optional
+        Materialized view specification for column discovery.
+
+    Returns
+    -------
+    go.Figure
+    """
+    if mv_equities_df.empty:
+        return create_no_data_figure("Price Target Drift — No Data")
+
+    # Discover price target columns
+    if mv_spec is not None:
+        pt_cols = mv_spec.price_target_columns
+    else:
+        pt_cols = [c for c in mv_equities_df.columns if c.startswith("price_target")]
+
+    if not pt_cols:
+        return create_no_data_figure("Price Target Drift — No PT Columns")
+
+    # Identify horizon suffixes
+    horizon_order = ["1w_ago", "1m_ago", "3m_ago", "6m_ago", "1y_ago"]
+    horizon_labels = ["1W Ago", "1M Ago", "3M Ago", "6M Ago", "1Y Ago"]
+
+    # Find the base PT column (current, no _ago suffix)
+    base_cols = [c for c in pt_cols if not any(h in c for h in horizon_order)]
+    if not base_cols:
+        base_cols = pt_cols[:1]
+
+    fig = go.Figure()
+    color_idx = 0
+
+    for base in base_cols[:3]:  # limit to 3 base metrics
+        # Current value
+        if base in mv_equities_df.columns:
+            median_val = mv_equities_df[base].median()
+            points = [("Current", median_val)]
+
+            for suffix, label in zip(horizon_order, horizon_labels):
+                hist_col = f"{base}_{suffix}" if f"{base}_{suffix}" in mv_equities_df.columns else None
+                if hist_col is None:
+                    # Try matching pattern
+                    candidates = [c for c in pt_cols if base.replace("price_target", "") in c and suffix in c]
+                    hist_col = candidates[0] if candidates else None
+                if hist_col and hist_col in mv_equities_df.columns:
+                    points.append((label, mv_equities_df[hist_col].median()))
+
+            if len(points) > 1:
+                labels, values = zip(*points)
+                fig.add_trace(
+                    go.Scatter(
+                        x=list(labels),
+                        y=list(values),
+                        mode="lines+markers",
+                        name=base.replace("_", " ").title(),
+                        line=dict(color=COLORS[color_idx % len(COLORS)], width=2),
+                        marker=dict(size=8),
+                    )
+                )
+                color_idx += 1
+
+    if not fig.data:
+        return create_no_data_figure("Price Target Drift — Insufficient Historical Data")
+
+    fig.update_layout(
+        title="Price Target Drift Across Historical Snapshots",
+        xaxis_title="Snapshot Horizon",
+        yaxis_title="Median Price Target",
+        template=PLOTLY_TEMPLATE,
+        height=500,
     )
     return fig

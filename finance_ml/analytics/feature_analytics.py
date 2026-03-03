@@ -470,7 +470,7 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
     ----------
     df : pd.DataFrame
         DataFrame containing:
-        - debt_to_equity, current_ratio, distress_risk_score
+        - debt_to_equity, current_ratio, combined_distress_risk_score
         - ticker, name, industry
 
     Returns
@@ -484,7 +484,7 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
         "industry",
         "debt_to_equity",
         "current_ratio",
-        "distress_risk_score",
+        "combined_distress_risk_score",
     ]
     available_cols = [c for c in required_cols if c in df.columns]
 
@@ -499,7 +499,7 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
         plot_df,
         x="debt_to_equity",
         y="current_ratio",
-        color="distress_risk_score" if "distress_risk_score" in plot_df.columns else None,
+        color="combined_distress_risk_score" if "combined_distress_risk_score" in plot_df.columns else None,
         color_continuous_scale="RdYlGn",
         hover_data=(
             ["ticker", "name", "industry"]
@@ -510,7 +510,7 @@ def create_leverage_liquidity_quadrant(df: pd.DataFrame) -> Figure:
         labels={
             "debt_to_equity": "Debt-to-Equity Ratio",
             "current_ratio": "Current Ratio (Liquidity)",
-            "distress_risk_score": "Distress Risk Score",
+            "combined_distress_risk_score": "Distress Risk Score",
         },
         height=650,
     )
@@ -553,7 +553,7 @@ def analyze_distress_distribution_legacy(df: pd.DataFrame) -> Figure:
     ----------
     df : pd.DataFrame
         DataFrame containing:
-        - distress_risk_score
+        - combined_distress_risk_score
         - industry
 
     Returns
@@ -565,7 +565,7 @@ def analyze_distress_distribution_legacy(df: pd.DataFrame) -> Figure:
         3. Q-Q plot vs normal
         4. Tail risk by industry
     """
-    distress_data = df["distress_risk_score"].dropna()
+    distress_data = df["combined_distress_risk_score"].dropna()
 
     fig = make_subplots(
         rows=2,
@@ -659,7 +659,7 @@ def analyze_distress_distribution_legacy(df: pd.DataFrame) -> Figure:
     if "industry" in df.columns:
         tail_risk = (
             df.groupby("industry")
-            .apply(lambda x: (x["distress_risk_score"] < 30).mean() * 100, include_groups=False)
+            .apply(lambda x: (x["combined_distress_risk_score"] < 30).mean() * 100, include_groups=False)
             .sort_values(ascending=False)
         )
 
@@ -715,7 +715,7 @@ def create_composite_quality_score(df: pd.DataFrame) -> pd.DataFrame:
     df : pd.DataFrame
         DataFrame containing quality factor columns:
         - piotroski_f_score, earnings_quality_composite
-        - cash_flow_quality_score, distress_risk_score
+        - cash_flow_quality_score, combined_distress_risk_score
         - accounting_quality_score, dilution_score
         - beta_stability_score, long_term_trend_score, eps_trajectory_score
 
@@ -734,7 +734,7 @@ def create_composite_quality_score(df: pd.DataFrame) -> pd.DataFrame:
         "piotroski_f_score": 0.15,
         "earnings_quality_composite": 0.15,
         "cash_flow_quality_score": 0.12,
-        "distress_risk_score": 0.12,
+        "combined_distress_risk_score": 0.12,
         "accounting_quality_score": 0.10,
         "dilution_score": 0.08,
         "beta_stability_score": 0.08,
@@ -758,7 +758,7 @@ def create_composite_quality_score(df: pd.DataFrame) -> pd.DataFrame:
         "piotroski_f_score",
         "earnings_quality_composite",
         "cash_flow_quality_score",
-        "distress_risk_score",
+        "combined_distress_risk_score",
         "accounting_quality_score",
         "dilution_score",
         "beta_stability_score",
@@ -929,7 +929,7 @@ def create_summary_dashboard(df: pd.DataFrame) -> Figure:
     )
 
     low_distress_pct = (
-        (df["distress_risk_score"] >= 70).mean() * 100 if "distress_risk_score" in df.columns else 0
+        (df["combined_distress_risk_score"] >= 70).mean() * 100 if "combined_distress_risk_score" in df.columns else 0
     )
     fig.add_trace(
         go.Indicator(
@@ -1028,7 +1028,7 @@ def main():
             print(f"    ✓ Saved to {output_dir}/feature_analytics_leverage.html")
 
         # Distress distribution
-        if "distress_risk_score" in df.columns:
+        if "combined_distress_risk_score" in df.columns:
             print("  - Creating distress distribution analysis...")
             fig_distress = analyze_distress_distribution_legacy(df)
             fig_distress.write_html(f"{output_dir}/feature_analytics_distress.html")

@@ -37,6 +37,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import xarray as xr
 from plotly.subplots import make_subplots
 from scipy import stats
 
@@ -44,6 +45,10 @@ from finance_ml.analytics.visualizations._shared import (
     PLOTLY_TEMPLATE,
     COLORS,
     create_no_data_figure,
+)
+from finance_ml.analytics.inference_schema import (
+    FeatureViewSpec,
+    IdentifierCoordinates,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,13 +60,20 @@ _CI_LINE_WIDTH = 4
 _MEDIAN_MARKER_SIZE = 8
 _MIN_FOREST_HEIGHT = 500
 _ROW_HEIGHT_PX = 22
+_ZERO_LINE_COLOR = "red"
+_ZERO_LINE_OPACITY = 0.6
+_CI_HOVER_TEMPLATE = (
+    "<b>{ticker}</b><br>"
+    "{ci_pct:.0%} CI: [{lo:.1f}%, {hi:.1f}%]"
+    "<extra></extra>"
+)
 
 # ---------------------------------------------------------------------------
 # Lazy ArviZ import (matches project-wide pattern)
 # ---------------------------------------------------------------------------
 try:
     import arviz as az
-    ARVIZ_AVAILABLE = True
+    ARVIZ_AVAILABLE = hasattr(az, "InferenceData")
 except ImportError:  # pragma: no cover
     az = None  # type: ignore[assignment]
     ARVIZ_AVAILABLE = False
@@ -69,6 +81,16 @@ except ImportError:  # pragma: no cover
 def float_array(x) -> np.ndarray:
     """Convert to a float64 numpy array (handles xarray scalars gracefully)."""
     return np.asarray(x, dtype=np.float64)
+
+
+def _ci_bounds(credible_interval: float) -> tuple[float, float]:
+    """Return the (lower, upper) quantile fractions for a symmetric ETI.
+
+    >>> _ci_bounds(0.94)
+    (0.03, 0.97)
+    """
+    tail = (1.0 - credible_interval) / 2.0
+    return tail, 1.0 - tail
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. Posterior Return Forest Plot
@@ -81,6 +103,7 @@ def create_posterior_return_forest(
         credible_interval: float = 0.94,
         sort_by: str = "median",
         title: Optional[str] = None,
+        view_spec: Optional[FeatureViewSpec] = None,
 ) -> go.Figure:
     """
     Forest plot of posterior expected returns per equity.
@@ -116,10 +139,12 @@ def create_posterior_return_forest(
     if not 0 < credible_interval < 1:
         raise ValueError(f"credible_interval must be in (0, 1), got {credible_interval}")
 
+    if title is None and view_spec is not None:
+        title = f"Posterior Returns — {view_spec.category} Features"
     title = title or f"Posterior Expected Returns — Top {top_n} Equities"
 
     # ── ArviZ path ────────────────────────────────────────────────────────
-    if ARVIZ_AVAILABLE and az is not None and isinstance(idata_or_df, az.InferenceData):
+    if ARVIZ_AVAILABLE and isinstance(idata_or_df, az.InferenceData):
         return _forest_from_idata(idata_or_df, var_name, top_n, credible_interval, sort_by, title)
 
     # ── DataFrame fallback ────────────────────────────────────────────────
@@ -136,8 +161,8 @@ def create_posterior_return_forest(
 def _build_forest_figure(
         tickers: np.ndarray,
         medians: np.ndarray,
-        lo: np.ndarray,
-        hi: np.ndarray,
+        ci_lower: np.ndarray,
+        ci_upper: np.ndarray,
         credible_interval: float,
         title: str,
 ) -> go.Figure:
@@ -147,15 +172,16 @@ def _build_forest_figure(
     for i in range(len(tickers)):
         fig.add_trace(
             go.Scatter(
-                x=[lo[i], hi[i]],
+                x=[ci_lower[i], ci_upper[i]],
                 y=[tickers[i], tickers[i]],
                 mode="lines",
                 line=dict(color=COLORS[0], width=_CI_LINE_WIDTH),
                 showlegend=False,
-                hovertemplate=(
-                    f"<b>{tickers[i]}</b><br>"
-                    f"{credible_interval:.0%} CI: [{lo[i]:.1f}%, {hi[i]:.1f}%]"
-                    f"<extra></extra>"
+                hovertemplate=_CI_HOVER_TEMPLATE.format(
+                    ticker=tickers[i],
+                    ci_pct=credible_interval,
+                    lo=ci_lower[i],
+                    hi=ci_upper[i],
                 ),
             )
         )
@@ -170,7 +196,7 @@ def _build_forest_figure(
         )
     )
 
-    fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.6)
+    fig.add_vline(x=0, line_dash="dash", line_color=_ZERO_LINE_COLOR, opacity=_ZERO_LINE_OPACITY)
     fig.update_layout(
         title=title,
         xaxis_title="Annualised Return (%)",
@@ -188,23 +214,29 @@ def _build_forest_figure(
 def _sort_and_slice_posterior(
         tickers: np.ndarray,
         medians: np.ndarray,
-        means: np.ndarray,
-        lo: np.ndarray,
-        hi: np.ndarray,
+        ci_lower: np.ndarray,
+        ci_upper: np.ndarray,
         sort_by: str,
         top_n: int,
+        sort_fallback: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Sort arrays by the chosen criterion and return the top-*n* slice.
 
-    Returns (tickers, medians, lo, hi) after sorting and slicing.
+    Parameters
+    ----------
+    sort_fallback : array, optional
+        Values used when *sort_by* is neither ``"median"`` nor
+        ``"hdi_width"`` (e.g. posterior means).
+
+    Returns (tickers, medians, ci_lower, ci_upper) after sorting and slicing.
     """
     sort_key = {
         "median": medians,
-        "hdi_width": hi - lo,
+        "hdi_width": ci_upper - ci_lower,
     }
-    sort_vals = sort_key.get(sort_by, means)
+    sort_vals = sort_key.get(sort_by, sort_fallback if sort_fallback is not None else medians)
     order = np.argsort(sort_vals)[::-1][:top_n]
-    return tickers[order], medians[order], lo[order], hi[order]
+    return tickers[order], medians[order], ci_lower[order], ci_upper[order]
 
 
 def _compute_rhat_annotation(
@@ -241,18 +273,21 @@ def _forest_from_idata(
 
     medians = float_array(samples.median(dim=("chain", "draw")).values)
     means = float_array(samples.mean(dim=("chain", "draw")).values)
-    alpha = (1 - credible_interval) / 2
-    lo = float_array(samples.quantile(alpha, dim=("chain", "draw")).values)
-    hi = float_array(samples.quantile(1 - alpha, dim=("chain", "draw")).values)
+    q_lo, q_hi = _ci_bounds(credible_interval)
+    ci_lower = float_array(samples.quantile(q_lo, dim=("chain", "draw")).values)
+    ci_upper = float_array(samples.quantile(q_hi, dim=("chain", "draw")).values)
 
-    tickers, medians, lo, hi = _sort_and_slice_posterior(
-        tickers, medians, means, lo, hi, sort_by, top_n,
+    tickers, medians, ci_lower, ci_upper = _sort_and_slice_posterior(
+        tickers, medians, ci_lower, ci_upper,
+        sort_by=sort_by,
+        top_n=top_n,
+        sort_fallback=means,
     )
 
-    rhat_text = _compute_rhat_annotation(idata, var_name, samples.sizes["chain"])
-    display_title = f"{title}{rhat_text}"
+    rhat_note = _compute_rhat_annotation(idata, var_name, samples.sizes["chain"])
+    annotated_title = f"{title}{rhat_note}" if rhat_note else title
 
-    return _build_forest_figure(tickers, medians, lo, hi, credible_interval, display_title)
+    return _build_forest_figure(tickers, medians, ci_lower, ci_upper, credible_interval, annotated_title)
 
 
 def _forest_from_dataframe(
@@ -355,7 +390,7 @@ def create_beat_probability_posterior(
     title = title or "Posterior Earnings Beat Probability"
 
     # ── ArviZ path ────────────────────────────────────────────────────────
-    if ARVIZ_AVAILABLE and az is not None and isinstance(idata_or_df, az.InferenceData):
+    if ARVIZ_AVAILABLE and isinstance(idata_or_df, az.InferenceData):
         return _beat_density_from_idata(idata_or_df, tickers, top_n, title)
 
     # ── DataFrame fallback ────────────────────────────────────────────────
@@ -499,6 +534,7 @@ def create_ruin_probability_diagnostic(
     idata_or_df: "az.InferenceData | pd.DataFrame",
     top_n: int = 20,
     title: Optional[str] = None,
+    identifier_coords: Optional[IdentifierCoordinates] = None,
 ) -> go.Figure:
     """
     Four-panel diagnostic dashboard for ruin probability posteriors.
@@ -530,7 +566,7 @@ def create_ruin_probability_diagnostic(
     if isinstance(idata_or_df, pd.DataFrame):
         return _ruin_diagnostic_from_df(idata_or_df, top_n, title)
 
-    if ARVIZ_AVAILABLE and az is not None and isinstance(idata_or_df, az.InferenceData):
+    if ARVIZ_AVAILABLE and isinstance(idata_or_df, az.InferenceData):
         return _ruin_diagnostic_from_idata(idata_or_df, top_n, title)
 
     return create_no_data_figure(title)
@@ -696,7 +732,7 @@ def _ruin_diagnostic_from_idata(idata, top_n, title) -> go.Figure:
 
 def create_mcse_convergence_panel(
     idata: "az.InferenceData | pd.DataFrame",
-    var_name: str = "expected_return",
+    var_name: str = "expected_return_prob_weighted",
     title: Optional[str] = None,
 ) -> go.Figure:
     """
@@ -722,7 +758,7 @@ def create_mcse_convergence_panel(
     """
     title = title or f"MCSE Convergence — {var_name}"
 
-    if not ARVIZ_AVAILABLE or az is None:
+    if not ARVIZ_AVAILABLE:
         return create_no_data_figure(f"{title} — ArviZ required")
     if not isinstance(idata, az.InferenceData) or not hasattr(idata, "posterior"):
         return create_no_data_figure(f"{title} — no posterior group")
@@ -837,7 +873,7 @@ def create_bayesian_category_ridge(
         # Use ArviZ InferenceData samples when available (from updated
         # bayesian_category_analysis), otherwise fall back to parametric draws.
         idata = info.get("inference_data")
-        if ARVIZ_AVAILABLE and az is not None and idata is not None:
+        if ARVIZ_AVAILABLE and idata is not None:
             try:
                 samples = idata.posterior["mu"].values.flatten()
             except Exception:
@@ -1022,3 +1058,127 @@ def _tier_color(tier: str) -> str:
     if "moderate" in tier_lower:
         return "#3498db"
     return "#00bc8c"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 7. Feature View Posterior Panel
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_feature_view_posterior_panel(
+    idata: "az.InferenceData | xr.Dataset",
+    view_spec: FeatureViewSpec,
+    top_n_features: int = 10,
+    top_n_equities: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """Multi-panel posterior visualization for a specific feature view.
+
+    Creates one subplot per top feature showing equity-level posterior
+    distributions.  Uses ``view_spec.feature_columns`` for axis labels.
+
+    Parameters
+    ----------
+    idata : arviz.InferenceData or xr.Dataset
+        Posterior samples (from ``build_feature_view_inference_data``).
+    view_spec : FeatureViewSpec
+        Feature view specification with category and column metadata.
+    top_n_features : int, default 10
+        Maximum number of feature subplots.
+    top_n_equities : int, default 20
+        Equities to display per feature panel.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or f"{view_spec.category} — Feature Posterior Panel"
+
+    # Extract the posterior dataset
+    if ARVIZ_AVAILABLE and isinstance(idata, az.InferenceData):
+        if hasattr(idata, "posterior"):
+            ds = idata.posterior
+        else:
+            return create_no_data_figure(f"{title} — no posterior group")
+    elif isinstance(idata, xr.Dataset):
+        ds = idata
+    else:
+        return create_no_data_figure(title)
+
+    # Select features present in both spec and dataset
+    available = [c for c in view_spec.feature_columns if c in ds.data_vars]
+    if not available:
+        return create_no_data_figure(f"{title} — no matching features")
+
+    features = available[:top_n_features]
+    n_features = len(features)
+    cols = min(3, n_features)
+    rows = (n_features + cols - 1) // cols
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=features,
+        vertical_spacing=0.08,
+        horizontal_spacing=0.08,
+    )
+
+    for idx, feat in enumerate(features):
+        r_idx = idx // cols + 1
+        c_idx = idx % cols + 1
+
+        var_data = ds[feat]
+        # Collapse chain/draw → per-equity medians and CIs
+        if "chain" in var_data.dims and "draw" in var_data.dims:
+            flat = var_data.stack(sample=("chain", "draw"))
+            medians = float_array(flat.median(dim="sample"))
+            q_lo = float_array(flat.quantile(0.03, dim="sample"))
+            q_hi = float_array(flat.quantile(0.97, dim="sample"))
+        elif "equity" in var_data.dims:
+            medians = float_array(var_data)
+            q_lo = medians
+            q_hi = medians
+        else:
+            continue
+
+        # Sort by median, take top_n_equities
+        order = np.argsort(medians)[::-1][:top_n_equities]
+        tickers = (
+            np.array(ds.coords["equity"].values)[order]
+            if "equity" in ds.coords
+            else np.arange(len(medians))[order].astype(str)
+        )
+
+        for i, oi in enumerate(order):
+            fig.add_trace(
+                go.Scatter(
+                    x=[q_lo[oi], q_hi[oi]],
+                    y=[tickers[i], tickers[i]],
+                    mode="lines",
+                    line=dict(color=COLORS[0], width=3),
+                    showlegend=False,
+                ),
+                row=r_idx,
+                col=c_idx,
+            )
+
+        fig.add_trace(
+            go.Scatter(
+                x=medians[order],
+                y=tickers,
+                mode="markers",
+                marker=dict(size=6, color=COLORS[2], symbol="diamond"),
+                showlegend=False,
+            ),
+            row=r_idx,
+            col=c_idx,
+        )
+
+    fig.update_layout(
+        title=title,
+        height=max(500, 250 * rows),
+        template=PLOTLY_TEMPLATE,
+    )
+    return fig

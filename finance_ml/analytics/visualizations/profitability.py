@@ -21,7 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS, create_no_data_figure
+from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE, COLORS, create_no_data_figure, resolve_column
 
 def create_margin_waterfall_chart(
     df: pd.DataFrame, ticker: Optional[str] = None, show_median: bool = True
@@ -175,8 +175,9 @@ def create_dupont_decomposition_dashboard(df: pd.DataFrame, top_n: int = 20) -> 
     plot_df = df.copy()
 
     # Calculate asset turnover proxy if not available
-    if "asset_turnover" not in plot_df.columns and "total_asset_turnover" in plot_df.columns:
-        plot_df["asset_turnover"] = plot_df["total_asset_turnover"]
+    at_col = resolve_column(plot_df, "asset_turnover")
+    if at_col is not None and at_col != "asset_turnover":
+        plot_df["asset_turnover"] = plot_df[at_col]
     if "asset_turnover" not in plot_df.columns:
         if "roa" in plot_df.columns and "net_margin_pct" in plot_df.columns:
             # Asset Turnover ≈ ROA / Net Margin
@@ -525,18 +526,7 @@ def create_margin_trend_heatmap(
     >>> fig.show()
     """
     if margin_col not in df.columns or group_col not in df.columns:
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"Missing required columns: {margin_col} or {group_col}",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(title="Margin Trend Heatmap - Missing Data", template=PLOTLY_TEMPLATE)
-        return fig
+        return create_no_data_figure("Margin Trend Heatmap - Missing Data")
 
     # Calculate statistics by group
     stats = (

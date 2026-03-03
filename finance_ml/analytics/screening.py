@@ -76,7 +76,7 @@ def create_enhanced_screener(
     # Ensure necessary columns exist
     required_cols = [
         "piotroski_f_score",
-        "distress_risk_score",
+        "combined_distress_risk_score",
         "eps_trajectory_score",
         "fcf_positive_years",
     ]
@@ -89,7 +89,7 @@ def create_enhanced_screener(
     # Apply filters
     mask = (
         (df["piotroski_f_score"] >= min_fscore)
-        & (df["distress_risk_score"] >= (100 - max_distress_risk))
+        & (df["combined_distress_risk_score"] >= (100 - max_distress_risk))
         & (df["eps_trajectory_score"] >= min_eps_trajectory)
         & (df["fcf_positive_years"] >= min_fcf_positive_years)
     )
@@ -398,8 +398,8 @@ def screen_valuation_reversion_candidates(
         mask &= df["piotroski_f_score"] >= (min_quality_score / 10)
 
     # Safety filter
-    if "distress_risk_score" in df.columns:
-        mask &= df["distress_risk_score"] >= (100 - max_distress_risk)
+    if "combined_distress_risk_score" in df.columns:
+        mask &= df["combined_distress_risk_score"] >= (100 - max_distress_risk)
 
     result = df[mask].copy()
 
@@ -487,8 +487,8 @@ def screen_financial_health(
     """
     mask = pd.Series([True] * len(df), index=df.index)
 
-    if "distress_risk_score" in df.columns:
-        mask &= df["distress_risk_score"] >= min_distress_score
+    if "combined_distress_risk_score" in df.columns:
+        mask &= df["combined_distress_risk_score"] >= min_distress_score
 
     if "debt_to_equity" in df.columns:
         mask &= df["debt_to_equity"] <= max_debt_to_equity
@@ -507,8 +507,8 @@ def screen_financial_health(
 
     result = df[mask].copy()
 
-    if "distress_risk_score" in result.columns:
-        result = result.sort_values("distress_risk_score", ascending=False)
+    if "combined_distress_risk_score" in result.columns:
+        result = result.sort_values("combined_distress_risk_score", ascending=False)
 
     return result
 
@@ -526,7 +526,7 @@ def rank_stocks_by_composite_score(
     weights : dict, optional
         Dictionary of score weights. Default weights:
         - piotroski_f_score: 0.25
-        - distress_risk_score: 0.25
+        - combined_distress_risk_score: 0.25
         - earnings_quality_composite: 0.25
         - cash_flow_quality_score: 0.25
 
@@ -543,7 +543,7 @@ def rank_stocks_by_composite_score(
     if weights is None:
         weights = {
             "piotroski_f_score": 0.25,
-            "distress_risk_score": 0.25,
+            "combined_distress_risk_score": 0.25,
             "earnings_quality_composite": 0.25,
             "cash_flow_quality_score": 0.25,
         }
@@ -708,8 +708,8 @@ def screen_high_yield_safe_dividends(
     if "dividend_payout_ratio" in df.columns:
         mask &= df["dividend_payout_ratio"] <= max_payout
 
-    if "distress_risk_score" in df.columns:
-        mask &= df["distress_risk_score"] >= min_distress_score
+    if "combined_distress_risk_score" in df.columns:
+        mask &= df["combined_distress_risk_score"] >= min_distress_score
 
     if "fcf_dividend_coverage" in df.columns:
         mask &= df["fcf_dividend_coverage"] >= min_fcf_coverage

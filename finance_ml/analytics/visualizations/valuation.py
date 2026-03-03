@@ -10,7 +10,7 @@ This module provides visualization functions for analyzing valuation metrics:
 
 Feature Categories leveraged (from feature_registry.sql vw_features_valuation_ratios):
 - p_e_ratio, p_b_ratio, ev_ebitda_ratio, ev_sales_ratio, peg_ratio, dividend_yield
-- forward_pe, trailing_pe, price_to_sales, price_to_fcf
+- forward_pe_premium, valuation_mean_reversion, valuation_compression
 """
 
 from __future__ import annotations
@@ -46,10 +46,10 @@ METRIC_LABELS = {
     "ev_sales_ratio": "EV/Sales",
     "peg_ratio": "PEG Ratio",
     "dividend_yield": "Dividend Yield",
-    "forward_pe": "Forward P/E",
-    "trailing_pe": "Trailing P/E",
-    "price_to_sales": "Price/Sales",
-    "price_to_fcf": "Price/FCF",
+    "forward_pe_premium": "Forward P/E Premium",
+    "valuation_mean_reversion": "Valuation Mean Reversion",
+    "valuation_compression": "Valuation Compression",
+    "price_to_tangible_book": "Price/Tangible Book",
     "eps_growth_yoy": "EPS Growth YoY",
     "eps_yoy_growth": "EPS Growth YoY",
     "revenue_growth_yoy": "Revenue Growth YoY",

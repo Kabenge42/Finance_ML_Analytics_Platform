@@ -182,6 +182,44 @@ class TestBayesianTechnicalResampler(unittest.TestCase):
         # Only 1 period → skipped
         self.assertTrue(result.empty)
 
+    def test_sql_style_column_names(self):
+        """Columns with SQL-style names (e.g. 'Price (1M Ago)') should work."""
+        rng = np.random.default_rng(99)
+        n = 5
+        last_prices = rng.uniform(50, 200, n)
+        df = pd.DataFrame(
+            {
+                "ticker": [f"SQL{i}" for i in range(n)],
+                "Last Price": last_prices,
+                "Price (1M Ago)": last_prices * rng.uniform(0.90, 1.10, n),
+                "Price (3M Ago)": last_prices * rng.uniform(0.80, 1.20, n),
+                "Price (1Y Ago)": last_prices * rng.uniform(0.60, 1.40, n),
+                "sector": rng.choice(["Tech", "Finance"], n),
+            }
+        )
+        result = self.resampler.resample_returns(df)
+        self.assertFalse(result.empty, "Should find returns from SQL-style columns")
+        self.assertIn("ticker", result.columns)
+        self.assertIn("posterior_mean", result.columns)
+
+    def test_compute_historical_returns_sql_columns(self):
+        """_compute_historical_returns should handle SQL-style price columns."""
+        rng = np.random.default_rng(101)
+        n = 3
+        last_prices = rng.uniform(100, 300, n)
+        df = pd.DataFrame(
+            {
+                "ticker": ["A", "B", "C"],
+                "Last Price": last_prices,
+                "Price (6M Ago)": last_prices * rng.uniform(0.70, 1.30, n),
+                "Price (3Y Ago)": last_prices * rng.uniform(0.40, 1.60, n),
+            }
+        )
+        returns_df = self.resampler._compute_historical_returns(df)
+        self.assertFalse(returns_df.empty)
+        periods = set(returns_df["period"].unique())
+        self.assertTrue(periods & {"6M", "3Y"}, "Should contain 6M and/or 3Y periods")
+
 
 class TestBayesianTechnicalResamplerInferenceData(unittest.TestCase):
     """Tests for build_inference_data on BayesianTechnicalResampler."""
@@ -369,7 +407,7 @@ class TestResampledBeatProbabilityModel(unittest.TestCase):
         self.assertGreaterEqual(b, 0.5)
 
     def test_analyze_returns_dataframe(self):
-        result = self.model.analyze(self.df)
+        result = self.model.analyze_dataframe(self.df)
         self.assertIsInstance(result, pd.DataFrame)
         if not result.empty:
             expected_cols = [
@@ -386,7 +424,7 @@ class TestResampledBeatProbabilityModel(unittest.TestCase):
                 self.assertIn(col, result.columns)
 
     def test_analyze_posterior_means_in_range(self):
-        result = self.model.analyze(self.df)
+        result = self.model.analyze_dataframe(self.df)
         if not result.empty:
             for _, row in result.iterrows():
                 self.assertGreaterEqual(row["resampled_posterior_mean"], 0.0)
@@ -396,7 +434,7 @@ class TestResampledBeatProbabilityModel(unittest.TestCase):
 
     def test_technical_adjustment_sign(self):
         """Technical adjustment should equal resampled - base."""
-        result = self.model.analyze(self.df)
+        result = self.model.analyze_dataframe(self.df)
         if not result.empty:
             for _, row in result.iterrows():
                 expected = row["resampled_posterior_mean"] - row["base_posterior_mean"]
@@ -570,7 +608,7 @@ class TestIntegrationFullWorkflow(unittest.TestCase):
             random_seed=42,
         )
 
-        beat_df = model.analyze(df)
+        beat_df = model.analyze_dataframe(df)
         if not beat_df.empty:
             self.assertIn("resampled_posterior_mean", beat_df.columns)
             self.assertIn("technical_adjustment", beat_df.columns)

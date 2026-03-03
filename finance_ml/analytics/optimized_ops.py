@@ -548,7 +548,7 @@ def fast_ruin_probability(
     )
 
     # Add risk tier
-    result["risk_tier"] = pd.cut(
+    result["risk_level"] = pd.cut(
         result["ruin_probability"],
         bins=[0, 0.1, 0.3, 0.6, 1.0],
         labels=["Low Risk", "Moderate Risk", "High Risk", "Critical Risk"],

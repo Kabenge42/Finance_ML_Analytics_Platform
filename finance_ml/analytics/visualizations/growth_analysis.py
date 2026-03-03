@@ -27,10 +27,12 @@ from finance_ml.analytics.visualizations._shared import (
     PLOTLY_TEMPLATE,
     COLORS,
     create_no_data_figure,
+    resolve_column,
 )
 
 # Metric display names - aligned with actual MV column names
 METRIC_LABELS = {
+    "revenue_growth_yoy": "Revenue Growth YoY",
     "revenue_yoy_growth": "Revenue Growth YoY",
     "revenue_cagr_3y": "Revenue 3Y CAGR",
     "revenue_cagr_5y": "Revenue 5Y CAGR",
@@ -73,13 +75,17 @@ def create_growth_waterfall_chart(
     >>> fig.show()
     """
     growth_cols = [
-        "revenue_yoy_growth",
+        "revenue_growth_yoy",
         "ebitda_growth_yoy",
         "operating_income_growth",
         "net_income_growth_yoy",
         "eps_yoy_growth",
     ]
-    available_cols = [col for col in growth_cols if col in df.columns]
+    available_cols = []
+    for col in growth_cols:
+        rc = resolve_column(df, col)
+        if rc is not None:
+            available_cols.append(rc)
 
     if not available_cols:
         return create_no_data_figure("Growth Waterfall Chart - No Data")
@@ -157,13 +163,17 @@ def create_growth_consistency_matrix(
     >>> fig.show()
     """
     growth_cols = [
-        "revenue_yoy_growth",
+        "revenue_growth_yoy",
         "revenue_cagr_3y",
         "revenue_cagr_5y",
         "eps_yoy_growth",
         "eps_cagr_3y",
     ]
-    available_cols = [col for col in growth_cols if col in df.columns]
+    available_cols = []
+    for col in growth_cols:
+        rc = resolve_column(df, col)
+        if rc is not None:
+            available_cols.append(rc)
 
     if not available_cols or group_col not in df.columns:
         return create_no_data_figure("Growth Consistency Matrix - No Data")
@@ -210,7 +220,7 @@ def create_growth_consistency_matrix(
 
 def create_growth_vs_profitability_quadrant(
     df: pd.DataFrame,
-    growth_metric: str = "revenue_yoy_growth",
+    growth_metric: str = "revenue_growth_yoy",
     profitability_metric: str = "roe",
     size_metric: str = "net_margin_pct",
     color_by: str = "industry",
@@ -249,6 +259,10 @@ def create_growth_vs_profitability_quadrant(
     >>> fig = create_growth_vs_profitability_quadrant(df)
     >>> fig.show()
     """
+    # Resolve aliased column names
+    resolved_growth = resolve_column(df, growth_metric)
+    if resolved_growth is not None:
+        growth_metric = resolved_growth
     if growth_metric not in df.columns or profitability_metric not in df.columns:
         return create_no_data_figure("Growth vs Profitability Quadrant - No Data")
 
@@ -402,8 +416,8 @@ def create_growth_acceleration_chart(
     >>> fig = create_growth_acceleration_chart(df, top_n=20)
     >>> fig.show()
     """
-    yoy_col = "revenue_yoy_growth"
-    cagr_col = "revenue_cagr_3y"
+    yoy_col = resolve_column(df, "revenue_growth_yoy") or "revenue_growth_yoy"
+    cagr_col = resolve_column(df, "revenue_growth_3y_cagr") or "revenue_cagr_3y"
 
     if yoy_col not in df.columns:
         return create_no_data_figure("Growth Acceleration Chart - No Data")
@@ -554,7 +568,7 @@ def create_sustainable_growth_analysis(
         )
 
     # Panel 2: Growth vs ROE scatter
-    growth_col = "revenue_yoy_growth"
+    growth_col = resolve_column(df, "revenue_growth_yoy") or "revenue_growth_yoy"
     if growth_col in df.columns:
         plot_df = df[["roe", growth_col]].dropna()
         if len(plot_df) > 0:

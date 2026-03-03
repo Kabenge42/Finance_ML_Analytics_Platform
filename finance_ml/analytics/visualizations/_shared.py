@@ -44,6 +44,13 @@ MV_COLUMN_ALIASES: dict[str, list[str]] = {
     "fcf_growth_yoy": ["fcf_growth_yoy", "fcf_yoy_growth"],
     "eps_qoq_growth": ["eps_qoq_growth"],
     "quality_composite_score": ["quality_momentum_score", "quality_composite_score"],
+    "ebitda_growth_yoy": ["growth_ebitda_growth_yoy", "ebitda_growth_yoy"],
+    "dividend_yield": ["valuation_dividend_yield", "dividend_yield", "dividend_yield_ltm"],
+    "rnd_intensity": ["rnd_intensity", "rnd_intensity_ltm"],
+    "accounting_quality_score": ["accounting_quality_score", "accounting_quality_score_comp"],
+    "earnings_quality_composite": ["earnings_quality_composite", "earnings_quality_score"],
+    "asset_turnover": ["asset_turnover", "total_asset_turnover"],
+    "piotroski_f_score": ["piotroski_f_score", "f_score"],
 }
 
 

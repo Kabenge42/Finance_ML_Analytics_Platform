@@ -214,7 +214,7 @@ def create_eps_trajectory_scatter(
         y="gaap_adj_eps_gap_pct",
         color=_col_or_none(df, "earnings_quality_score"),
         size=_col_or_none(df, size_col),
-        hover_data=["ticker", "name"],
+        hover_data=[c for c in ["ticker", "name"] if c in df.columns] or None,
         title="EPS Trajectory vs GAAP Adjustment Gap",
         color_continuous_scale="RdYlGn",
     )
@@ -227,7 +227,7 @@ def create_eps_trajectory_scatter(
 # =============================================================================
 
 _DEFAULT_GROWTH_COLS = [
-    "revenue_yoy_growth",
+    "revenue_growth_yoy",
     "ebitda_growth_yoy",
     "eps_yoy_growth",
     "fcf_growth_yoy",
@@ -257,7 +257,13 @@ def create_growth_correlation_heatmap(
     if growth_cols is None:
         growth_cols = _DEFAULT_GROWTH_COLS
 
-    available_cols = [col for col in growth_cols if col in df.columns]
+    # Resolve aliases for each requested column
+    resolved = []
+    for col in growth_cols:
+        rc = resolve_column(df, col)
+        if rc is not None:
+            resolved.append(rc)
+    available_cols = resolved
     if not available_cols:
         return _no_data("Growth Metrics Correlation - No Data")
 
@@ -581,7 +587,7 @@ def create_rnd_intensity_growth_scatter(
         y="rnd_yoy_growth",
         color="high_rnd_intensity_flag" if "high_rnd_intensity_flag" in df.columns else None,
         size=size_col if size_col in df.columns else None,
-        hover_data=["ticker", "name", "rnd_per_employee"],
+        hover_data=[c for c in ["ticker", "name", "rnd_per_employee"] if c in df.columns] or None,
         title="R&D Intensity vs YoY R&D Growth",
     )
     fig.update_layout(
@@ -622,7 +628,7 @@ def create_rnd_per_employee_histogram(
     fig = px.histogram(
         df_filtered,
         x="rnd_per_employee",
-        color=color_by,
+        color=_col_or_none(df_filtered, color_by),
         nbins=nbins,
         title="R&D per Employee Distribution by Industry",
     )
@@ -762,7 +768,7 @@ def create_goodwill_impairment_scatter(
         y="impairment_risk_score",
         color="recent_acquisition_flag" if "recent_acquisition_flag" in df.columns else None,
         size=size_col if size_col in df.columns else None,
-        hover_data=["ticker", "name", "goodwill_concentration"],
+        hover_data=[c for c in ["ticker", "name", "goodwill_concentration"] if c in df.columns] or None,
         title="Goodwill Concentration vs Impairment Risk Score",
     )
     fig.update_layout(
@@ -848,7 +854,7 @@ def create_capex_growth_scatter(
         y="capex_vs_5y_avg",
         color=color_by if color_by in df.columns else None,
         size=size_col if size_col in df.columns else None,
-        hover_data=["ticker", "name", "investment_efficiency"],
+        hover_data=[c for c in ["ticker", "name", "investment_efficiency"] if c in df.columns] or None,
         title="CapEx YoY Growth vs 5Y Average Comparison",
     )
     fig.add_hline(y=1, line_dash="dash", line_color="gray", annotation_text="5Y Avg")
@@ -987,7 +993,7 @@ def create_valuation_violin_plot(
         color=group_by,
         box=True,
         points="all",
-        hover_data=["ticker", "name"],
+        hover_data=[c for c in ["ticker", "name"] if c in df_plot.columns] or None,
         height=1000,
         width=2000,
         title=f"{metric.replace('_', ' ').title()} Distribution by {group_by.title()}",
@@ -1151,7 +1157,7 @@ def create_productivity_quadrant(
         y=y_col,
         size=size_col if size_col in df.columns else None,
         color=color_by if color_by in df.columns else None,
-        hover_data=["ticker", "name"],
+        hover_data=[c for c in ["ticker", "name"] if c in df.columns] or None,
         title="Employee Productivity Quadrant",
         labels={
             x_col: "Revenue per Employee",
@@ -1187,7 +1193,7 @@ def create_accounting_quality_breakdown(
     Radar chart showing the sub-components of the accounting_quality_score.
     """
     components = [
-        "accruals_quality_score",
+        "accounting_quality_score",
         "non_operating_income_share",  # Note: lower is better for quality
         "gaap_adj_eps_gap_pct",  # Note: lower is better for quality
         "asset_sale_boost",  # Note: lower is better for quality
@@ -1206,7 +1212,7 @@ def create_accounting_quality_breakdown(
         if comp in stock_data.columns:
             val = stock_data[comp].iloc[0]
             # Normalize so that higher = better quality
-            if comp == "accruals_quality_score":
+            if comp == "accounting_quality_score":
                 score = val
             elif comp == "non_operating_income_share":
                 score = max(0, 100 - val)
@@ -1260,72 +1266,65 @@ def create_valuation_range_visual(
 
     current = stock_data[metric].iloc[0] if metric in stock_data.columns else None
 
-    # Try to find historical range columns
-    # Based on naming convention in calculated_features_registry.sql or similar
-    # p_e_3y_min, p_e_3y_max, p_e_5y_min, p_e_5y_max
+    # Use schema-aligned columns: p_e_vs_3y_avg, p_e_vs_5y_avg, p_b_vs_5y_avg
     prefix = metric.replace("_ratio", "")
-    min_3y = stock_data.get(f"{prefix}_3y_min", pd.Series([None])).iloc[0]
-    max_3y = stock_data.get(f"{prefix}_3y_max", pd.Series([None])).iloc[0]
-    min_5y = stock_data.get(f"{prefix}_5y_min", pd.Series([None])).iloc[0]
-    max_5y = stock_data.get(f"{prefix}_5y_max", pd.Series([None])).iloc[0]
+    vs_3y_col = f"{prefix}_vs_3y_avg"
+    vs_5y_col = f"{prefix}_vs_5y_avg"
 
-    if current is None or (min_3y is None and min_5y is None):
-        # Fallback if specific min/max columns don't exist
-        # Maybe we can use p_e_vs_3y_avg to infer some range if it's the only thing available
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"Historical range data for {metric} not available", showarrow=False
-        )
-        return fig
+    vs_3y = stock_data[vs_3y_col].iloc[0] if vs_3y_col in stock_data.columns else None
+    vs_5y = stock_data[vs_5y_col].iloc[0] if vs_5y_col in stock_data.columns else None
+
+    if current is None or (vs_3y is None and vs_5y is None):
+        return _no_data(f"Historical range data for {metric} not available")
 
     fig = go.Figure()
 
-    # 5Y range bar
-    if min_5y is not None and max_5y is not None:
-        fig.add_trace(
-            go.Bar(
-                name="5Y Range",
-                x=[max_5y - min_5y],
-                y=[metric.upper()],
-                base=min_5y,
-                orientation="h",
-                marker_color="rgba(100, 100, 100, 0.3)",
-                showlegend=True,
-            )
-        )
+    categories = []
+    current_vals = []
+    avg_vals = []
 
-    # 3Y range bar
-    if min_3y is not None and max_3y is not None:
-        fig.add_trace(
-            go.Bar(
-                name="3Y Range",
-                x=[max_3y - min_3y],
-                y=[metric.upper()],
-                base=min_3y,
-                orientation="h",
-                marker_color="rgba(100, 100, 255, 0.5)",
-                showlegend=True,
-            )
-        )
+    if vs_3y is not None:
+        # vs_3y_avg is typically current / 3y_avg or a ratio; infer the average
+        avg_3y = current / vs_3y if vs_3y != 0 else None
+        if avg_3y is not None:
+            categories.append("3Y Avg")
+            current_vals.append(current)
+            avg_vals.append(avg_3y)
 
-    # Current value marker
+    if vs_5y is not None:
+        avg_5y = current / vs_5y if vs_5y != 0 else None
+        if avg_5y is not None:
+            categories.append("5Y Avg")
+            current_vals.append(current)
+            avg_vals.append(avg_5y)
+
+    if not categories:
+        return _no_data(f"Historical range data for {metric} not available")
+
     fig.add_trace(
-        go.Scatter(
+        go.Bar(
+            name="Historical Avg",
+            x=avg_vals,
+            y=categories,
+            orientation="h",
+            marker_color="rgba(100, 100, 255, 0.5)",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
             name="Current",
-            x=[current],
-            y=[metric.upper()],
-            mode="markers",
-            marker=dict(color="red", size=15, symbol="diamond"),
-            showlegend=True,
+            x=current_vals,
+            y=categories,
+            orientation="h",
+            marker_color="rgba(255, 100, 100, 0.7)",
         )
     )
 
     fig.update_layout(
-        title=f"{metric.replace('_', ' ').title()} Historical Range: {ticker}",
+        title=f"{metric.replace('_', ' ').title()} vs Historical Averages: {ticker}",
         template=PLOTLY_TEMPLATE,
         xaxis_title="Valuation Multiple",
-        yaxis=dict(showticklabels=False),
-        barmode="overlay",
+        barmode="group",
     )
 
     return fig
@@ -1338,11 +1337,11 @@ def create_balance_sheet_composition_chart(
     """Create stacked bar chart of balance sheet composition by industry."""
     import plotly.express as px
 
-    bs_cols = ["total_assets", "total_liabilities", "total_equity"]
+    bs_cols = ["assets_fq", "debt_fq", "wc_fq"]
     available = [c for c in bs_cols if c in df.columns]
 
     if not available or group_by not in df.columns:
-        return px.bar(title="Balance Sheet data not available")
+        return _no_data("Balance Sheet Composition — No Data")
 
     agg_df = df.groupby(group_by)[available].mean().reset_index()
 

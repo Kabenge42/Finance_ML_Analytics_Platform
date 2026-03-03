@@ -45,7 +45,7 @@ def sample_screening_df() -> pd.DataFrame:
             "industry": np.random.choice(industries, n),
             # Quality metrics for enhanced screener
             "piotroski_f_score": np.random.randint(0, 10, n),
-            "distress_risk_score": np.random.uniform(10, 95, n).round(1),
+            "combined_distress_risk_score": np.random.uniform(10, 95, n).round(1),
             "eps_trajectory_score": np.random.uniform(20, 90, n).round(1),
             "fcf_positive_years": np.random.randint(0, 6, n),
             "debt_deleveraging": np.random.choice([0, 1], n),
@@ -92,7 +92,7 @@ def minimal_screening_df() -> pd.DataFrame:
         {
             "ticker": ["AAPL", "MSFT", "GOOGL", "AMZN"],
             "piotroski_f_score": [8, 6, 7, 5],
-            "distress_risk_score": [85, 70, 80, 65],
+            "combined_distress_risk_score": [85, 70, 80, 65],
             "eps_trajectory_score": [75, 55, 60, 45],
             "fcf_positive_years": [5, 3, 4, 2],
         }
@@ -138,7 +138,7 @@ class TestCreateEnhancedScreener:
         result = create_enhanced_screener(minimal_screening_df, min_fscore=1, max_distress_risk=30)
 
         # distress_risk_score >= 70: AAPL(85), MSFT(70), GOOGL(80) = 3 stocks
-        assert all(result["distress_risk_score"] >= 70)
+        assert all(result["combined_distress_risk_score"] >= 70)
 
     def test_filters_by_fcf_positive_years(self, minimal_screening_df):
         """Should filter by minimum FCF positive years."""
@@ -198,7 +198,7 @@ class TestCreateEnhancedScreener:
             {
                 "ticker": ["AAPL", "MSFT"],
                 "piotroski_f_score": [8, 6],
-                "distress_risk_score": [85, 70],
+                "combined_distress_risk_score": [85, 70],
                 "eps_trajectory_score": [75, 60],
                 "fcf_positive_years": [5, 3],
             }
@@ -438,7 +438,7 @@ class TestScreenFinancialHealth:
         result = screen_financial_health(sample_screening_df, min_distress_score=80)
 
         if len(result) > 0:
-            assert all(result["distress_risk_score"] >= 80)
+            assert all(result["combined_distress_risk_score"] >= 80)
 
     def test_filters_by_debt_to_equity(self, sample_screening_df):
         """Should filter by maximum debt to equity ratio."""

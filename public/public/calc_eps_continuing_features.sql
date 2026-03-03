@@ -28,7 +28,7 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "Basic EPS - Cont (-3FY)" > 0 AND "Basic EPS - Cont (FY)" > 0
                THEN
-               (safe_power("Basic EPS - Cont (FY)"::NUMERIC / NULLIF("Basic EPS - Cont (-3FY)"::NUMERIC, 0), 1.0 / 3.0) -
+               (POWER("Basic EPS - Cont (FY)"::NUMERIC / NULLIF("Basic EPS - Cont (-3FY)"::NUMERIC, 0), 1.0 / 3.0) -
                 1) * 100
            END                                                                                   AS eps_cont_cagr_3y,
        -- Continuing vs Total EPS ratio (how much comes from continuing ops)

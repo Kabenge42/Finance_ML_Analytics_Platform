@@ -378,7 +378,7 @@ def engineer_financial_distress_features(df: pd.DataFrame) -> pd.DataFrame:
 
         # Combined distress indicator
         if "distress_risk_score" in result.columns:
-            result["combined_distress_score"] = (
+            result["combined_distress_risk_score"] = (
                 result["distress_risk_score"] * 0.7
                 + (100 - result["liquidity_stress_score"]) * 0.3
             ).clip(0, 100)
@@ -459,7 +459,7 @@ def engineer_financial_distress_features(df: pd.DataFrame) -> pd.DataFrame:
         "z_score_volatility",
         "distress_risk_score",
         "liquidity_stress_score",
-        "combined_distress_score",
+        "combined_distress_risk_score",
         "distress_risk_score_enhanced",
     ]
     if fin_mask.any():

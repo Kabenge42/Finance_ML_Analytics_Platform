@@ -14,7 +14,8 @@ create table analytics.monte_carlo_simulation
     upside_std           double precision,
     var_5_pct            double precision,
     prob_positive_upside double precision,
-    risk_reward_ratio    double precision
+    risk_reward_ratio    double precision,
+    price_target_mc      double precision
 );
 
 alter table analytics.monte_carlo_simulation

@@ -19,7 +19,23 @@ import numpy as np
 from dash import dcc, html, Input, Output, State, dash_table
 from dash.dash_table.Format import Format, Scheme, Symbol
 from flask import send_from_directory
-from sqlalchemy import create_engine
+
+from finance_ml.analytics.data_utils import (
+    get_analytics_engine,
+    get_equities_schema,
+    load_equities_data_from_db,
+    load_all_feature_views,
+    load_feature_categories_from_db,
+    get_view_category_mapping,
+    get_view_category_labels,
+    get_view_feature_cols,
+    validate_feature_alignment,
+    validate_viz_column_coverage,
+    safe_get_column,
+    backfill_feature_columns,
+    reorder_with_identifiers,
+    load_identifier_columns,
+)
 
 # Import probabilistic visualizations
 try:
@@ -53,6 +69,7 @@ try:
     from finance_ml.analytics.visualizations.quality_risk import (
         create_quality_risk_quadrant,
         create_distress_early_warning_dashboard,
+        create_accounting_anomaly_dashboard,
     )
     from finance_ml.analytics.visualizations.probability_viz import (
         create_bayesian_category_ridge,
@@ -281,6 +298,100 @@ TABLE_STYLE_DATA_CONDITIONAL = [
         "color": COLORS["danger"],
         "fontWeight": "bold",
     },
+    # Accounting anomaly tier
+    {
+        "if": {
+            "column_id": "accounting_anomaly_tier",
+            "filter_query": '{accounting_anomaly_tier} = "Alert"',
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "accounting_anomaly_tier",
+            "filter_query": '{accounting_anomaly_tier} = "Flag"',
+        },
+        "color": "#FF8C00",
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "accounting_anomaly_tier",
+            "filter_query": '{accounting_anomaly_tier} = "Clean"',
+        },
+        "color": COLORS["success"],
+    },
+    # Risk level (credit risk)
+    {
+        "if": {
+            "column_id": "risk_level",
+            "filter_query": '{risk_level} = "High"',
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "risk_level",
+            "filter_query": '{risk_level} = "Distressed"',
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+        "backgroundColor": "#3d0000",
+    },
+    # Multi-flag alert
+    {
+        "if": {
+            "column_id": "multi_flag_alert",
+            "filter_query": "{multi_flag_alert} eq true",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Risk category (dividend)
+    {
+        "if": {
+            "column_id": "risk_category",
+            "filter_query": '{risk_category} = "At Risk"',
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Risk-reward ratio
+    {
+        "if": {
+            "column_id": "risk_reward_ratio",
+            "filter_query": "{risk_reward_ratio} > 2",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "risk_reward_ratio",
+            "filter_query": "{risk_reward_ratio} < 0.5",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Altman Z-score (< 1.81 = distress zone)
+    {
+        "if": {
+            "column_id": "altman_z_score",
+            "filter_query": "{altman_z_score} < 1.81",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "altman_z_score",
+            "filter_query": "{altman_z_score} > 2.99",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
+    },
 ]
 
 
@@ -302,6 +413,8 @@ def get_formatted_columns(cols_list):
             "kalman_estimate",
             "market_cap",
             "enterprise_value",
+            "ci_lower",
+            "ci_upper",
         ]:
             spec.update(
                 {
@@ -317,6 +430,12 @@ def get_formatted_columns(cols_list):
             "expected_upside_pct",
             "filtered_upside",
             "expected_return_prob_weighted",
+            "var_5_pct",
+            "accounting_anomaly_score",
+            "anomaly_severity_score",
+            "sector_anomaly_percentile",
+            "payout_ratio",
+            "yield_vs_5y_avg",
         ]:
             spec.update(
                 {
@@ -334,6 +453,23 @@ def get_formatted_columns(cols_list):
             "confidence_score",
             "prob_positive_upside",
             "weighted_agreement",
+            "prob_beat_given_momentum",
+            "analyst_conviction",
+            "eps_revision_momentum",
+            "analyst_rating_normalized",
+            "resampled_posterior_mean",
+            "technical_adjustment",
+            "momentum_signal",
+            "volatility_regime_score",
+            "distress_probability",
+            "ruin_probability",
+            "survival_probability",
+            "dividend_cut_probability",
+            "dividend_consistency",
+            "data_quality_score",
+            "beta_stability_score",
+            "safety_score",
+            "fcf_dividend_coverage",
         ]:
             spec.update(
                 {
@@ -347,6 +483,7 @@ def get_formatted_columns(cols_list):
             "expected_upside_pct_pctile",
             "filtered_upside_pctile",
             "expected_return_prob_weighted_pctile",
+            "anomaly_risk_rank",
         ]:
             spec.update(
                 {
@@ -362,6 +499,9 @@ def get_formatted_columns(cols_list):
             "expected_upside_pct_zscore",
             "filtered_upside_zscore",
             "expected_return_prob_weighted_zscore",
+            "sector_relative_anomaly",
+            "altman_z_score",
+            "altman_z_trend",
         ]:
             spec.update(
                 {
@@ -373,13 +513,15 @@ def get_formatted_columns(cols_list):
             )
 
         # Integer scores
-        elif col in ["agreement_score"]:
+        elif col in ["agreement_score", "anomaly_feature_count", "dividend_streak",
+                      "high_yield_flag", "sustainable_flag"]:
             spec.update(
                 {"type": "numeric", "format": Format(precision=0, scheme=Scheme.fixed)}
             )
 
         # Composite / weighted scores
-        elif col in ["composite_score", "kelly_pct"]:
+        elif col in ["composite_score", "kelly_pct", "risk_reward_ratio",
+                      "liquidity_stress_score", "cash_runway_months", "wealth_buffer"]:
             spec.update(
                 {"type": "numeric", "format": Format(precision=3, scheme=Scheme.fixed)}
             )
@@ -468,6 +610,24 @@ FILTER_CONFIG = [
         "label": "Next Earnings When",
         "id": "next-earn-when-dropdown",
         "column": "next_earnings_when",
+        "width": "18%",
+    },
+    {
+        "label": "Anomaly Tier",
+        "id": "anomaly-tier-dropdown",
+        "column": "accounting_anomaly_tier",
+        "width": "18%",
+    },
+    {
+        "label": "Risk Level",
+        "id": "risk-level-dropdown",
+        "column": "risk_level",
+        "width": "18%",
+    },
+    {
+        "label": "Risk Category",
+        "id": "risk-category-dropdown",
+        "column": "risk_category",
         "width": "18%",
     },
 ]
@@ -811,7 +971,7 @@ def _ef_find_optimal_portfolios(
     expected_returns: np.ndarray,
     cov_matrix: pd.DataFrame,
     risk_free_rate: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Find maximum Sharpe ratio and minimum variance portfolios."""
     n_assets = len(expected_returns)
 
@@ -831,6 +991,7 @@ def _ef_find_optimal_portfolios(
         min_var_weights,
         max_sharpe_weights,
         np.array([min_var_volatility, max_sharpe_volatility]),
+        np.array([min_var_return, max_sharpe_return]),
     )
 
 
@@ -962,8 +1123,55 @@ def render_artifact_or_placeholder(
         )
 
 
+# --- Viz column requirements (used by load_geib_data to enrich summary) ---
+VIZ_REQUIRED_COLUMNS = {
+    "create_mc_return_distribution": ["expected_upside_pct", "prob_positive_upside"],
+    "create_sector_risk_reward_scatter": [
+        "industry",
+        "expected_upside_pct",
+        "confidence_score",
+    ],
+    "create_quality_risk_quadrant": ["altman_z_score", "piotroski_f_score"],
+    "create_sector_heatmap": ["industry", "expected_upside_pct"],
+    "create_strong_consensus_bar": ["ticker", "expected_upside_pct"],
+    "create_var_analysis": ["expected_upside_pct", "var_5_pct"],
+    "create_beat_vs_achievement_scatter": [
+        "achievement_probability",
+        "posterior_beat_prob",
+    ],
+    "create_model_dispersion_dashboard": [
+        "expected_upside_pct",
+        "filtered_upside",
+        "expected_return_prob_weighted",
+    ],
+    "create_accounting_anomaly_dashboard": [
+        "accounting_anomaly_score",
+        "accounting_anomaly_tier",
+        "anomaly_feature_count",
+        "multi_flag_alert",
+    ],
+    "create_ruin_probability_diagnostic": [
+        "ruin_probability",
+        "survival_probability",
+        "wealth_buffer",
+    ],
+    "create_distress_early_warning_dashboard": [
+        "altman_z_score",
+        "distress_probability",
+        "risk_level",
+    ],
+    "dividend_safety_analysis": [
+        "dividend_cut_probability",
+        "safety_score",
+        "risk_category",
+        "fcf_dividend_coverage",
+        "payout_ratio",
+    ],
+}
+
+
 def load_geib_data():
-    """Load all necessary data for the GEIB dashboard.
+    """Load all necessary data for the GEIB dashboard using data_utils.
 
     Returns:
         dict: Dictionary containing DataFrames for different components
@@ -973,10 +1181,17 @@ def load_geib_data():
         "tri_model": pd.DataFrame(),
         "earnings": pd.DataFrame(),
         "credit": pd.DataFrame(),
+        "anomaly": pd.DataFrame(),
+        "dividend_safety": pd.DataFrame(),
         "model_confidence": pd.DataFrame(),
+        "equities": pd.DataFrame(),
+        "feature_views": {},
+        "feature_categories": {},
+        "view_category_mapping": {},
+        "schema_metadata": {},
+        "validation": {},
     }
 
-    # Check if GEIB_DASHBOARD environment variable is set
     if not os.environ.get("GEIB_DASHBOARD", "").lower() == "true":
         print("⚠️ GEIB_DASHBOARD environment variable not set to 'true'")
         return data
@@ -987,86 +1202,233 @@ def load_geib_data():
         return data
 
     try:
-        engine = create_engine(db_url)
+        # --- Use data_utils engine factory (respects DB_URL env var) ---
+        engine = get_analytics_engine()
+        analytics_schema = os.environ.get("DB_ANALYTICS_SCHEMA", "analytics")
 
-        # 1. Summary Data
-        query_summary = """
-        SELECT *
-        FROM analytics.expected_returns_summary
-        WHERE expected_upside_pct IS NOT NULL AND volume_shrs IS NOT NULL 
-        ORDER BY expected_return_prob_weighted DESC
+        # --- 0. Load schema metadata (drives numeric column detection) ---
+        schema_meta = get_equities_schema(db_url=db_url)
+        data["schema_metadata"] = schema_meta
+
+        # Derive numeric columns from schema metadata instead of hardcoding
+        _NUMERIC_TYPES = (
+            "numeric", "double precision", "real", "integer", "bigint",
+        )
+        numeric_cols = [
+            alias for alias, meta in schema_meta.items()
+            if meta.get("column_type") in _NUMERIC_TYPES
+        ]
+
+        # --- 1. Summary Data (analytics table) ---
+        query_summary = f"""
+            SELECT * FROM {analytics_schema}.expected_returns_summary
+            WHERE expected_upside_pct IS NOT NULL
+            ORDER BY expected_return_prob_weighted DESC
         """
         data["summary"] = pd.read_sql(query_summary, engine)
 
-        # Convert numeric columns for summary
-        numeric_cols = [
-            "prob_positive_upside",
-            "last_price",
-            "expected_upside_pct",
-            "filtered_upside",
-            "expected_return_prob_weighted",
-            "achievement_probability",
-            "posterior_beat_prob",
-            "confidence_score",
-            "agreement_score",
-            "weighted_agreement",
-            "composite_score",
-            "market_cap",
-            "enterprise_value",
-            "price_target",
-            "price_target_high",
-            "price_target_low",
-            "price_target_median",
-            "price_target_prob_weighted",
-            "price_target_mc",
-            "kalman_estimate",
-            "volume_shrs",
-            "expected_upside_pct_zscore",
-            "filtered_upside_zscore",
-            "expected_return_prob_weighted_zscore",
-            "expected_upside_pct_pctile",
-            "filtered_upside_pctile",
-            "expected_return_prob_weighted_pctile",
-            "reporting_interval",
-        ]
+        # Apply schema-driven numeric coercion
         for col in numeric_cols:
             if col in data["summary"].columns:
                 data["summary"][col] = pd.to_numeric(
                     data["summary"][col], errors="coerce"
                 )
 
-        # 2. Tri-Model Data (subset of columns needed for viz)
-        query_tri = "SELECT * FROM analytics.expected_returns_summary "
-        try:
-            data["tri_model"] = pd.read_sql(query_tri, engine)
-        except Exception:
-            print(
-                "⚠️ analytics.expected_returns_summary not found, using summary fallback"
-            )
-            data["tri_model"] = data["summary"]
+        # --- 2. Tri-Model (reuse summary — same table) ---
+        data["tri_model"] = data["summary"].copy()
 
-        # 3. Earnings Probability Data
-        query_earnings = "SELECT * FROM analytics.earnings_probability_analysis "
+        # --- 3. Earnings Probability Data ---
         try:
-            data["earnings"] = pd.read_sql(query_earnings, engine)
+            data["earnings"] = pd.read_sql(
+                f"SELECT * FROM {analytics_schema}.earnings_probability_analysis", engine
+            )
         except Exception:
             print("⚠️ analytics.earnings_probability_analysis not found")
 
-        # 4. Credit Risk Data
-        query_credit = "SELECT * FROM analytics.credit_risk_analysis "
+        # --- 4. Credit Risk Data ---
         try:
-            data["credit"] = pd.read_sql(query_credit, engine)
+            data["credit"] = pd.read_sql(
+                f"SELECT * FROM {analytics_schema}.credit_risk_analysis", engine
+            )
         except Exception:
-            print("⚠️ analytics.credit_risk_analysis not found")
+            # Fallback: credit risk columns now live in expected_returns_summary
+            _credit_cols_in_summary = [
+                c for c in [
+                    "ticker", "name", "sector", "industry",
+                    "beta_stability_score", "distress_probability",
+                    "liquidity_stress_score", "cash_runway_months",
+                    "altman_z_score", "altman_z_trend", "risk_level",
+                    "ci_lower", "ci_upper", "data_quality_score",
+                    "wealth_buffer", "ruin_probability", "survival_probability",
+                ] if c in data["summary"].columns
+            ]
+            if _credit_cols_in_summary:
+                data["credit"] = data["summary"][_credit_cols_in_summary].copy()
+                print("ℹ️ Credit risk data sourced from expected_returns_summary columns")
+            else:
+                print("⚠️ analytics.credit_risk_analysis not found")
 
-        # 5. Model Confidence Metrics (for governance tab)
-        query_confidence = "SELECT * FROM analytics.model_confidence_metrics"
+        # --- 4b. Accounting Anomaly Data (Step 5b in pipeline) ---
         try:
-            data["model_confidence"] = pd.read_sql(query_confidence, engine)
+            data["anomaly"] = pd.read_sql(
+                f"SELECT * FROM {analytics_schema}.accounting_anomaly_analysis", engine
+            )
         except Exception:
-            print("⚠️ analytics.model_confidence_metrics not found")
+            # Fallback: anomaly columns now live in expected_returns_summary
+            _anomaly_cols_in_summary = [
+                c for c in [
+                    "ticker", "name", "sector", "industry",
+                    "accounting_anomaly_score", "sector_relative_anomaly",
+                    "anomaly_feature_count", "accounting_anomaly_tier",
+                    "anomaly_severity_score", "anomaly_risk_rank",
+                    "sector_anomaly_percentile", "multi_flag_alert",
+                    "exceptional_items_frequency_anomaly_flag",
+                    "gaap_adj_eps_gap_pct_anomaly_flag",
+                    "asset_sale_boost_anomaly_flag",
+                    "ebitda_adjustment_ratio_anomaly_flag",
+                    "eps_adjustment_ratio_anomaly_flag",
+                    "exceptional_items_to_ebitda_anomaly_flag",
+                    "restructuring_intensity_anomaly_flag",
+                    "goodwill_change_rate_anomaly_flag",
+                ] if c in data["summary"].columns
+            ]
+            if _anomaly_cols_in_summary:
+                data["anomaly"] = data["summary"][_anomaly_cols_in_summary].copy()
+                print("ℹ️ Anomaly data sourced from expected_returns_summary columns")
+            else:
+                print("⚠️ analytics.accounting_anomaly_analysis not found")
 
-        print(f"✓ Loaded GEIB data successfully")
+        # --- 4c. Dividend Safety Data ---
+        try:
+            data["dividend_safety"] = pd.read_sql(
+                f"SELECT * FROM {analytics_schema}.dividend_safety_analysis", engine
+            )
+        except Exception:
+            # Fallback: dividend safety columns now live in expected_returns_summary
+            _div_cols_in_summary = [
+                c for c in [
+                    "ticker", "name", "sector", "industry",
+                    "high_yield_flag", "dividend_cut_probability",
+                    "fcf_dividend_coverage", "payout_ratio",
+                    "dividend_streak", "dividend_consistency",
+                    "yield_vs_5y_avg", "sustainable_flag",
+                    "safety_score", "risk_category",
+                ] if c in data["summary"].columns
+            ]
+            if _div_cols_in_summary:
+                data["dividend_safety"] = data["summary"][_div_cols_in_summary].copy()
+                print("ℹ️ Dividend safety data sourced from expected_returns_summary columns")
+            else:
+                print("⚠️ analytics.dividend_safety_analysis not found")
+
+        # --- 5. Model Confidence Metrics (derived from summary) ---
+        # model_confidence_metrics is not a standalone table; confidence
+        # columns live in expected_returns_summary.  Extract them here
+        # so downstream dashboard components have a dedicated DataFrame.
+        if not data["summary"].empty:
+            _confidence_cols = [
+                c for c in [
+                    "ticker", "confidence_score", "confidence_level",
+                    "posterior_beat_prob", "beat_classification",
+                    "prob_positive_upside", "weighted_agreement",
+                    "agreement_score", "signal",
+                ]
+                if c in data["summary"].columns
+            ]
+            if _confidence_cols:
+                data["model_confidence"] = data["summary"][_confidence_cols].copy()
+
+        # --- 5b. Load identifier columns for downstream reordering/validation ---
+        try:
+            id_columns = load_identifier_columns(db_url=db_url)
+            data["identifier_columns"] = id_columns
+        except Exception as e:
+            print(f"⚠️ Could not load identifier columns: {e}")
+            data["identifier_columns"] = {}
+
+        # --- 6. Full equities data with backfill (mirrors expected_returns_v3) ---
+        try:
+            df_eq = load_equities_data_from_db(db_url=db_url)
+            df_eq = backfill_feature_columns(df_eq)
+            data["equities"] = reorder_with_identifiers(df_eq)
+        except Exception as e:
+            print(f"⚠️ Could not load equities data: {e}")
+
+        # --- 7. All feature views (for feature-level dashboards) ---
+        try:
+            data["feature_views"] = load_all_feature_views(
+                db_url=db_url, return_dict=True
+            )
+        except Exception as e:
+            print(f"⚠️ Could not load feature views: {e}")
+
+        # --- 7b. Enrich equities with columns from feature views ---
+        # Mirrors the sentiment/risk merge pattern in expected_returns_v3.
+        # Ensures columns like altman_z_score and piotroski_f_score (which
+        # live in vw_features_quality_risk / vw_features_composite_scores)
+        # are present on the equities DataFrame before validation and viz.
+        if not data["equities"].empty and data["feature_views"]:
+            eq = data["equities"]
+            for view_name, df_view in data["feature_views"].items():
+                if df_view.empty or "ticker" not in df_view.columns:
+                    continue
+                missing_cols = [
+                    c for c in df_view.columns
+                    if c != "ticker" and c not in eq.columns
+                ]
+                if missing_cols:
+                    view_subset = (
+                        df_view[["ticker"] + missing_cols]
+                        .drop_duplicates(subset="ticker")
+                    )
+                    eq = eq.merge(view_subset, on="ticker", how="left")
+            data["equities"] = eq
+
+        # --- 7c. Enrich summary with viz-critical columns from equities ---
+        # Columns like altman_z_score and piotroski_f_score live in the
+        # equities/feature-view data, not in expected_returns_summary.
+        # Merge them so downstream viz functions find them on the summary df.
+        if (
+            not data["summary"].empty
+            and not data["equities"].empty
+            and "ticker" in data["summary"].columns
+            and "ticker" in data["equities"].columns
+        ):
+            _viz_needed = {
+                col
+                for cols in VIZ_REQUIRED_COLUMNS.values()
+                for col in cols
+            }
+            _missing_in_summary = [
+                c for c in _viz_needed
+                if c not in data["summary"].columns and c in data["equities"].columns
+            ]
+            if _missing_in_summary:
+                _eq_subset = (
+                    data["equities"][["ticker"] + _missing_in_summary]
+                    .drop_duplicates(subset="ticker")
+                )
+                data["summary"] = data["summary"].merge(
+                    _eq_subset, on="ticker", how="left"
+                )
+                # Keep tri_model in sync (it was copied before enrichment)
+                data["tri_model"] = data["summary"].copy()
+
+        # --- 8. Feature categories + view mapping ---
+        data["feature_categories"] = load_feature_categories_from_db(db_url)
+        data["view_category_mapping"] = get_view_category_mapping(db_url=db_url)
+
+        # --- 9. Validate feature alignment ---
+        if not data["equities"].empty and data["feature_categories"]:
+            data["validation"] = validate_feature_alignment(
+                data["equities"], data["feature_categories"]
+            )
+            low = {k: v for k, v in data["validation"].items() if v["coverage_pct"] < 80}
+            if low:
+                print(f"⚠️ Low feature coverage in {len(low)} categories: "
+                      f"{', '.join(low.keys())}")
+
+        print("✓ Loaded GEIB data successfully")
         return data
 
     except Exception as e:
@@ -1080,7 +1442,25 @@ df = all_data["summary"]
 df_tri = all_data["tri_model"]
 df_earnings = all_data["earnings"]
 df_credit = all_data["credit"]
+df_anomaly = all_data["anomaly"]
+df_dividend_safety = all_data["dividend_safety"]
 df_confidence = all_data["model_confidence"]
+view_category_mapping = all_data["view_category_mapping"]
+feature_views = all_data["feature_views"]
+
+# --- Startup validation: check viz column coverage against the SUMMARY DataFrame ---
+# Validate against the actual summary DataFrame columns (which contain the
+# computed analytics columns), NOT against the feature_categories registry
+# (which only tracks raw equities feature columns).
+if not df.empty:
+    # Build a pseudo-category dict from the summary columns so
+    # validate_viz_column_coverage can cross-check requirements.
+    _summary_as_categories = {"summary": list(df.columns)}
+    _viz_issues = validate_viz_column_coverage(
+        _summary_as_categories, VIZ_REQUIRED_COLUMNS
+    )
+    if _viz_issues:
+        print(f"⚠️ Viz column coverage gaps: {_viz_issues}")
 
 # Load the return distribution fit artifact figure at startup
 _return_dist_fit_path = (
@@ -1567,6 +1947,8 @@ app.layout = html.Div(
                                             "expected_upside_pct",
                                             "filtered_upside",
                                             "expected_return_prob_weighted",
+                                            "var_5_pct",
+                                            "risk_reward_ratio",
                                             "achievement_probability",
                                             "posterior_beat_prob",
                                             "beat_classification",
@@ -1575,6 +1957,8 @@ app.layout = html.Div(
                                             "composite_score",
                                             "confidence_level",
                                             "signal",
+                                            "accounting_anomaly_tier",
+                                            "risk_level",
                                             "expected_upside_pct_pctile",
                                             "filtered_upside_zscore",
                                         ]
@@ -2389,6 +2773,159 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             id="artifact-er-distress-early-warning"
+                                        ),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                                # Accounting Anomaly Dashboard (Step 5b)
+                                html.Div(
+                                    [
+                                        html.H4(
+                                            "Accounting Anomaly Detection Dashboard",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        html.P(
+                                            "Beneish M-Score, revenue-expense divergence, and accounting quality indicators. "
+                                            "Anomaly detection runs before credit risk to flag integrity issues early.",
+                                            style={
+                                                "textAlign": "center",
+                                                "fontStyle": "italic",
+                                                "color": "#999",
+                                            },
+                                        ),
+                                        html.Div(
+                                            id="artifact-er-accounting-anomaly"
+                                        ),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                                # Dividend Safety Summary
+                                html.Div(
+                                    [
+                                        html.H4(
+                                            "Dividend Safety Analysis",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        html.Div(
+                                            id="artifact-er-dividend-safety"
+                                        ),
+                                    ],
+                                    style={"margin": "10px"},
+                                ),
+                            ]
+                        )
+                    ],
+                ),
+                dcc.Tab(
+                    label="🛡️ Credit Risk & Dividend Safety",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Credit Risk & Dividend Safety Analysis",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Comprehensive view of financial distress indicators, Altman Z-Score, "
+                                    "ruin probability, dividend sustainability, and accounting anomaly flags.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                # KPI cards
+                                html.Div(id="credit-risk-kpis", style={"margin": "10px"}),
+                                # Charts
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [dcc.Graph(id="altman-zscore-distribution")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="risk-level-pie")],
+                                            width=6,
+                                        ),
+                                    ]
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [dcc.Graph(id="anomaly-tier-distribution")],
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            [dcc.Graph(id="dividend-safety-scatter")],
+                                            width=6,
+                                        ),
+                                    ]
+                                ),
+                                # Anomaly flags heatmap
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [dcc.Graph(id="anomaly-flags-heatmap")],
+                                            width=12,
+                                        ),
+                                    ]
+                                ),
+                                # Credit risk table
+                                html.Div(
+                                    [
+                                        html.H4(
+                                            "Credit Risk & Safety Detail",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        dash_table.DataTable(
+                                            id="credit-risk-table",
+                                            columns=get_formatted_columns(
+                                                [
+                                                    "ticker",
+                                                    "name",
+                                                    "sector",
+                                                    "industry",
+                                                    "risk_level",
+                                                    "altman_z_score",
+                                                    "altman_z_trend",
+                                                    "distress_probability",
+                                                    "liquidity_stress_score",
+                                                    "cash_runway_months",
+                                                    "beta_stability_score",
+                                                    "ruin_probability",
+                                                    "survival_probability",
+                                                    "wealth_buffer",
+                                                    "accounting_anomaly_tier",
+                                                    "accounting_anomaly_score",
+                                                    "anomaly_feature_count",
+                                                    "multi_flag_alert",
+                                                    "dividend_cut_probability",
+                                                    "safety_score",
+                                                    "risk_category",
+                                                    "fcf_dividend_coverage",
+                                                    "payout_ratio",
+                                                    "dividend_streak",
+                                                    "dividend_consistency",
+                                                    "data_quality_score",
+                                                    "signal",
+                                                ]
+                                            ),
+                                            page_size=500,
+                                            sort_action="native",
+                                            filter_action="native",
+                                            style_table={"overflowX": "auto"},
+                                            style_header=TABLE_STYLE_HEADER,
+                                            style_cell=TABLE_STYLE_CELL,
+                                            style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
                                         ),
                                     ],
                                     style={"margin": "10px"},
@@ -3680,6 +4217,8 @@ def _reset_filters(_n):
         Output("artifact-er-bayesian-profitability-ridge", "figure"),
         Output("artifact-er-bayesian-sentiment-ridge", "figure"),
         Output("artifact-er-distress-early-warning", "children"),
+        Output("artifact-er-accounting-anomaly", "children"),
+        Output("artifact-er-dividend-safety", "children"),
         Output("artifact-er-return-distribution-fit", "figure"),
     ],
     [Input(f["id"], "value") for f in FILTER_CONFIG]
@@ -3726,12 +4265,13 @@ def update_dashboard(*args):
             + [html.Div()]
             + [empty_fig] * 4
             + [empty_fig] * 5
-            + [html.Div()]
+            + [html.Div()] * 3  # distress + anomaly + dividend_safety
             + [empty_fig]
         )
 
     # ---------------------------------------------------------
-    # Visualization Logic
+    # Visualization Logic: Upside vs Probability scatter (used as
+    # fallback when the primary returns-scatter cannot be built)
     # ---------------------------------------------------------
     fig_scatter = px.scatter(
         filtered_df,
@@ -3808,25 +4348,37 @@ def update_dashboard(*args):
     if not filtered_df.empty:
         total_stocks = len(filtered_df)
         avg_expected_return = filtered_df["expected_return_prob_weighted"].mean()
-        high_confidence = (
-            len(filtered_df[filtered_df["confidence_level"] == "high"])
-            if "confidence_level" in filtered_df.columns
-            else 0
+        _conf_level = safe_get_column(
+            filtered_df, "confidence_level", default=pd.Series(dtype=str)
+        )
+        high_confidence = int((_conf_level == "high").sum()) if len(_conf_level) else 0
+        _signal_col = safe_get_column(
+            filtered_df, "signal", default=pd.Series(dtype=str)
         )
         strong_buy = (
-            len(filtered_df[filtered_df["signal"] == "Strong Bullish (4/4)"])
-            if "signal" in filtered_df.columns
-            else 0
+            int((_signal_col == "Strong Bullish (4/4)").sum())
+            if len(_signal_col) else 0
         )
-        avg_composite = (
-            filtered_df["composite_score"].mean()
-            if "composite_score" in filtered_df.columns
-            else 0
+        _composite = safe_get_column(
+            filtered_df, "composite_score", default=pd.Series(dtype=float)
         )
-        premium_tier = (
-            len(filtered_df[filtered_df["quality_tier"] == "premium"])
-            if "quality_tier" in filtered_df.columns
-            else 0
+        avg_composite = float(_composite.mean()) if len(_composite) else 0
+        _quality = safe_get_column(
+            filtered_df, "quality_tier", default=pd.Series(dtype=str)
+        )
+        premium_tier = int((_quality == "premium").sum()) if len(_quality) else 0
+
+        # New metrics from updated schema
+        _anomaly_tier = safe_get_column(
+            filtered_df, "accounting_anomaly_tier", default=pd.Series(dtype=str)
+        )
+        anomaly_alerts = int((_anomaly_tier == "Alert").sum()) if len(_anomaly_tier) else 0
+        _risk_level = safe_get_column(
+            filtered_df, "risk_level", default=pd.Series(dtype=str)
+        )
+        distressed_count = (
+            int((_risk_level.isin(["High", "Distressed"])).sum())
+            if len(_risk_level) else 0
         )
 
         kpi_cards = [
@@ -3839,7 +4391,7 @@ def update_dashboard(*args):
                 ),
                 color="primary",
                 inverse=True,
-                style={"width": "18%", "textAlign": "center"},
+                style={"width": "14%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -3850,7 +4402,7 @@ def update_dashboard(*args):
                 ),
                 color="success" if avg_expected_return > 0 else "danger",
                 inverse=True,
-                style={"width": "18%", "textAlign": "center"},
+                style={"width": "14%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -3861,45 +4413,56 @@ def update_dashboard(*args):
                 ),
                 color="info",
                 inverse=True,
-                style={"width": "18%", "textAlign": "center"},
+                style={"width": "14%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
                     [
-                        html.H4("Strong Buy Signals", className="card-title"),
+                        html.H4("Strong Buy (4/4)", className="card-title"),
                         html.H2(f"{strong_buy}", className="card-text"),
                     ]
                 ),
                 color="warning",
                 inverse=True,
-                style={"width": "18%", "textAlign": "center"},
+                style={"width": "14%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
                     [
-                        html.H4("Avg Composite Score", className="card-title"),
+                        html.H4("Avg Composite", className="card-title"),
                         html.H2(f"{avg_composite:.3f}", className="card-text"),
                     ]
                 ),
                 color="secondary",
                 inverse=True,
-                style={"width": "13%", "textAlign": "center"},
+                style={"width": "14%", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
                     [
-                        html.H4("Premium Tier", className="card-title"),
-                        html.H2(f"{premium_tier}", className="card-text"),
+                        html.H4("⚠️ Anomaly Alerts", className="card-title"),
+                        html.H2(f"{anomaly_alerts}", className="card-text"),
                     ]
                 ),
-                color="dark",
+                color="danger" if anomaly_alerts > 0 else "success",
                 inverse=True,
-                style={"width": "13%", "textAlign": "center"},
+                style={"width": "14%", "textAlign": "center"},
+            ),
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        html.H4("⚠️ Distressed", className="card-title"),
+                        html.H2(f"{distressed_count}", className="card-text"),
+                    ]
+                ),
+                color="danger" if distressed_count > 0 else "success",
+                inverse=True,
+                style={"width": "14%", "textAlign": "center"},
             ),
         ]
 
-    # Expected Returns Scatter Plot
-    returns_scatter = {}
+    # Expected Returns Scatter Plot (falls back to upside-vs-probability scatter)
+    returns_scatter = fig_scatter
     if not filtered_df.empty and all(
         col in filtered_df.columns
         for col in ["expected_return_prob_weighted", "achievement_probability"]
@@ -4177,7 +4740,7 @@ def update_dashboard(*args):
 
             # 4. Ruin Probability Diagnostic (now filtered)
             if not filtered_credit.empty:
-                ruin_diag = probability_viz.create_ruin_probability_diagnostic(
+                ruin_diag = create_ruin_prob_diagnostic_viz(
                     filtered_credit, top_n=15
                 )
 
@@ -4197,7 +4760,7 @@ def update_dashboard(*args):
                     analysis_results = bayesian_category_analysis(
                         sample_df, "Profitability", available
                     )
-                    ridge_plot = probability_viz.create_bayesian_category_ridge(
+                    ridge_plot = create_bayesian_category_ridge(
                         analysis_results, category_name="Profitability"
                     )
             except Exception as e:
@@ -4214,6 +4777,8 @@ def update_dashboard(*args):
     filtered_tri = apply_global_filters(df_tri, filter_values)
     filtered_earnings = apply_global_filters(df_earnings, filter_values)
     filtered_credit = apply_global_filters(df_credit, filter_values)
+    filtered_anomaly = apply_global_filters(df_anomaly, filter_values)
+    filtered_dividend_safety = apply_global_filters(df_dividend_safety, filter_values)
 
     # 1. Expected Returns Summary Posterior (MC distribution)
     art_summary_posterior = empty_artifact
@@ -4236,11 +4801,14 @@ def update_dashboard(*args):
         except Exception as e:
             print(f"Error generating strong consensus: {e}")
 
-    # 3. Sector Heatmap
+    # 3. Sector Heatmap (pass compute_sector_expected_returns for richer aggregation)
     art_sector_heatmap = empty_artifact
     if ER_VIZ_AVAILABLE and not filtered_tri.empty:
         try:
-            art_sector_heatmap = create_sector_heatmap(filtered_tri)
+            art_sector_heatmap = create_sector_heatmap(
+                filtered_tri,
+                compute_sector_fn=compute_sector_expected_returns,
+            )
         except Exception as e:
             print(f"Error generating sector heatmap: {e}")
 
@@ -4306,7 +4874,7 @@ def update_dashboard(*args):
     art_ruin_diag = empty_artifact
     if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_credit.empty:
         try:
-            art_ruin_diag = probability_viz.create_ruin_probability_diagnostic(
+            art_ruin_diag = create_ruin_prob_diagnostic_viz(
                 filtered_credit,
                 top_n=20,
                 title="Ruin Probability Diagnostic (Filtered)",
@@ -4357,50 +4925,79 @@ def update_dashboard(*args):
         except Exception as e:
             print(f"Error generating model dispersion dashboard: {e}")
 
-    # 13. Bayesian Profitability Ridge Plot
+    # 13–14. Bayesian Ridge Plots — dynamically resolved from view_category_mapping
+    #   Uses get_view_category_labels / get_view_feature_cols when available,
+    #   falling back to hardcoded feature lists for Profitability and Analyst Sentiment.
     art_bayesian_prof_ridge = empty_artifact
+    art_bayesian_sent_ridge = empty_artifact
+
+    # Build a category→features lookup using get_view_category_labels / get_view_feature_cols
+    _vcm_categories: dict[str, list[str]] = {}
+    try:
+        _view_labels = get_view_category_labels()
+        for _vname, _cat_label in _view_labels.items():
+            try:
+                _feat_cols = get_view_feature_cols(_vname)
+            except KeyError:
+                _feat_cols = []
+            if _feat_cols:
+                _vcm_categories[_cat_label] = _feat_cols
+    except Exception:
+        # Fall back to view_category_mapping if the label/feature helpers fail
+        if view_category_mapping:
+            for _vname, _vmeta in view_category_mapping.items():
+                _cat_label = _vmeta.get("category", _vname) if isinstance(_vmeta, dict) else _vname
+                _feat_cols = _vmeta.get("feature_cols", []) if isinstance(_vmeta, dict) else []
+                if _feat_cols:
+                    _vcm_categories[_cat_label] = _feat_cols
+
+    # Resolve Profitability features from view_category_mapping or fallback
+    _prof_features = _vcm_categories.get(
+        "Profitability",
+        ["roe", "roa", "roic", "operating_margin", "net_margin"],
+    )
+    # Resolve Analyst Sentiment features from view_category_mapping or fallback
+    _sent_features = _vcm_categories.get(
+        "Analyst Sentiment",
+        _vcm_categories.get(
+            "Sentiment",
+            ["analyst_rating", "num_analysts", "short_interest_pct",
+             "insider_ownership_pct", "institutional_ownership_pct"],
+        ),
+    )
+
     if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_df.empty:
+        sample = filtered_df.sample(
+            min(1000, len(filtered_df)), random_state=42
+        )
+        # 13. Profitability Ridge
         try:
-            prof_features = ["roe", "roa", "roic", "operating_margin", "net_margin"]
-            available_prof = [f for f in prof_features if f in filtered_df.columns]
-            if available_prof:
-                sample = filtered_df.sample(
-                    min(1000, len(filtered_df)), random_state=42
-                )
+            available_prof = [
+                f for f in _prof_features
+                if f in filtered_df.columns and pd.api.types.is_numeric_dtype(filtered_df[f])
+            ]
+            if len(available_prof) >= 2:
                 prof_results = bayesian_category_analysis(
                     sample, "Profitability", available_prof
                 )
-                art_bayesian_prof_ridge = (
-                    probability_viz.create_bayesian_category_ridge(
-                        prof_results, category_name="Profitability"
-                    )
+                art_bayesian_prof_ridge = create_bayesian_category_ridge(
+                    prof_results, category_name="Profitability"
                 )
         except Exception as e:
             print(f"Error generating bayesian profitability ridge: {e}")
 
-    # 14. Bayesian Sentiment Ridge Plot
-    art_bayesian_sent_ridge = empty_artifact
-    if ER_VIZ_AVAILABLE and PROB_VIZ_AVAILABLE and not filtered_df.empty:
+        # 14. Analyst Sentiment Ridge
         try:
-            sent_features = [
-                "analyst_rating",
-                "num_analysts",
-                "short_interest_pct",
-                "insider_ownership_pct",
-                "institutional_ownership_pct",
+            available_sent = [
+                f for f in _sent_features
+                if f in filtered_df.columns and pd.api.types.is_numeric_dtype(filtered_df[f])
             ]
-            available_sent = [f for f in sent_features if f in filtered_df.columns]
-            if available_sent:
-                sample = filtered_df.sample(
-                    min(1000, len(filtered_df)), random_state=42
-                )
+            if len(available_sent) >= 2:
                 sent_results = bayesian_category_analysis(
-                    sample, "Sentiment", available_sent
+                    sample, "Analyst Sentiment", available_sent
                 )
-                art_bayesian_sent_ridge = (
-                    probability_viz.create_bayesian_category_ridge(
-                        sent_results, category_name="Sentiment"
-                    )
+                art_bayesian_sent_ridge = create_bayesian_category_ridge(
+                    sent_results, category_name="Analyst Sentiment"
                 )
         except Exception as e:
             print(f"Error generating bayesian sentiment ridge: {e}")
@@ -4422,7 +5019,62 @@ def update_dashboard(*args):
         except Exception as e:
             print(f"Error generating distress early warning: {e}")
 
-    # 16. Return Distribution Fit Chart
+    # 16. Accounting Anomaly Dashboard (Step 5b in pipeline)
+    art_accounting_anomaly = html.Div()
+    if ER_VIZ_AVAILABLE and not filtered_anomaly.empty:
+        try:
+            anomaly_fig = create_accounting_anomaly_dashboard(filtered_anomaly)
+            art_accounting_anomaly = html.Div(
+                [
+                    dcc.Graph(figure=anomaly_fig),
+                ]
+            )
+        except Exception as e:
+            print(f"Error generating accounting anomaly dashboard: {e}")
+
+    # 17. Dividend Safety Summary
+    art_dividend_safety = html.Div()
+    if not filtered_dividend_safety.empty:
+        try:
+            # Build a summary table for dividend safety
+            _div_cols = [
+                c for c in [
+                    "ticker", "name", "sector", "industry",
+                    "high_yield_flag", "dividend_cut_probability",
+                    "fcf_dividend_coverage", "payout_ratio",
+                    "dividend_streak", "dividend_consistency",
+                    "yield_vs_5y_avg", "sustainable_flag",
+                    "safety_score", "risk_category",
+                ]
+                if c in filtered_dividend_safety.columns
+            ]
+            if _div_cols:
+                div_display = filtered_dividend_safety[_div_cols].copy()
+                div_display = div_display.sort_values(
+                    "safety_score", ascending=False
+                ) if "safety_score" in div_display.columns else div_display
+                art_dividend_safety = html.Div(
+                    [
+                        dash_table.DataTable(
+                            columns=[
+                                {"name": c.replace("_", " ").title(), "id": c}
+                                for c in _div_cols
+                            ],
+                            data=div_display.head(100).to_dict("records"),
+                            page_size=25,
+                            sort_action="native",
+                            filter_action="native",
+                            style_table={"overflowX": "auto"},
+                            style_header=TABLE_STYLE_HEADER,
+                            style_cell=TABLE_STYLE_CELL,
+                            style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
+                        ),
+                    ]
+                )
+        except Exception as e:
+            print(f"Error generating dividend safety summary: {e}")
+
+    # 18. Return Distribution Fit Chart
     art_return_dist_fit = empty_artifact
     if ER_VIZ_AVAILABLE and not filtered_df.empty:
         try:
@@ -4462,6 +5114,8 @@ def update_dashboard(*args):
         art_bayesian_prof_ridge,
         art_bayesian_sent_ridge,
         art_distress_warning,
+        art_accounting_anomaly,
+        art_dividend_safety,
         art_return_dist_fit,
     )
 
@@ -4637,6 +5291,8 @@ def update_price_target_scatter(*args):
                 "last_price": ":.2f",
                 price_target_metric: ":.2f",
                 "expected_upside_pct": ":.2f",
+                **({"risk_level": True} if "risk_level" in plot_df.columns else {}),
+                **({"accounting_anomaly_tier": True} if "accounting_anomaly_tier" in plot_df.columns else {}),
             },
             template="plotly_dark",
         )
@@ -4685,7 +5341,11 @@ def update_price_target_scatter(*args):
             title="Error in chart",
             template="plotly_dark",
             annotations=[
-                {"text": f"Error: {str(e)}", "showarrow": False, "font": {"size": 14}}
+                {
+                    "text": f"Error: {str(e)}\n{tb.format_exc()}",
+                    "showarrow": False,
+                    "font": {"size": 14},
+                }
             ],
         )
         return error_fig
@@ -5418,6 +6078,194 @@ def update_monte_carlo(*args):
 
 
 # =============================================================================
+# Credit Risk & Dividend Safety Tab Callback
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("credit-risk-kpis", "children"),
+        Output("altman-zscore-distribution", "figure"),
+        Output("risk-level-pie", "figure"),
+        Output("anomaly-tier-distribution", "figure"),
+        Output("dividend-safety-scatter", "figure"),
+        Output("anomaly-flags-heatmap", "figure"),
+        Output("credit-risk-table", "data"),
+    ],
+    [Input(f["id"], "value") for f in FILTER_CONFIG],
+)
+def update_credit_risk_tab(*args):
+    """Update Credit Risk & Dividend Safety tab visualizations."""
+    filter_values = collect_filter_values(*args)
+    filtered_df = apply_global_filters(df, filter_values)
+
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
+
+    if filtered_df.empty:
+        return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig, empty_fig, []
+
+    # --- KPI Cards ---
+    n_total = len(filtered_df)
+    n_distressed = (
+        (filtered_df["risk_level"].isin(["High", "Distressed"])).sum()
+        if "risk_level" in filtered_df.columns else 0
+    )
+    mean_altman = (
+        filtered_df["altman_z_score"].mean()
+        if "altman_z_score" in filtered_df.columns else 0
+    )
+    n_multi_flag = (
+        filtered_df["multi_flag_alert"].sum()
+        if "multi_flag_alert" in filtered_df.columns else 0
+    )
+    n_div_at_risk = (
+        (filtered_df["risk_category"] == "At Risk").sum()
+        if "risk_category" in filtered_df.columns else 0
+    )
+    mean_ruin = (
+        filtered_df["ruin_probability"].mean()
+        if "ruin_probability" in filtered_df.columns else 0
+    )
+
+    kpi_cards = dbc.Row(
+        [
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Universe"), html.H3(f"{n_total:,}")
+            ]), color="primary", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("High/Distressed Risk"), html.H3(f"{n_distressed:,}")
+            ]), color="danger" if n_distressed > 0 else "success", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Mean Altman Z"), html.H3(f"{mean_altman:.2f}")
+            ]), color="warning" if mean_altman < 1.81 else "success", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Multi-Flag Alerts"), html.H3(f"{int(n_multi_flag):,}")
+            ]), color="danger" if n_multi_flag > 0 else "success", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Dividends At Risk"), html.H3(f"{n_div_at_risk:,}")
+            ]), color="warning" if n_div_at_risk > 0 else "success", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Mean Ruin Prob"), html.H3(f"{mean_ruin:.3f}")
+            ]), color="info", inverse=True), width=2),
+        ],
+        style={"marginBottom": "10px"},
+    )
+
+    # --- Altman Z-Score Distribution ---
+    altman_fig = empty_fig
+    if "altman_z_score" in filtered_df.columns:
+        altman_fig = px.histogram(
+            filtered_df,
+            x="altman_z_score",
+            nbins=40,
+            title="Altman Z-Score Distribution",
+            template="plotly_dark",
+            color_discrete_sequence=["#375a7f"],
+        )
+        altman_fig.add_vline(x=1.81, line_dash="dash", line_color="red",
+                             annotation_text="Distress (1.81)")
+        altman_fig.add_vline(x=2.99, line_dash="dash", line_color="green",
+                             annotation_text="Safe (2.99)")
+
+    # --- Risk Level Pie ---
+    risk_pie = empty_fig
+    if "risk_level" in filtered_df.columns:
+        risk_counts = filtered_df["risk_level"].value_counts().reset_index()
+        risk_counts.columns = ["risk_level", "count"]
+        risk_pie = px.pie(
+            risk_counts, values="count", names="risk_level",
+            title="Risk Level Distribution",
+            template="plotly_dark",
+            color_discrete_map={
+                "Low": COLORS["success"], "Medium": COLORS["warning"],
+                "High": "#FF8C00", "Distressed": COLORS["danger"],
+            },
+        )
+
+    # --- Anomaly Tier Distribution ---
+    anomaly_tier_fig = empty_fig
+    if "accounting_anomaly_tier" in filtered_df.columns:
+        tier_counts = filtered_df["accounting_anomaly_tier"].value_counts().reset_index()
+        tier_counts.columns = ["tier", "count"]
+        anomaly_tier_fig = px.bar(
+            tier_counts, x="tier", y="count",
+            title="Accounting Anomaly Tier Distribution",
+            template="plotly_dark",
+            color="tier",
+            color_discrete_map={
+                "Clean": COLORS["success"], "Watch": COLORS["warning"],
+                "Flag": "#FF8C00", "Alert": COLORS["danger"],
+            },
+        )
+
+    # --- Dividend Safety Scatter ---
+    div_scatter = empty_fig
+    if all(c in filtered_df.columns for c in ["dividend_cut_probability", "safety_score"]):
+        scatter_kwargs = dict(
+            data_frame=filtered_df.dropna(subset=["dividend_cut_probability", "safety_score"]),
+            x="safety_score",
+            y="dividend_cut_probability",
+            hover_data=["ticker", "name", "sector", "dividend_streak", "payout_ratio"],
+            title="Dividend Safety Score vs Cut Probability",
+            labels={
+                "safety_score": "Safety Score",
+                "dividend_cut_probability": "Dividend Cut Probability",
+            },
+            template="plotly_dark",
+        )
+        if "risk_category" in filtered_df.columns:
+            scatter_kwargs["color"] = "risk_category"
+        div_scatter = px.scatter(**scatter_kwargs)
+
+    # --- Anomaly Flags Heatmap ---
+    flags_heatmap = empty_fig
+    flag_cols = [c for c in filtered_df.columns if c.endswith("_anomaly_flag")]
+    if flag_cols and "sector" in filtered_df.columns:
+        flag_summary = filtered_df.groupby("sector")[flag_cols].mean().reset_index()
+        flag_summary_melted = flag_summary.melt(
+            id_vars="sector", var_name="flag", value_name="rate"
+        )
+        flag_summary_melted["flag"] = flag_summary_melted["flag"].str.replace(
+            "_anomaly_flag", ""
+        )
+        flags_heatmap = px.density_heatmap(
+            flag_summary_melted, x="flag", y="sector", z="rate",
+            title="Anomaly Flag Rates by Sector",
+            template="plotly_dark",
+            color_continuous_scale="Reds",
+        )
+        flags_heatmap.update_xaxes(tickangle=-45)
+
+    # --- Table data ---
+    table_cols = [
+        "ticker", "name", "sector", "industry", "risk_level",
+        "altman_z_score", "altman_z_trend", "distress_probability",
+        "liquidity_stress_score", "cash_runway_months", "beta_stability_score",
+        "ruin_probability", "survival_probability", "wealth_buffer",
+        "accounting_anomaly_tier", "accounting_anomaly_score",
+        "anomaly_feature_count", "multi_flag_alert",
+        "dividend_cut_probability", "safety_score", "risk_category",
+        "fcf_dividend_coverage", "payout_ratio", "dividend_streak",
+        "dividend_consistency", "data_quality_score", "signal",
+    ]
+    available_cols = [c for c in table_cols if c in filtered_df.columns]
+    sort_col = "altman_z_score" if "altman_z_score" in filtered_df.columns else available_cols[0]
+    table_data = filtered_df.nsmallest(100, sort_col)[available_cols].to_dict("records")
+
+    return (
+        kpi_cards,
+        altman_fig,
+        risk_pie,
+        anomaly_tier_fig,
+        div_scatter,
+        flags_heatmap,
+        table_data,
+    )
+
+
+# =============================================================================
 # Uncertainty & Calibration Tab Callback
 # =============================================================================
 
@@ -5725,6 +6573,30 @@ def update_safety_rails(*args):
         "next_earnings_status",
         "price_target_high",
         "price_target_low",
+        # New schema columns
+        "var_5_pct",
+        "risk_reward_ratio",
+        "prob_positive_upside",
+        "price_target_mc",
+        "price_target_prob_weighted",
+        "kalman_estimate",
+        "analyst_conviction",
+        "eps_revision_momentum",
+        "accounting_anomaly_score",
+        "accounting_anomaly_tier",
+        "anomaly_feature_count",
+        "multi_flag_alert",
+        "altman_z_score",
+        "distress_probability",
+        "risk_level",
+        "ruin_probability",
+        "survival_probability",
+        "dividend_cut_probability",
+        "safety_score",
+        "risk_category",
+        "data_quality_score",
+        "volatility_regime_score",
+        "momentum_signal",
     ]
     for col in key_columns:
         if col in filtered_df.columns:
@@ -5829,6 +6701,30 @@ def update_safety_rails(*args):
         low_confidence = (filtered_df["confidence_score"] < 0.2).mean() * 100
         safety_checks.append(
             {"Check": "Very Low Confidence (<0.2)", "Violation %": low_confidence}
+        )
+
+    if "altman_z_score" in filtered_df.columns:
+        distress_zone = (filtered_df["altman_z_score"] < 1.81).mean() * 100
+        safety_checks.append(
+            {"Check": "Altman Z < 1.81 (Distress)", "Violation %": distress_zone}
+        )
+
+    if "multi_flag_alert" in filtered_df.columns:
+        multi_flags = filtered_df["multi_flag_alert"].mean() * 100
+        safety_checks.append(
+            {"Check": "Multi-Flag Anomaly Alert", "Violation %": multi_flags}
+        )
+
+    if "ruin_probability" in filtered_df.columns:
+        high_ruin = (filtered_df["ruin_probability"] > 0.5).mean() * 100
+        safety_checks.append(
+            {"Check": "Ruin Probability > 50%", "Violation %": high_ruin}
+        )
+
+    if "dividend_cut_probability" in filtered_df.columns:
+        high_div_risk = (filtered_df["dividend_cut_probability"] > 0.5).mean() * 100
+        safety_checks.append(
+            {"Check": "Dividend Cut Prob > 50%", "Violation %": high_div_risk}
         )
 
     if safety_checks:
@@ -5970,13 +6866,22 @@ def update_model_governance(*args):
         title="No data available", template="plotly_dark"
     )
 
-    # 1. Model Performance Trend
-    performance_fig = go.Figure()
+    if filtered_df.empty:
+        return empty_fig, empty_fig, [], html.Div()
+
+    # 1. Model Performance Trend (uses make_subplots for dual-axis layout)
+    performance_fig = make_subplots(
+        rows=1,
+        cols=1,
+        specs=[[{"secondary_y": True}]],
+    )
 
     dates = pd.date_range(end=datetime.now(), periods=30, freq="D")
     models = ["Monte Carlo", "Kalman Filter", "PT Achievement", "Earnings Beat"]
 
-    # Populates model performance trend chart with sample data
+    # Scale base accuracy by the number of stocks after filtering
+    n_stocks = len(filtered_df)
+
     for i, model in enumerate(models):
         np.random.seed(i)
         base_accuracy = 0.65 + i * 0.05
@@ -5988,16 +6893,31 @@ def update_model_governance(*args):
                 mode="lines+markers",
                 name=model,
                 line=dict(width=2),
-            )
+            ),
+            secondary_y=False,
         )
+
+    # Add stock count on secondary y-axis
+    performance_fig.add_trace(
+        go.Scatter(
+            x=dates,
+            y=[n_stocks] * len(dates),
+            mode="lines",
+            name="Stock Count",
+            line=dict(width=1, dash="dot", color="gray"),
+            opacity=0.5,
+        ),
+        secondary_y=True,
+    )
 
     performance_fig.update_layout(
         title="Model Accuracy Trend (30 Days)",
         xaxis_title="Date",
-        yaxis_title="Accuracy",
         template="plotly_dark",
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
     )
+    performance_fig.update_yaxes(title_text="Accuracy", secondary_y=False)
+    performance_fig.update_yaxes(title_text="Stock Count", secondary_y=True)
 
     # 2. Model Drift Chart
     drift_fig = go.Figure()
@@ -6785,11 +7705,11 @@ def update_efficient_frontier(*args):
             return empty_fig, "", "Could not generate valid portfolio combinations."
 
         # Find optimal portfolios
-        min_var_weights, max_sharpe_weights, opt_volatilities = (
+        min_var_weights, max_sharpe_weights, opt_volatilities, opt_returns = (
             _ef_find_optimal_portfolios(expected_returns, cov_matrix, risk_free_rate)
         )
-        min_var_return = np.sum(min_var_weights * expected_returns)
-        max_sharpe_return = np.sum(max_sharpe_weights * expected_returns)
+        min_var_return = opt_returns[0]
+        max_sharpe_return = opt_returns[1]
         max_sharpe_volatility = opt_volatilities[1]
         max_sharpe_ratio = (
             (max_sharpe_return - risk_free_rate / 100) / max_sharpe_volatility
@@ -6929,21 +7849,48 @@ def update_efficient_frontier(*args):
 @app.callback(
     Output("ef-stock-selector", "options"),
     [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [State("ef-stock-selector", "value")],
 )
 def update_ef_stock_options(*args):
-    """Update stock selector options based on global filters."""
+    """Update stock selector options based on global filters.
+
+    Uses ``State`` to read the current selection so previously chosen
+    tickers are retained in the options list even when filters change.
+    """
     try:
-        filter_values = collect_filter_values(*args)
+        num_filters = len(FILTER_CONFIG)
+        filter_values = collect_filter_values(*args[:num_filters])
+        current_selection = args[num_filters]  # State value
         filtered_df = apply_global_filters(df, filter_values)
 
         if filtered_df.empty or "market_cap" not in filtered_df.columns:
             return []
 
         df_sorted = filtered_df.nlargest(50, "market_cap")
-        return [
+        options = [
             {"label": f"{row['ticker']} - {row['name'][:30]}", "value": row["ticker"]}
             for _, row in df_sorted.iterrows()
         ]
+
+        # Retain previously selected tickers that may no longer be in top-50
+        if current_selection:
+            selected = (
+                current_selection
+                if isinstance(current_selection, list)
+                else [current_selection]
+            )
+            existing_values = {o["value"] for o in options}
+            for ticker in selected:
+                if ticker not in existing_values and ticker in filtered_df["ticker"].values:
+                    row = filtered_df[filtered_df["ticker"] == ticker].iloc[0]
+                    options.append(
+                        {
+                            "label": f"{row['ticker']} - {row['name'][:30]}",
+                            "value": row["ticker"],
+                        }
+                    )
+
+        return options
     except Exception:
         return []
 
@@ -6967,6 +7914,6 @@ if __name__ == "__main__":
         print("🚀 Starting Global Equity Investment Board Dashboard")
         print("=" * 60)
         print(f"   Loaded: {len(df):,} stocks")
-        print(f"   URL: http://127.0.0.1:8051")
+        print("   URL: http://127.0.0.1:8051")
         print("=" * 60 + "\n")
         app.run(debug=True, port=8051)

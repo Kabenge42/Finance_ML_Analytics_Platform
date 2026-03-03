@@ -92,9 +92,13 @@ networkx>= 3.3.0, <4.0.0
 Pillow>= 10.4.0, <15.0.0
 numba>= 0.60.0, <1.0.0; python_version < '3.14'
 forex-python>= 1.8, <2.0.0
-requests>= 2.32.0, <3.0.0
+requests>=2.32.0
+urllib3>=2.6.0
+charset-normalizer>=3.4.0
 dash-bootstrap-components>= 1.6.0, <4.0.0
 flask>= 3.0.0, <4.0.0
 ipython>= 8.28.0, <11.0.0
 python-dotenv
 numba<0.70.0
+xarray
+pymc

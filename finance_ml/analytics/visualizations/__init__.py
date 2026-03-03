@@ -116,6 +116,7 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_beneish_mscore_analysis",
             "create_risk_tier_sunburst",
             "create_distress_early_warning_dashboard",
+            "create_accounting_anomaly_dashboard",
         ],
     ),
     # Growth analysis visualization functions
@@ -185,8 +186,39 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_mcse_convergence_panel",
             "create_bayesian_category_ridge",
             "create_tri_model_posterior_comparison",
+            "create_feature_view_posterior_panel",
         ],
     ),
+    # Expected returns pipeline visualization functions
+    (
+        ".expected_returns_viz",
+        [
+            "create_mc_return_distribution",
+            "create_sector_risk_reward_scatter",
+            "create_kalman_vs_raw_scatter",
+            "create_tri_model_agreement_histogram",
+            "create_strong_consensus_bar",
+            "create_sector_heatmap",
+            "create_var_analysis",
+            "create_beat_vs_achievement_scatter",
+            "create_model_dispersion_dashboard",
+            "create_return_distribution_fit_chart",
+            "create_sector_return_analytics_heatmap",
+            "create_screening_summary_chart",
+            "create_price_target_drift_dashboard",
+        ],
+    ),
+)
+
+# ---------------------------------------------------------------------------
+# Import shared constants/helpers so they are available at package level.
+# ---------------------------------------------------------------------------
+from finance_ml.analytics.visualizations._shared import (  # noqa: E402
+    PLOTLY_TEMPLATE,
+    COLORS,
+    MV_COLUMN_ALIASES,
+    resolve_column,
+    create_no_data_figure,
 )
 
 # ---------------------------------------------------------------------------

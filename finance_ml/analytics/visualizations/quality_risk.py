@@ -28,6 +28,7 @@ from finance_ml.analytics.visualizations._shared import (
     PLOTLY_TEMPLATE,
     COLORS,
     create_no_data_figure,
+    resolve_column,
 )
 
 # Metric display names
@@ -37,7 +38,7 @@ METRIC_LABELS = {
     "beneish_m_score": "Beneish M-Score",
     "distress_risk_score": "Distress Risk Score",
     "quality_momentum_score": "Quality Momentum Score",
-    "combined_distress_score": "Combined Distress Score",
+    "combined_distress_risk_score": "Combined Distress Risk Score",
     "accounting_quality_score": "Accounting Quality Score",
 }
 
@@ -82,10 +83,14 @@ def create_piotroski_fscore_breakdown(
     >>> fig = create_piotroski_fscore_breakdown(df, ticker='AAPL')
     >>> fig.show()
     """
-    if "piotroski_f_score" not in df.columns:
-        return create_no_data_figure("Piotroski F-Score Breakdown - No Data")
+    fscore_col = resolve_column(df, "piotroski_f_score")
+    if fscore_col is None:
+        return create_no_data_figure(
+            "Piotroski F-Score Breakdown — Column not found. "
+            "Ensure calc_piotroski_f_score() output is included in your data source."
+        )
 
-    valid_data = df["piotroski_f_score"].dropna()
+    valid_data = df[fscore_col].dropna()
     if len(valid_data) == 0:
         return create_no_data_figure("Piotroski F-Score Breakdown - No Data")
 
@@ -128,7 +133,7 @@ def create_piotroski_fscore_breakdown(
     if ticker and "ticker" in df.columns:
         stock_data = df[df["ticker"] == ticker]
         if len(stock_data) > 0:
-            stock_score = stock_data["piotroski_f_score"].iloc[0]
+            stock_score = stock_data[fscore_col].iloc[0]
             if pd.notna(stock_score):
                 fig.add_vline(
                     x=stock_score,
@@ -492,12 +497,10 @@ def create_beneish_mscore_analysis(
     >>> fig = create_beneish_mscore_analysis(df)
     >>> fig.show()
     """
-    # Try primary column, fall back to available alternatives
-    score_col = None
-    for candidate in ["beneish_m_score", "accounting_quality_score", "accruals_quality"]:
-        if candidate in df.columns:
-            score_col = candidate
-            break
+    # Try primary column via resolve_column, fall back to accounting_quality_score
+    score_col = resolve_column(df, "beneish_m_score")
+    if score_col is None:
+        score_col = resolve_column(df, "accounting_quality_score")
 
     if score_col is None:
         return create_no_data_figure("Accounting Quality Analysis - No Data")
@@ -759,7 +762,8 @@ def create_distress_early_warning_dashboard(
     >>> fig.show()
     """
     has_altman = "altman_z_score" in df.columns
-    has_piotroski = "piotroski_f_score" in df.columns
+    _fscore_col = resolve_column(df, "piotroski_f_score")
+    has_piotroski = _fscore_col is not None
     has_distress = "distress_risk_score" in df.columns
 
     if not has_altman and not has_piotroski and not has_distress:
@@ -802,7 +806,7 @@ def create_distress_early_warning_dashboard(
 
     # Panel 2: F-Score warning (low scores)
     if has_piotroski:
-        f_data = df["piotroski_f_score"].dropna()
+        f_data = df[_fscore_col].dropna()
         weak = f_data[f_data <= 3]
         average = f_data[(f_data > 3) & (f_data <= 6)]
         strong = f_data[f_data > 6]
@@ -849,7 +853,7 @@ def create_distress_early_warning_dashboard(
         summary_data["Count"].append(z_distress)
 
     if has_piotroski:
-        f_weak = len(df[df["piotroski_f_score"] <= 3])
+        f_weak = len(df[df[_fscore_col] <= 3])
         summary_data["Category"].append("F-Score Weak")
         summary_data["Count"].append(f_weak)
 
@@ -880,5 +884,161 @@ def create_distress_early_warning_dashboard(
         barmode="overlay",
         margin=dict(l=80, r=40, t=60, b=60),
     )
+
+    return fig
+
+def create_accounting_anomaly_dashboard(
+        df: pd.DataFrame,
+        group_col: str = "industry",
+) -> go.Figure:
+    """
+    Multi-panel dashboard for accounting anomaly detection results.
+
+    Panels:
+    1. Anomaly score distribution by tier (Clean/Watch/Flag/Alert)
+    2. Per-feature flag frequency (horizontal bar)
+    3. Sector-relative anomaly heatmap (top sectors)
+    4. Mahalanobis distance vs anomaly score scatter
+
+    Uses: accounting_anomaly_score, accounting_anomaly_tier,
+          *_anomaly_flag, mahalanobis_distance, sector_relative_anomaly
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame with anomaly detection columns
+    group_col : str, default 'industry'
+        Column for sector grouping
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with 4-panel anomaly dashboard
+    """
+    if "accounting_anomaly_score" not in df.columns:
+        return create_no_data_figure(
+            "Accounting Anomaly Dashboard — Run detect_accounting_anomalies() first"
+        )
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=(
+            "Anomaly Score Distribution by Tier",
+            "Per-Feature Flag Frequency",
+            "Sector-Relative Anomaly Scores",
+            "Mahalanobis Distance vs Anomaly Score",
+        ),
+        vertical_spacing=0.12,
+        horizontal_spacing=0.10,
+    )
+
+    # Panel 1: Score distribution by tier
+    tier_colors = {
+        "Clean": "#00A878",
+        "Watch": "#FFD93D",
+        "Flag": "#FF8C42",
+        "Alert": "#E63946",
+    }
+    if "accounting_anomaly_tier" in df.columns:
+        for tier in ["Clean", "Watch", "Flag", "Alert"]:
+            tier_data = df[df["accounting_anomaly_tier"] == tier]["accounting_anomaly_score"]
+            if len(tier_data) > 0:
+                fig.add_trace(
+                    go.Histogram(
+                        x=tier_data,
+                        name=tier,
+                        marker_color=tier_colors.get(tier, "#0A7EA4"),
+                        opacity=0.7,
+                    ),
+                    row=1,
+                    col=1,
+                )
+    else:
+        fig.add_trace(
+            go.Histogram(
+                x=df["accounting_anomaly_score"].dropna(),
+                name="Score",
+                marker_color="#0A7EA4",
+                opacity=0.7,
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Panel 2: Per-feature flag frequency
+    flag_cols = sorted([c for c in df.columns if c.endswith("_anomaly_flag")])
+    if flag_cols:
+        flag_counts = {
+            c.replace("_anomaly_flag", ""): int(df[c].sum())
+            for c in flag_cols
+            if df[c].sum() > 0
+        }
+        if flag_counts:
+            sorted_flags = sorted(flag_counts.items(), key=lambda x: x[1], reverse=True)
+            fig.add_trace(
+                go.Bar(
+                    y=[f[0] for f in sorted_flags],
+                    x=[f[1] for f in sorted_flags],
+                    orientation="h",
+                    marker_color="#6C63FF",
+                    name="Flags",
+                ),
+                row=1,
+                col=2,
+            )
+
+    # Panel 3: Sector-relative anomaly scores (top sectors)
+    if group_col in df.columns and "accounting_anomaly_score" in df.columns:
+        sector_mean = (
+            df.groupby(group_col)["accounting_anomaly_score"]
+            .mean()
+            .sort_values(ascending=False)
+            .head(15)
+        )
+        fig.add_trace(
+            go.Bar(
+                y=sector_mean.index,
+                x=sector_mean.values,
+                orientation="h",
+                marker_color="#FF8C42",
+                name="Sector Mean",
+            ),
+            row=2,
+            col=1,
+        )
+
+    # Panel 4: Mahalanobis distance vs anomaly score
+    if "mahalanobis_distance" in df.columns:
+        plot_df = df[["accounting_anomaly_score", "mahalanobis_distance"]].dropna()
+        if len(plot_df) > 0:
+            fig.add_trace(
+                go.Scatter(
+                    x=plot_df["accounting_anomaly_score"],
+                    y=plot_df["mahalanobis_distance"],
+                    mode="markers",
+                    marker=dict(size=5, color="#0A7EA4", opacity=0.5),
+                    name="Stocks",
+                ),
+                row=2,
+                col=2,
+            )
+
+    fig.update_layout(
+        title="Accounting Anomaly Detection Dashboard",
+        template=PLOTLY_TEMPLATE,
+        height=1000,
+        width=1200,
+        showlegend=True,
+        barmode="overlay",
+        margin=dict(l=120, r=40, t=80, b=60),
+    )
+
+    fig.update_xaxes(title_text="Anomaly Score (0-100)", row=1, col=1)
+    fig.update_xaxes(title_text="Stocks Flagged", row=1, col=2)
+    fig.update_xaxes(title_text="Mean Anomaly Score", row=2, col=1)
+    fig.update_xaxes(title_text="Anomaly Score", row=2, col=2)
+    fig.update_yaxes(title_text="Count", row=1, col=1)
+    fig.update_yaxes(title_text="Mahalanobis Distance", row=2, col=2)
 
     return fig

@@ -46,14 +46,14 @@ SELECT "ISIN"                                                                   
        CASE
            WHEN "Total Revenues (-3FY)" > 0 AND "Total Revenues (FY)" > 0
                THEN
-               (safe_power(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC), 1.0 / 3.0) -
+               (POWER(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-3FY)"::NUMERIC), 1.0 / 3.0) -
                 1) *
                100
            END                                                                                   AS revenue_cagr_3y,
        CASE
            WHEN "Total Revenues (-4FY)" > 0 AND "Total Revenues (FY)" > 0
                THEN
-               (safe_power(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC), 1.0 / 4.0) -
+               (POWER(public.safe_divide("Total Revenues (FY)"::NUMERIC, "Total Revenues (-4FY)"::NUMERIC), 1.0 / 4.0) -
                 1) *
                100
            END                                                                                   AS revenue_cagr_4y,
@@ -66,7 +66,7 @@ SELECT "ISIN"                                                                   
        public.safe_divide("Total Revenues (FQ)"::NUMERIC,
                           ("Total Revenues (FQ)" + "Total Revenues (-1FQFQ)" +
                            "Total Revenues (-2FQFQ)" + "Total Revenues (-3FQFQ)") /
-                          4.0) AS revenue_fq_vs_4q_avg,
+                          4.0)                                                                   AS revenue_fq_vs_4q_avg,
        -- Growth flag: 1 if growing YoY
        CASE
            WHEN "Total Revenues (FY)" > "Total Revenues (-1FY)" THEN 1

@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any, Optional, TYPE_CHECKING
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
@@ -89,9 +89,16 @@ def aggregate_probability_results(
     available_metrics = [c for c in metric_cols if c in df.columns]
 
     # ── Optional: keep only top-N ISINs by mean prob_above_median ──
-    if policy.top_n_isins and "isin" in df.columns and "prob_above_median" in available_metrics:
+    if (
+        policy.top_n_isins
+        and "isin" in df.columns
+        and "prob_above_median" in available_metrics
+    ):
         isin_rank = (
-            df.groupby("isin")["prob_above_median"].mean().nlargest(policy.top_n_isins).index
+            df.groupby("isin")["prob_above_median"]
+            .mean()
+            .nlargest(policy.top_n_isins)
+            .index
         )
         df = df[df["isin"].isin(isin_rank)]
 
@@ -109,7 +116,10 @@ def aggregate_probability_results(
         )
 
     if aggregation == "by_feature" and "feature" in df.columns:
-        agg_dict = {m: ["mean", "median", "std", "min", "max", "count"] for m in available_metrics}
+        agg_dict = {
+            m: ["mean", "median", "std", "min", "max", "count"]
+            for m in available_metrics
+        }
         result = df.groupby("feature").agg(agg_dict)
         # Flatten MultiIndex columns  →  "value_mean", "percentile_std", …
         result.columns = ["_".join(col).strip() for col in result.columns]
@@ -122,18 +132,31 @@ def aggregate_probability_results(
         group_cols = ["isin"]
         # Keep first occurrence of useful identifier columns
         id_first = {}
-        for c in ["ticker", "name", "sector", "industry", "region", "country", "exchange"]:
+        for c in [
+            "ticker",
+            "name",
+            "sector",
+            "industry",
+            "region",
+            "country",
+            "exchange",
+        ]:
             if c in df.columns:
                 id_first[c] = "first"
         result = df.groupby(group_cols).agg({**agg_dict, **id_first})
         result.columns = [
-            "_".join(col).strip() if isinstance(col, tuple) else col for col in result.columns
+            "_".join(col).strip() if isinstance(col, tuple) else col
+            for col in result.columns
         ]
         result = result.reset_index()
         logging.info("Aggregated by isin: %d → %d rows", len(df), len(result))
         return result
 
-    if aggregation == "by_sector" and "sector" in df.columns and "feature" in df.columns:
+    if (
+        aggregation == "by_sector"
+        and "sector" in df.columns
+        and "feature" in df.columns
+    ):
         agg_dict = {m: ["mean", "median", "std", "count"] for m in available_metrics}
         result = df.groupby(["sector", "feature"]).agg(agg_dict)
         result.columns = ["_".join(col).strip() for col in result.columns]
@@ -203,8 +226,8 @@ _equities_schema_cache: dict[str, dict[str, str | int | None]] | None = None
 
 
 def load_equities_schema_from_db(
-        db_url: Optional[str] = None,
-        schema: str = "public",
+    db_url: Optional[str] = None,
+    schema: str = "public",
 ) -> dict[str, dict[str, str | int | None]]:
     """
     Load equities schema metadata from ``equities_schema_metadata`` table.
@@ -239,7 +262,9 @@ def load_equities_schema_from_db(
     >>> market_data_cols = [k for k, v in schema_meta.items() if v["role"] == "market_data"]
     """
     if create_engine is None or text is None:
-        logging.warning("SQLAlchemy not available, cannot load equities schema metadata")
+        logging.warning(
+            "SQLAlchemy not available, cannot load equities schema metadata"
+        )
         return {}
 
     resolved_url = db_url or os.environ.get("DB_URL")
@@ -263,7 +288,12 @@ def load_equities_schema_from_db(
         metadata: dict[str, dict[str, str | int | None]] = {}
         for row in rows:
             col_name, col_alias, role, col_count, description, ddl_eq = (
-                row[0], row[1], row[2], row[3], row[4], row[5],
+                row[0],
+                row[1],
+                row[2],
+                row[3],
+                row[4],
+                row[5],
             )
             metadata[col_alias] = {
                 "column_name": col_name,
@@ -282,14 +312,15 @@ def load_equities_schema_from_db(
 
     except Exception as e:
         logging.warning(
-            "Could not load equities schema metadata from DB: %s", e,
+            "Could not load equities schema metadata from DB: %s",
+            e,
         )
         return {}
 
 
 def get_equities_schema(
-        db_url: Optional[str] = None,
-        schema: str = "public",
+    db_url: Optional[str] = None,
+    schema: str = "public",
 ) -> dict[str, dict[str, str | int | None]]:
     """
     Load equities schema metadata from database, with process-level caching.
@@ -327,7 +358,9 @@ def get_equities_schema(
     """
     global _equities_schema_cache
     if _equities_schema_cache is None:
-        _equities_schema_cache = load_equities_schema_from_db(db_url=db_url, schema=schema)
+        _equities_schema_cache = load_equities_schema_from_db(
+            db_url=db_url, schema=schema
+        )
         logging.info(
             "Cached equities schema: %d columns across %d roles",
             len(_equities_schema_cache),
@@ -392,7 +425,7 @@ def load_identifier_columns(
 
     except Exception as e:
         logging.warning(
-            "Could not load identifier columns from DB: %s. " "Using defaults.",
+            "Could not load identifier columns from DB: %s. Using defaults.",
             e,
         )
         _identifier_cols_cache = list(_DEFAULT_IDENTIFIER_COLS)
@@ -424,6 +457,19 @@ def reorder_with_identifiers(df: pd.DataFrame) -> pd.DataFrame:
     other = [c for c in df.columns if c not in id_present]
     return df[id_present + other]
 
+
+ANALYTICS_EXPORT_TABLES: list[str] = [
+    "monte_carlo_simulation",
+    "price_target_achievement",
+    "kalman_filtered_price_targets",
+    "expected_returns_tri_model",
+    "strong_consensus_picks",
+    "earnings_probability_analysis",
+    "expected_returns_summary",
+    "credit_risk_analysis",
+    "dividend_safety_analysis",
+    "accounting_anomaly_analysis",
+]
 
 VW_FEATURES_VIEWS = [
     "vw_features_analyst_sentiment",
@@ -589,7 +635,9 @@ def export_to_db(
     cfg = config or ExportConfig()
     resolved_table = table_name or cfg.table_name
     if not resolved_table:
-        raise ValueError("table_name must be provided either directly or via ExportConfig.")
+        raise ValueError(
+            "table_name must be provided either directly or via ExportConfig."
+        )
     resolved_if_exists = if_exists if table_name else cfg.if_exists
 
     return export_to_analytics_db(df, resolved_table, if_exists=resolved_if_exists)
@@ -623,7 +671,9 @@ def export_to_csv(
     cfg = config or ExportConfig()
     resolved_name = table_name or cfg.table_name
     if not resolved_name:
-        raise ValueError("table_name must be provided either directly or via ExportConfig.")
+        raise ValueError(
+            "table_name must be provided either directly or via ExportConfig."
+        )
     resolved_dir = Path(output_dir or cfg.output_dir)
 
     resolved_dir.mkdir(parents=True, exist_ok=True)
@@ -664,13 +714,17 @@ def export_to_json(
     cfg = config or ExportConfig()
     resolved_name = table_name or cfg.table_name
     if not resolved_name:
-        raise ValueError("table_name must be provided either directly or via ExportConfig.")
+        raise ValueError(
+            "table_name must be provided either directly or via ExportConfig."
+        )
     resolved_dir = Path(output_dir or cfg.output_dir)
 
     resolved_dir.mkdir(parents=True, exist_ok=True)
     file_path = resolved_dir / f"{resolved_name}.json"
 
-    df.to_json(file_path, orient=cfg.orient, indent=cfg.json_indent, default_handler=str)
+    df.to_json(
+        file_path, orient=cfg.orient, indent=cfg.json_indent, default_handler=str
+    )
     logging.info("Exported %d rows to %s", len(df), file_path)
     return file_path
 
@@ -706,10 +760,7 @@ def _build_feature_query(
     """Build a parameterised SQL query for the feature materialized view."""
     base_sql = f"""
         SELECT *
-        FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') 
-        ORDER BY next_earnings ASC
+        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC
     """
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
@@ -791,16 +842,13 @@ def load_feature_data_from_db(
 
 
 def _build_equities_query(
-        view_ref: str,
-        limit: Optional[int] = None,
+    view_ref: str,
+    limit: Optional[int] = None,
 ) -> text:
     """Build a parameterised SQL query for the equities materialized view."""
     base_sql = f"""
         SELECT *
-        FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') 
-        ORDER BY next_earnings ASC
+        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC
     """
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
@@ -808,9 +856,10 @@ def _build_equities_query(
 
 
 def load_equities_data_from_db(
-        db_url: Optional[str] = None,
-        limit: Optional[int] = None,
-        schema: Optional[str] = None,
+    db_url: Optional[str] = None,
+    earnings_date_filter: str = "2026-01-01",
+    limit: Optional[int] = None,
+    schema: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Load equities data from PostgreSQL materialized view ``mv_equities``.
@@ -824,6 +873,8 @@ def load_equities_data_from_db(
     ----------
     db_url : str, optional
         SQLAlchemy database URL. If None, reads from DB_URL environment variable
+    earnings_date_filter : str, optional
+        Filter earnings data to only include dates after this date
     limit : int, optional
         Maximum number of rows to return
     schema : str, optional
@@ -866,7 +917,7 @@ def load_equities_data_from_db(
 
     engine = create_engine(db_url)
 
-    base_sql = f"SELECT * FROM {view_ref}"
+    base_sql = f"SELECT * FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC"
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
     query = text(base_sql)
@@ -1093,10 +1144,8 @@ def load_all_feature_views(
         try:
             query = f"""
         SELECT *
-        FROM {view_ref}
-        WHERE next_earnings >= CURRENT_DATE - (INTERVAL '3 months')
-          AND next_earnings <= CURRENT_DATE + (INTERVAL '3 months') 
-        ORDER BY next_earnings ASC
+        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC
+        
     """
             df_view = pd.read_sql(query, engine)
             result_dict[view_name] = df_view
@@ -1122,7 +1171,9 @@ def load_all_feature_views(
             # Get feature columns (exclude identifiers already present)
             feature_cols = [c for c in df_view.columns if c not in merged_df.columns]
             merge_cols = [
-                c for c in identifier_cols if c in df_view.columns and c in merged_df.columns
+                c
+                for c in identifier_cols
+                if c in df_view.columns and c in merged_df.columns
             ]
             if merge_cols and feature_cols:
                 merged_df = merged_df.merge(
@@ -1133,9 +1184,9 @@ def load_all_feature_views(
 
 
 def get_view_category_mapping(
-        db_url: Optional[str] = None,
-        schema: str = "public",
-        use_db: bool = True,
+    db_url: Optional[str] = None,
+    schema: str = "public",
+    use_db: bool = True,
 ) -> dict[str, dict[str, str | list[str]]]:
     """
     Return mapping of view names to feature categories and their feature columns.
@@ -1173,8 +1224,8 @@ def get_view_category_mapping(
 
 
 def _load_view_category_mapping_from_db(
-        db_url: Optional[str] = None,
-        schema: str = "public",
+    db_url: Optional[str] = None,
+    schema: str = "public",
 ) -> dict[str, dict[str, str | list[str]]]:
     """
     Build the view→category mapping by introspecting the actual DB views.
@@ -1972,11 +2023,10 @@ def _get_fallback_view_category_mapping() -> dict[str, dict[str, str | list[str]
                 "low_beta_flag",
                 "beta_stability_score",
                 # calc_financial_distress_features
-                "distress_risk_score",
+                "combined_distress_risk_score",
                 "liquidity_stress_score",
                 "working_capital_trend",
                 "cash_runway_months",
-                "combined_distress_score",
                 "wc_deteriorating_flag",
                 "retained_earnings_growth",
                 "accumulated_deficit_flag",
@@ -2096,6 +2146,7 @@ def _get_fallback_view_category_mapping() -> dict[str, dict[str, str | list[str]
         },
     }
 
+
 def get_view_category_labels() -> dict[str, str]:
     """
     Return flat mapping of view names to category labels (backward-compatible).
@@ -2105,7 +2156,9 @@ def get_view_category_labels() -> dict[str, str]:
     dict[str, str]
         Mapping from view name to category label string
     """
-    return {view: info["category"] for view, info in get_view_category_mapping().items()}
+    return {
+        view: info["category"] for view, info in get_view_category_mapping().items()
+    }
 
 
 def get_view_feature_cols(view_name: str) -> list[str]:
@@ -2401,25 +2454,25 @@ def _get_fallback_feature_categories() -> dict[str, list[str]]:
         ],
         "Quality & Risk": [
             "piotroski_f_score",
+            "altman_z_score",          # ensure always present
+            "altman_z_score_fy",       # temporal aliases used as fallbacks
+            "altman_z_trend",
             "has_goodwill_impairment",
             "has_asset_writedown",
             "has_restructuring",
             "goodwill_to_assets_pct",
             "intangible_intensity",
             "exceptional_items_to_ebitda",
-            "altman_z_score",
-            "altman_z_trend",
             "current_ratio",
             "quick_ratio",
             "accounting_quality_score",
             "beta_stability_score",
         ],
         "Financial Distress": [
-            "distress_risk_score",
+            "combined_distress_risk_score",
             "liquidity_stress_score",
             "working_capital_trend",
             "cash_runway_months",
-            "combined_distress_score",
             "wc_deteriorating_flag",
             "accumulated_deficit_flag",
             "adequate_cash_buffer",
@@ -2599,7 +2652,8 @@ def validate_feature_registry_alignment(
         ][["feature_key", "primary_source_col"]].to_dict("records")
 
         orphan_fns = features[
-            features["source_function"].notna() & ~features["source_function"].isin(fn_set)
+            features["source_function"].notna()
+            & ~features["source_function"].isin(fn_set)
         ][["feature_key", "source_function"]].to_dict("records")
 
         category_coverage = features.groupby("category").size().to_dict()
@@ -2661,3 +2715,32 @@ def compare_registry_with_local(
             report["features_only_in_local"][cat] = list(only_in_local)
 
     return report
+
+
+def validate_viz_column_coverage(
+    feature_categories: dict[str, list[str]],
+    viz_required_columns: dict[str, list[str]],
+) -> dict[str, list[str]]:
+    """
+    Cross-check visualization function column requirements against
+    calculated_features_registry to surface mismatches early.
+
+    Parameters
+    ----------
+    feature_categories : dict
+        From load_feature_categories_from_db() — category → feature aliases.
+    viz_required_columns : dict
+        Mapping of viz function name → list of required column aliases.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        Functions with missing columns: function_name → [missing_cols].
+    """
+    all_features = {f for feats in feature_categories.values() for f in feats}
+    issues: dict[str, list[str]] = {}
+    for func_name, required in viz_required_columns.items():
+        missing = [c for c in required if c not in all_features]
+        if missing:
+            issues[func_name] = missing
+    return issues

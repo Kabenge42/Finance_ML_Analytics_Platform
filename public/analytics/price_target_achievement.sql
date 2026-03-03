@@ -31,6 +31,7 @@ create table analytics.price_target_achievement
     next_fy_end_date                  date,
     next_income_statement_report_date date,
     reference_date                    date,
+    bullish_pct                       double precision,
     achievement_probability           double precision,
     upside_potential                  double precision,
     price_target_spread_pct           double precision,

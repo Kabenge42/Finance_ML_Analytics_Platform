@@ -33,7 +33,7 @@ SELECT "ISIN"                                                                   
        -- Goodwill accumulation rate (avg annual increase)
        CASE
            WHEN "Goodwill (-3FY)" > 0
-               THEN (safe_power(public.safe_divide("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
+               THEN (POWER(public.safe_divide("Goodwill (FY)"::NUMERIC, "Goodwill (-3FY)"::NUMERIC), 1.0 / 3.0) - 1) *
                     100
            END                                                                            AS goodwill_accumulation_rate,
        -- Goodwill to assets trend (increasing concentration risk)

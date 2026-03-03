@@ -25,6 +25,8 @@ $env:OUTPUT_DIR = "outputs"
 $env:MODEL_VERSION = "v9_10"
 $env:RANDOM_SEED = "42"
 
+$env:GEIB_DASHBOARD = 'true'
+
 # Performance settings
 $env:N_JOBS = "4"
 
@@ -43,3 +45,11 @@ Write-Host "OUTPUT_DIR: $env:OUTPUT_DIR"
 Write-Host "MODEL_DIR: $env:MODEL_DIR"
 Write-Host "RANDOM_SEED: $env:RANDOM_SEED"
 Write-Host "DB_URL: $env:DB_URL"
+Write-Host "GEIB_DASHBOARD: $env:GEIB_DASHBOARD"
+Write-Host "N_JOBS: $env:N_JOBS"
+Write-Host "LOG_LEVEL: $env:LOG_LEVEL"
+Write-Host "TF_CPP_MIN_LOG_LEVEL: $env:TF_CPP_MIN_LOG_LEVEL"
+Write-Host "MODEL_VERSION: $env:MODEL_VERSION"
+Write-Host "CACHE_DIR: $env:CACHE_DIR"
+
+

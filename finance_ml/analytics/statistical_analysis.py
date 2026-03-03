@@ -15,12 +15,11 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -31,13 +30,43 @@ try:
     import arviz as az
     import xarray as xr
 
-    ARVIZ_AVAILABLE = True
-except (ImportError, OSError, PermissionError, Exception):
+    ARVIZ_AVAILABLE = hasattr(az, "InferenceData")
+except (ImportError, OSError, PermissionError):
     az = None  # type: ignore[assignment]
     xr = None  # type: ignore[assignment]
     ARVIZ_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# SHARED UTILITIES
+# =============================================================================
+
+
+def _normal_normal_conjugate_posterior(
+    sample_mean: float,
+    sample_var: float,
+    n: int,
+    prior_mean: float,
+    prior_var: float,
+) -> tuple[float, float]:
+    """
+    Compute Normal-Normal conjugate posterior parameters.
+
+    Prior:      μ ~ N(prior_mean, prior_var)
+    Likelihood: X | μ ~ N(μ, sample_var / n)
+
+    Returns
+    -------
+    tuple[float, float]
+        (posterior_mean, posterior_var)
+    """
+    posterior_var = 1.0 / (1.0 / prior_var + n / sample_var)
+    posterior_mean = posterior_var * (
+        prior_mean / prior_var + n * sample_mean / sample_var
+    )
+    return posterior_mean, posterior_var
 
 
 # =============================================================================
@@ -243,9 +272,8 @@ class BayesianTechnicalResampler:
             sample_var = data.var(ddof=1) if n > 1 else prior_var
 
             # Normal-Normal conjugate posterior
-            posterior_var = 1.0 / (1.0 / prior_var + n / sample_var)
-            posterior_mean = posterior_var * (
-                self.prior_return_mean / prior_var + n * sample_mean / sample_var
+            posterior_mean, posterior_var = _normal_normal_conjugate_posterior(
+                sample_mean, sample_var, n, self.prior_return_mean, prior_var,
             )
             posterior_std = np.sqrt(posterior_var)
 
@@ -489,8 +517,9 @@ def bayesian_category_analysis(
 
         # Posterior parameters (Normal-Normal conjugate)
         prior_var = prior_std**2
-        posterior_var = 1 / (1 / prior_var + n / sample_var)
-        posterior_mean = posterior_var * (prior_mean / prior_var + n * sample_mean / sample_var)
+        posterior_mean, posterior_var = _normal_normal_conjugate_posterior(
+            sample_mean, sample_var, n, prior_mean, prior_var,
+        )
         posterior_std = np.sqrt(posterior_var)
 
         # 95% Credible Interval
@@ -708,7 +737,6 @@ def hierarchical_mcmc_by_sector(
     # Global parameters
     global_data = df[feature].dropna()
     global_mean = global_data.mean()
-    global_std = global_data.std()
 
     # Computes sector‑level shrinkage toward global mean
     for sector in sectors:
@@ -1030,7 +1058,7 @@ def fit_distributions_by_category(
             params_norm = norm.fit(data_clean)
             ll_norm = norm.logpdf(data_clean, *params_norm).sum()
             fits["normal"] = {"params": params_norm, "aic": 2 * 2 - 2 * ll_norm}
-        except:
+        except (ValueError, RuntimeError):
             pass
 
         # Student's t
@@ -1038,7 +1066,7 @@ def fit_distributions_by_category(
             params_t = t.fit(data_clean)
             ll_t = t.logpdf(data_clean, *params_t).sum()
             fits["student_t"] = {"params": params_t, "aic": 2 * 3 - 2 * ll_t}
-        except:
+        except (ValueError, RuntimeError):
             pass
 
         # Skew Normal
@@ -1046,7 +1074,7 @@ def fit_distributions_by_category(
             params_skew = skewnorm.fit(data_clean)
             ll_skew = skewnorm.logpdf(data_clean, *params_skew).sum()
             fits["skew_normal"] = {"params": params_skew, "aic": 2 * 3 - 2 * ll_skew}
-        except:
+        except (ValueError, RuntimeError):
             pass
 
         if not fits:
@@ -1117,19 +1145,19 @@ def calculate_ruin_probability(
         DataFrame with ruin probabilities and risk tiers
     """
     base_cols = ["ticker", "name", "industry", "market_cap"]
-    optional_cols = ["distress_risk_score"]
+    optional_cols = ["combined_distress_risk_score"]
     use_cols = base_cols + [c for c in optional_cols if c in df.columns]
     result = df[[c for c in use_cols if c in df.columns]].copy()
-    if "distress_risk_score" not in result.columns:
-        result["distress_risk_score"] = 50.0  # neutral default
+    if "combined_distress_risk_score" not in result.columns:
+        result["combined_distress_risk_score"] = 50.0  # neutral default
 
     # ── 1. Expected drift: blend FCF yield, EPS trajectory, and distress score ──
     if "fcf_yield" in df.columns and "eps_trajectory_score" in df.columns:
         fcf_norm = df["fcf_yield"].clip(-20, 50) / 100
         eps_norm = df["eps_trajectory_score"] / 100
 
-        # Add distress-score contribution: higher distress_risk_score → healthier
-        distress_drift = df.get("distress_risk_score", pd.Series(50, index=df.index)) / 200  # 0–0.5
+        # Add distress-score contribution: higher combined_distress_risk_score → healthier
+        distress_drift = df.get("combined_distress_risk_score", pd.Series(50, index=df.index)) / 200  # 0–0.5
         result["expected_drift"] = (
                 fcf_norm * 0.40 + eps_norm * 0.30 + distress_drift * 0.30
         ).fillna(0.05)
@@ -1175,7 +1203,7 @@ def calculate_ruin_probability(
     result["survival_probability"] = 1 - result["ruin_probability"]
 
     # ── 5. Risk tier classification (wider low-risk band) ──
-    result["risk_tier"] = pd.cut(
+    result["risk_level"] = pd.cut(
         result["ruin_probability"],
         bins=[0, 0.15, 0.35, 0.60, 1.0],
         labels=["Low Risk", "Moderate Risk", "High Risk", "Critical Risk"],
@@ -1213,7 +1241,7 @@ def calculate_conditional_probabilities(
     """
     results = []
 
-    df["is_distressed"] = df["distress_risk_score"] < distress_threshold
+    df["is_distressed"] = df["combined_distress_risk_score"] < distress_threshold
     base_distress_rate = df["is_distressed"].mean()
 
     for category, features in feature_categories.items():
@@ -1890,31 +1918,45 @@ def analyze_employee_productivity_frontier(
 
 def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Detects accounting anomalies in a given DataFrame using specific financial features.
+    Detect accounting anomalies using multi-layered statistical analysis.
 
-    This function analyzes a set of pre-defined financial features to identify accounting
-    anomalies. It calculates Z-scores for each feature and combines them into an overall
-    accounting anomaly score. The anomaly score is then normalized to a scale of 0-100.
+    Enhanced from the original z-score approach with:
+    - **Robust z-scores** using median/MAD instead of mean/std (outlier-resistant)
+    - **Distribution fitting** — selects best-fit (Normal vs Student-t vs Laplace)
+      per feature using AIC, then scores outliers against the fitted distribution
+    - **Sector-relative scoring** — anomaly score adjusted for industry norms
+    - **Feature-level flags** — individual feature anomaly flags (>2σ robust)
+    - **Composite anomaly tier** — categorical risk label (Clean / Watch / Flag / Alert)
+    - **Mahalanobis distance** — multivariate outlier detection across all features
+    - **Benford's Law test** — digit distribution test for earnings manipulation signals
 
-    :param df: The input DataFrame containing financial data. Expected to include some or
-        all of the following columns:
-        - exceptional_items_frequency
-        - non_operating_income_share
-        - gaap_adj_eps_gap_pct
-        - asset_sale_boost
-        - ebitda_adjustment_ratio
-        - eps_adjustment_ratio
-        - exceptional_items_to_ebitda
-        - restructuring_intensity
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Financial data. Expected to include some or all of:
+        - exceptional_items_frequency, non_operating_income_share
+        - gaap_adj_eps_gap_pct, asset_sale_boost
+        - ebitda_adjustment_ratio, eps_adjustment_ratio
+        - exceptional_items_to_ebitda, restructuring_intensity
         - goodwill_change_rate
 
-
-    :return: A DataFrame similar to the input but with the following additional columns:
-        - accounting_anomaly_score: The overall anomaly score normalized to a scale of 0-100.
-        - {feature}_z: The absolute Z-score for each available feature (e.g., exceptional_items_frequency_z).
-        If no relevant features are present in the input, the function returns the original DataFrame unchanged.
+    Returns
+    -------
+    pd.DataFrame
+        Input DataFrame with additional columns:
+        - accounting_anomaly_score: Composite score normalized to 0-100
+        - accounting_anomaly_tier: 'Clean' / 'Watch' / 'Flag' / 'Alert'
+        - {feature}_z_robust: Robust (MAD-based) z-score per feature
+        - {feature}_anomaly_flag: Boolean flag if robust |z| > 2.5
+        - {feature}_dist_name: Best-fit distribution name
+        - {feature}_dist_pvalue: Goodness-of-fit p-value
+        - anomaly_feature_count: Number of features flagged as anomalous
+        - mahalanobis_distance: Multivariate outlier distance
+        - sector_relative_anomaly: Anomaly score relative to sector median
+        - benford_chi2_pvalue: Benford's Law chi-squared p-value (if applicable)
     """
     features = [
+        # ── Original features ──
         "exceptional_items_frequency",
         "non_operating_income_share",
         "gaap_adj_eps_gap_pct",
@@ -1924,28 +1966,251 @@ def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
         "exceptional_items_to_ebitda",
         "restructuring_intensity",
         "goodwill_change_rate",
+        # ── EPS adjustment features ──
+        "eps_adj_ltm",
+        "eps_adjustment_ratio_comp",
+        "eps_adjustment_spread_ltm",
+        "eps_adjustment_spread_fy",
+        "eps_adjustment_pct",
+        # ── Net income adjustment features ──
+        "net_income_adjustment_ratio_ltm",
+        "net_income_adjustment_ratio_fy",
+        "net_income_adjustment_pct",
+        # ── EBITDA / EBIT adjustment features ──
+        "ebitda_adjustment_pct_ltm",
+        "ebitda_adjustment_pct_fy",
+        "ebit_adjustment_pct_ltm",
+        "ebit_adjustment_pct_fy",
+        # ── GAAP vs non-GAAP spread & revision features ──
+        "forward_eps_gaap_adj_spread",
+        "gaap_vs_norm_revision_spread",
+        "gaap_revision_momentum",
+        "gaap_revision_1m",
+        "gaap_revision_3m",
+        "gaap_revision_6m",
+        "gaap_revision_1y",
+        # ── Earnings quality & discontinuities ──
+        "discontinued_ops_impact",
+        "earnings_quality_warning",
+        "revision_quality_divergence",
+        # ── Surprise & growth acceleration ──
+        "eps_growth_accel",
+        "eps_surprise_pct",
+        "revenue_surprise_pct",
     ]
+
+    # Feature importance weights (higher = more indicative of manipulation)
+    feature_weights = {
+        # ── Original features ──
+        "exceptional_items_frequency": 1.0,
+        "non_operating_income_share": 1.2,
+        "gaap_adj_eps_gap_pct": 1.5,            # GAAP-adjusted gap is a strong signal
+        "asset_sale_boost": 1.3,
+        "ebitda_adjustment_ratio": 1.4,
+        "eps_adjustment_ratio": 1.5,             # EPS adjustments are high-signal
+        "exceptional_items_to_ebitda": 1.1,
+        "restructuring_intensity": 0.8,          # Restructuring can be legitimate
+        "goodwill_change_rate": 0.9,
+        # ── EPS adjustment features ──
+        "eps_adj_ltm": 1.3,                      # Trailing EPS adjustment — direct quality signal
+        "eps_adjustment_ratio_comp": 1.5,        # Comparative ratio amplifies divergence
+        "eps_adjustment_spread_ltm": 1.6,        # Wide LTM spread = aggressive adjustments
+        "eps_adjustment_spread_fy": 1.5,         # FY spread — forward-looking manipulation risk
+        "eps_adjustment_pct": 1.4,               # Magnitude of EPS adjustments
+        # ── Net income adjustment features ──
+        "net_income_adjustment_ratio_ltm": 1.4,  # NI adjustments distort bottom line directly
+        "net_income_adjustment_ratio_fy": 1.3,   # Forward NI adjustment — moderate signal
+        "net_income_adjustment_pct": 1.4,        # Percentage-based NI adjustments
+        # ── EBITDA / EBIT adjustment features ──
+        "ebitda_adjustment_pct_ltm": 1.3,        # EBITDA adjustments — common in add-backs
+        "ebitda_adjustment_pct_fy": 1.2,         # Forward EBITDA — slightly less actionable
+        "ebit_adjustment_pct_ltm": 1.3,          # EBIT trailing adjustments
+        "ebit_adjustment_pct_fy": 1.2,           # EBIT forward adjustments
+        # ── GAAP vs non-GAAP spread & revision features ──
+        "forward_eps_gaap_adj_spread": 1.6,      # Forward GAAP vs adjusted spread — very high signal
+        "gaap_vs_norm_revision_spread": 1.7,     # Divergence between GAAP & normalized revisions — top signal
+        "gaap_revision_momentum": 1.4,           # Accelerating GAAP revisions suggest deterioration
+        "gaap_revision_1m": 1.0,                 # Short-term revisions — noisy but timely
+        "gaap_revision_3m": 1.1,                 # Medium-term — more reliable
+        "gaap_revision_6m": 1.2,                 # Confirmed trend
+        "gaap_revision_1y": 1.3,                 # Long-term revision drift — persistent signal
+        # ── Earnings quality & discontinuities ──
+        "discontinued_ops_impact": 1.5,          # Discontinued operations mask ongoing performance
+        "earnings_quality_warning": 1.8,         # Explicit quality flag — highest weight in group
+        "revision_quality_divergence": 1.6,      # Analyst vs GAAP revision disagreement
+        # ── Surprise & growth acceleration ──
+        "eps_growth_accel": 0.7,                 # Growth acceleration is often legitimate
+        "eps_surprise_pct": 0.8,                 # Surprises alone are weak anomaly signals
+        "revenue_surprise_pct": 0.7,             # Revenue surprises — even more common legitimately
+    }
 
     available = [f for f in features if f in df.columns]
     if not available:
         return df
 
     result = df.copy()
-    result["accounting_anomaly_score"] = 0
+    result["accounting_anomaly_score"] = 0.0
+    total_weight = 0.0
 
+    # ── Layer 1: Robust z-scores (Median / MAD) ──
     for feat in available:
         data = result[feat].dropna()
-        if len(data) > 10:
-            # Fit a normal distribution and find outliers (3 sigma)
-            mean, std = stats.norm.fit(data)
-            z_scores = (result[feat] - mean) / std
-            result[f"{feat}_z"] = z_scores.abs()
-            result["accounting_anomaly_score"] += result[f"{feat}_z"].fillna(0)
+        if len(data) <= 10:
+            continue
 
-    # Normalize score to 0-100
+        median_val = data.median()
+        mad = stats.median_abs_deviation(data, nan_policy="omit")
+        # MAD-based robust z-score (scale factor 1.4826 for Normal consistency)
+        mad_scaled = mad * 1.4826 if mad > 1e-10 else data.std()
+
+        if mad_scaled > 1e-10:
+            robust_z = (result[feat] - median_val) / mad_scaled
+        else:
+            robust_z = pd.Series(0.0, index=result.index)
+
+        result[f"{feat}_z_robust"] = robust_z.abs()
+        result[f"{feat}_anomaly_flag"] = robust_z.abs() > 2.5
+
+        # ── Layer 2: Distribution fitting per feature ──
+        weight = feature_weights.get(feat, 1.0)
+        clean_data = data.values
+        best_dist_name = "normal"
+        best_pvalue = 0.0
+
+        candidates = [
+            ("normal", stats.norm),
+            ("student_t", stats.t),
+            ("laplace", stats.laplace),
+        ]
+        best_aic = np.inf
+        best_fit_dist = None
+
+        for dist_name, dist_obj in candidates:
+            try:
+                params = dist_obj.fit(clean_data)
+                log_lik = dist_obj.logpdf(clean_data, *params).sum()
+                k = len(params)
+                aic = 2 * k - 2 * log_lik
+                if aic < best_aic:
+                    best_aic = aic
+                    best_dist_name = dist_name
+                    best_fit_dist = (dist_obj, params)
+                    # KS goodness-of-fit test
+                    ks_stat, ks_pval = stats.kstest(clean_data, dist_obj.cdf, args=params)
+                    best_pvalue = float(ks_pval)
+            except Exception:
+                continue
+
+        result[f"{feat}_dist_name"] = best_dist_name
+        result[f"{feat}_dist_pvalue"] = best_pvalue
+
+        # Score: use fitted distribution's survival function for tail probability
+        if best_fit_dist is not None:
+            dist_obj, params = best_fit_dist
+            # Two-tailed: probability of observing a value as extreme or more
+            cdf_vals = dist_obj.cdf(result[feat].values, *params)
+            tail_prob = np.minimum(cdf_vals, 1 - cdf_vals) * 2
+            # Convert to anomaly contribution: lower tail prob = higher anomaly
+            feat_score = np.where(
+                np.isnan(tail_prob), 0.0, -np.log10(np.clip(tail_prob, 1e-10, 1.0))
+            )
+        else:
+            feat_score = result[f"{feat}_z_robust"].fillna(0).values
+
+        result["accounting_anomaly_score"] += feat_score * weight
+        total_weight += weight
+
+    # ── Layer 3: Multivariate outlier detection (Mahalanobis distance) ──
+    numeric_available = [f for f in available if f in result.columns]
+    feature_matrix = result[numeric_available].copy()
+    complete_mask = feature_matrix.notna().all(axis=1)
+
+    if complete_mask.sum() > len(numeric_available) + 5:
+        complete_data = feature_matrix.loc[complete_mask].values
+        try:
+            mean_vec = np.mean(complete_data, axis=0)
+            cov_matrix = np.cov(complete_data, rowvar=False)
+
+            # Regularise covariance to ensure invertibility
+            cov_matrix += np.eye(cov_matrix.shape[0]) * 1e-6
+            cov_inv = np.linalg.inv(cov_matrix)
+
+            # Compute Mahalanobis distance for all complete rows
+            diff = complete_data - mean_vec
+            mahal = np.sqrt(np.sum(diff @ cov_inv * diff, axis=1))
+
+            result.loc[complete_mask, "mahalanobis_distance"] = mahal
+
+            # Add Mahalanobis contribution to anomaly score (chi-squared tail prob)
+            p_dims = len(numeric_available)
+            mahal_pvalue = 1 - stats.chi2.cdf(mahal ** 2, df=p_dims)
+            mahal_score = -np.log10(np.clip(mahal_pvalue, 1e-10, 1.0))
+            result.loc[complete_mask, "accounting_anomaly_score"] += mahal_score
+            total_weight += 1.0
+        except np.linalg.LinAlgError:
+            logger.debug("Mahalanobis distance skipped — singular covariance matrix")
+
+    # ── Layer 4: Sector-relative scoring ──
+    sector_col = "industry" if "industry" in result.columns else "sector"
+    if sector_col in result.columns:
+        sector_median = result.groupby(sector_col)["accounting_anomaly_score"].transform("median")
+        sector_std = result.groupby(sector_col)["accounting_anomaly_score"].transform("std")
+        result["sector_relative_anomaly"] = np.where(
+            sector_std > 0,
+            (result["accounting_anomaly_score"] - sector_median) / sector_std,
+            0.0,
+        )
+    else:
+        result["sector_relative_anomaly"] = 0.0
+
+    # ── Layer 5: Benford's Law test (digit distribution) ──
+    # Applied to gaap_adj_eps_gap_pct or eps_adjustment_ratio if available
+    benford_col = next(
+        (c for c in ["gaap_adj_eps_gap_pct", "eps_adjustment_ratio"] if c in result.columns),
+        None,
+    )
+    if benford_col is not None:
+        benford_data = result[benford_col].dropna().abs()
+        benford_data = benford_data[benford_data > 0]
+        if len(benford_data) > 50:
+            leading_digits = benford_data.apply(
+                lambda x: int(str(f"{abs(x):.10f}").lstrip("0").lstrip(".")[0])
+                if x != 0 else 0
+            )
+            leading_digits = leading_digits[leading_digits.between(1, 9)]
+            if len(leading_digits) > 30:
+                observed = leading_digits.value_counts().reindex(range(1, 10), fill_value=0)
+                expected_benford = np.array([np.log10(1 + 1 / d) for d in range(1, 10)])
+                expected_counts = expected_benford * len(leading_digits)
+                chi2, p_val = stats.chisquare(observed.values, f_exp=expected_counts)
+                result["benford_chi2_pvalue"] = float(p_val)
+            else:
+                result["benford_chi2_pvalue"] = np.nan
+        else:
+            result["benford_chi2_pvalue"] = np.nan
+    else:
+        result["benford_chi2_pvalue"] = np.nan
+
+    # ── Normalize composite score to 0-100 ──
     max_score = result["accounting_anomaly_score"].max()
     if max_score > 0:
-        result["accounting_anomaly_score"] = (result["accounting_anomaly_score"] / max_score) * 100
+        result["accounting_anomaly_score"] = (
+            result["accounting_anomaly_score"] / max_score
+        ) * 100
+
+    # ── Anomaly feature count ──
+    flag_cols = [c for c in result.columns if c.endswith("_anomaly_flag")]
+    if flag_cols:
+        result["anomaly_feature_count"] = result[flag_cols].sum(axis=1).astype(int)
+    else:
+        result["anomaly_feature_count"] = 0
+
+    # ── Composite anomaly tier ──
+    result["accounting_anomaly_tier"] = pd.cut(
+        result["accounting_anomaly_score"],
+        bins=[-0.1, 25, 50, 75, 100.1],
+        labels=["Clean", "Watch", "Flag", "Alert"],
+    )
 
     return result
 
@@ -1985,6 +2250,80 @@ def analyze_reporting_lag_sentiment(df: pd.DataFrame) -> dict:
         "hypothesis_confirmed": bool(confirmed),
         "sample_size": int(len(data)),
     }
+
+def analyze_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extended analytics layer on top of ``detect_accounting_anomalies`` output.
+
+    Adds sector-level summary statistics, cross-feature correlation analysis,
+    and risk-weighted composite indicators for downstream consumption.
+
+    This function expects a DataFrame that has already been processed by
+    ``detect_accounting_anomalies`` (i.e. contains ``accounting_anomaly_score``,
+    ``accounting_anomaly_tier``, per-feature ``_z_robust`` / ``_anomaly_flag``
+    columns, etc.).
+
+    If the input has not been processed yet, it is passed through
+    ``detect_accounting_anomalies`` first.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with accounting anomaly detection results.
+
+    Returns
+    -------
+    pd.DataFrame
+        Input DataFrame enriched with:
+        - anomaly_severity_score: Weighted combination of anomaly score and feature count
+        - anomaly_risk_rank: Percentile rank of severity within the universe
+        - sector_anomaly_percentile: Percentile of anomaly score within sector
+        - multi_flag_alert: Boolean — True if ≥3 features are flagged
+    """
+    if "accounting_anomaly_score" not in df.columns:
+        df = detect_accounting_anomalies(df)
+
+    if "accounting_anomaly_score" not in df.columns:
+        return df
+
+    result = df.copy()
+
+    # ── Severity score: combine anomaly score with feature count ──
+    feature_count = result.get("anomaly_feature_count", pd.Series(0, index=result.index))
+    result["anomaly_severity_score"] = (
+            result["accounting_anomaly_score"] * 0.7
+            + feature_count.clip(0, 9) / 9 * 100 * 0.3
+    )
+
+    # ── Universe-level percentile rank ──
+    severity = result["anomaly_severity_score"].dropna()
+    if len(severity) > 1:
+        result["anomaly_risk_rank"] = result["anomaly_severity_score"].rank(
+            pct=True, ascending=True
+        ) * 100
+    else:
+        result["anomaly_risk_rank"] = 50.0
+
+    # ── Sector-level percentile ──
+    sector_col = "industry" if "industry" in result.columns else "sector"
+    if sector_col in result.columns:
+        result["sector_anomaly_percentile"] = result.groupby(sector_col)[
+                                                  "accounting_anomaly_score"
+                                              ].rank(pct=True, ascending=True) * 100
+    else:
+        result["sector_anomaly_percentile"] = result["anomaly_risk_rank"]
+
+    # ── Multi-flag alert ──
+    result["multi_flag_alert"] = feature_count >= 3
+
+    logger.info(
+        "Accounting anomaly analytics: severity computed for %d stocks, "
+        "%d multi-flag alerts",
+        len(result),
+        result["multi_flag_alert"].sum(),
+    )
+
+    return result
 
 
 def run_category_probability_analytics(
@@ -2038,8 +2377,8 @@ def run_category_probability_analytics(
     dist_fits = fit_distributions_by_category(df, category_name, available_features, n_simulations)
     results["distribution_fits"] = dist_fits
 
-    # 3. Conditional probabilities (if distress_risk_score available)
-    if "distress_risk_score" in df.columns:
+    # 3. Conditional probabilities (if combined_distress_risk_score available)
+    if "combined_distress_risk_score" in df.columns:
         cond_probs = calculate_conditional_probabilities(df, {category_name: available_features})
         results["conditional_probs"] = cond_probs
 
@@ -2258,7 +2597,7 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
     ----------
     df : pd.DataFrame
         DataFrame containing:
-        - distress_risk_score
+        - combined_distress_risk_score
         - industry
 
     Returns
@@ -2270,7 +2609,7 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
         3. Q-Q plot vs normal
         4. Tail risk by industry
     """
-    distress_data = df["distress_risk_score"].dropna()
+    distress_data = df["combined_distress_risk_score"].dropna()
 
     fig = make_subplots(
         rows=2,
@@ -2364,7 +2703,7 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
     if "industry" in df.columns:
         tail_risk = (
             df.groupby("industry")
-            .apply(lambda x: (x["distress_risk_score"] < 30).mean() * 100, include_groups=False)
+            .apply(lambda x: (x["combined_distress_risk_score"] < 30).mean() * 100, include_groups=False)
             .sort_values(ascending=False)
         )
 

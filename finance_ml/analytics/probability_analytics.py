@@ -136,15 +136,28 @@ _NUMERIC_CAST_COLS = [
     "eps_norm_est_ntm",
     "eps_gaap_est_ntm",
     "eps_gaap_est_fy1e",
+    # Passthrough columns from mv_all_stock_features
+    "accounting_quality_score",
+    "distress_risk_score",
+    "eps_revision_momentum",
+    "altman_z_score",
+    "model_confidence",
+    "map_estimate",
 ]
-_INTEGER_CAST_COLS = ["analyst_count", "quarterly_beat_streak","gaap_positive_revision_flag"]
+_INTEGER_CAST_COLS = [
+    "analyst_count",
+    "quarterly_beat_streak",
+    "gaap_positive_revision_flag",
+    "piotroski_f_score",
+    "eps_positive_streak",
+]
 
 # Lazy ArviZ import (consistent with inference_schema.py)
 try:
     import arviz as az
     import xarray as xr
 
-    ARVIZ_AVAILABLE = True
+    ARVIZ_AVAILABLE = hasattr(az, "InferenceData")
 except (ImportError, OSError, PermissionError, Exception):
     az = None  # type: ignore[assignment]
     xr = None  # type: ignore[assignment]
@@ -191,6 +204,22 @@ class CreditRiskResult:
     altman_z_score: float
     risk_level: str  # 'Low', 'Medium', 'High', 'Distressed'
     confidence_interval: tuple[float, float]
+@dataclass
+class AccountingAnomalyResult:
+    """Result container for per-stock accounting anomaly analysis."""
+    ticker: str
+    name: str
+    sector: str
+    industry: str
+    accounting_anomaly_score: float
+    accounting_anomaly_tier: str
+    anomaly_feature_count: int
+    mahalanobis_distance: float
+    sector_relative_anomaly: float
+    benford_chi2_pvalue: float
+    anomaly_severity_score: float
+    multi_flag_alert: bool
+
 
 
 @dataclass
@@ -205,7 +234,6 @@ class DividendSafetyResult:
     dividend_streak: int
     safety_score: float
     risk_category: str  # 'Safe', 'Borderline', 'At Risk'
-
 
 @dataclass
 class PriceTargetResult:
@@ -230,32 +258,71 @@ class BeatProbabilityResult:
     industry: str
     country: str
     exchange: str
+    # Historical counts
+    historical_beats: int
+    total_reports: int
+    dynamic_total_reports: int
+    historical_beat_rate: float
+    # Prior parameters
     prior_alpha: float
     prior_beta: float
+    # Posterior parameters
     posterior_alpha: float
     posterior_beta: float
-    prior_mean: float
-    posterior_mean: float
+    posterior_beat_prob: float
     posterior_std: float
-    credible_interval_90: tuple[float, float]
-    credible_interval_95: tuple[float, float]
-    beat_probability: float
+    # Credible intervals
+    ci_90_lower: float
+    ci_90_upper: float
+    ci_95_lower: float
+    ci_95_upper: float
+    # Confidence & classification
     confidence_score: float
-    historical_beat_rate: float
-    n_observations: int
-    # Forward estimate fields
-    eps_norm_est_ntm: Optional[float] = None
-    eps_norm_est_fy1e: Optional[float] = None
-    eps_gaap_est_ntm: Optional[float] = None
-    eps_gaap_est_fy1e: Optional[float] = None
+    prior_influence_pct: float
+    effective_sample_size: float
+    classification_confidence: str  # 'High', 'Medium', 'Low'
+    beat_classification: str  # 'likely_beat', 'uncertain'
+    # Forward estimate fields (from mv_all_stock_features via ForwardEstimateSignals)
     gaap_revision_momentum: Optional[float] = None
     gaap_norm_spread: Optional[float] = None
-    # Next earnings context
-    next_earnings_status: Optional[str] = None
+    revision_trend_short: Optional[float] = None
+    revision_trend_medium: Optional[float] = None
+    eps_norm_est_fy1e: Optional[float] = None
+    eps_norm_est_ntm: Optional[float] = None
+    eps_gaap_est_ntm: Optional[float] = None
+    eps_gaap_est_fy1e: Optional[float] = None
     # Analyst coverage
     analyst_count: Optional[int] = None
-    # Dynamic total derived from non-null reported EPS
-    dynamic_total_reports: Optional[int] = None
+    # Quarterly beat streak (from ReportedEPSHistory)
+    quarterly_beat_streak: Optional[int] = None
+    # Data source tag
+    data_source: str = "trajectory_proxy"
+    # Next earnings context
+    next_earnings_status: Optional[str] = None
+    # Resampled model fields (merged from ResampledBeatProbabilityModel)
+    base_posterior_mean: Optional[float] = None
+    resampled_posterior_mean: Optional[float] = None
+    technical_adjustment: Optional[float] = None
+    momentum_signal: Optional[float] = None
+    volatility_regime_score: Optional[float] = None
+    credible_interval_90: Optional[tuple[float, float]] = None
+    credible_interval_95: Optional[tuple[float, float]] = None
+    prob_beat_given_momentum: Optional[float] = None
+    earnings_season_flag: Optional[int] = None
+    pre_earnings_window: Optional[int] = None
+    ess_bulk: Optional[float] = None
+    r_hat: Optional[float] = None
+    # EPS streak fields (merged from EPSStreakAnalyzer)
+    eps_positive_streak: Optional[int] = None
+    # Composite / quality fields (from mv_all_stock_features passthrough)
+    model_confidence: Optional[float] = None
+    map_estimate: Optional[float] = None
+    accounting_quality_score: Optional[float] = None
+    distress_risk_score: Optional[float] = None
+    gaap_adj_eps_gap_pct: Optional[float] = None
+    piotroski_f_score: Optional[int] = None
+    eps_revision_momentum: Optional[float] = None
+    altman_z_score: Optional[float] = None
 
 
 @dataclass
@@ -276,6 +343,23 @@ class EPSStreakResult:
     mean_reversion_prob: float
     expected_next_outcome: str
     confidence_level: float
+    # Dynamic data derived from reported history
+    dynamic_total_reports: int = 0
+    historical_beat_rate: float = 0.0
+    # Forward signal passthrough
+    gaap_revision_momentum: Optional[float] = None
+    next_earnings_status: Optional[str] = None
+    # EPS streak from mv_all_stock_features
+    eps_positive_streak: Optional[int] = None
+    # Composite / quality fields (from mv_all_stock_features passthrough)
+    model_confidence: Optional[float] = None
+    map_estimate: Optional[float] = None
+    accounting_quality_score: Optional[float] = None
+    distress_risk_score: Optional[float] = None
+    gaap_adj_eps_gap_pct: Optional[float] = None
+    piotroski_f_score: Optional[int] = None
+    eps_revision_momentum: Optional[float] = None
+    altman_z_score: Optional[float] = None
     historical_pattern: list[str] = field(default_factory=list)
 
 
@@ -1189,6 +1273,16 @@ class EarningsBeatProbabilityModel:
         Returns:
             DataFrame with enriched probability analysis results.
         """
+        # Composite/quality columns to pass through from mv_all_stock_features
+        _PASSTHROUGH_COLS = {
+            "accounting_quality_score": "accounting_quality_score",
+            "combined_distress_risk_score": "distress_risk_score",
+            "gaap_adj_eps_gap_pct": "gaap_adj_eps_gap_pct",
+            "piotroski_f_score": "piotroski_f_score",
+            "eps_revision_momentum": "eps_revision_momentum",
+            "altman_z_score": "altman_z_score",
+        }
+
         # Check which rows have forward data available
         forward_col_keys = list(self._FORWARD_COL_MAP.keys())
         has_any_forward = df[
@@ -1231,6 +1325,9 @@ class EarningsBeatProbabilityModel:
                 beat_classification = (
                     "likely_beat" if prob_result["posterior_mean"] > 0.5 else "uncertain"
                 )
+                # Compute eps_positive_streak from reported history
+                eps_positive_streak = history.quarterly_beat_streak()
+
                 record = _extract_identifiers(row)
                 record.update(
                     {
@@ -1262,10 +1359,20 @@ class EarningsBeatProbabilityModel:
                         "eps_gaap_est_fy1e": forward_signals.eps_gaap_fy1e,
                         "analyst_count": forward_signals.analyst_count,
                         "next_earnings_status": row.get("next_earnings_status", None),
-                        "quarterly_beat_streak": history.quarterly_beat_streak(),
+                        "quarterly_beat_streak": eps_positive_streak,
                         "data_source": "forward_enhanced",
+                        "eps_positive_streak": eps_positive_streak,
                     }
                 )
+
+                # Pass through composite/quality columns from mv_all_stock_features
+                for src_col, out_key in _PASSTHROUGH_COLS.items():
+                    val = row.get(src_col, None)
+                    if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                        record[out_key] = val
+                    else:
+                        record[out_key] = None
+
                 results.append(record)
 
         # --- Proxy path (vectorized Beta-Binomial for trajectory scores) ---
@@ -1358,7 +1465,17 @@ class EarningsBeatProbabilityModel:
                     "next_earnings_status": row.get("next_earnings_status", None),
                     "quarterly_beat_streak": None,
                     "data_source": "trajectory_proxy",
+                    "eps_positive_streak": None,
                 })
+
+                # Pass through composite/quality columns from mv_all_stock_features
+                for src_col, out_key in _PASSTHROUGH_COLS.items():
+                    val = row.get(src_col, None)
+                    if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                        record[out_key] = val
+                    else:
+                        record[out_key] = None
+
                 results.append(record)
 
         return pd.DataFrame(results)
@@ -1564,6 +1681,25 @@ class EPSStreakAnalyzer:
             "historical_beat_rate",
             "gaap_revision_momentum",
             "next_earnings_status",
+            "eps_positive_streak",
+            "model_confidence",
+            "map_estimate",
+            "accounting_quality_score",
+            "distress_risk_score",
+            "gaap_adj_eps_gap_pct",
+            "piotroski_f_score",
+            "eps_revision_momentum",
+            "altman_z_score",
+        ]
+
+        # Composite/quality columns to pass through from mv_all_stock_features
+        _PASSTHROUGH_COLS = [
+            "accounting_quality_score",
+            "combined_distress_risk_score",
+            "gaap_adj_eps_gap_pct",
+            "piotroski_f_score",
+            "eps_revision_momentum",
+            "altman_z_score",
         ]
 
         # Check if forward/history columns are available
@@ -1628,6 +1764,24 @@ class EPSStreakAnalyzer:
             effective_total = max(n_total_yoy, dynamic_total) if dynamic_total > 0 else n_total_yoy
             historical_beat_rate = n_beats_yoy / effective_total if effective_total > 0 else 0.0
 
+            # --- Compute model_confidence and map_estimate ---
+            # model_confidence: how decisive the streak prediction is (0-1)
+            model_confidence = abs(result.streak_continuation_prob - 0.5) * 2.0 * result.confidence_level
+
+            # map_estimate: MAP (maximum a posteriori) beat probability
+            # Use Beta posterior mode when we have enough data
+            if effective_total > 0:
+                prior = _model.default_prior
+                n_beats = n_beats_yoy
+                post_a = prior.alpha + n_beats
+                post_b = prior.beta + (effective_total - n_beats)
+                if post_a > 1 and post_b > 1:
+                    map_estimate = (post_a - 1) / (post_a + post_b - 2)
+                else:
+                    map_estimate = post_a / (post_a + post_b)
+            else:
+                map_estimate = trajectory / 100.0 if trajectory is not None else 0.5
+
             record = _extract_identifiers(row)
             record.update(
                 {
@@ -1645,8 +1799,26 @@ class EPSStreakAnalyzer:
                         else None
                     ),
                     "next_earnings_status": row.get("next_earnings_status", None),
+                    # EPS positive streak passthrough
+                    "eps_positive_streak": (
+                        int(streak) if streak is not None and not pd.isna(streak) else None
+                    ),
+                    # Model-derived fields
+                    "model_confidence": round(model_confidence, 10),
+                    "map_estimate": round(map_estimate, 10),
                 }
             )
+
+            # Pass through composite/quality columns from mv_all_stock_features
+            for col in _PASSTHROUGH_COLS:
+                val = row.get(col, None)
+                # Rename combined_distress_risk_score → distress_risk_score for export
+                out_key = "distress_risk_score" if col == "combined_distress_risk_score" else col
+                if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                    record[out_key] = val
+                else:
+                    record[out_key] = None
+
             results.append(record)
 
         if not results:
@@ -1869,7 +2041,7 @@ class CreditRiskProbabilityModel:
             accumulated_deficit = row.get("accumulated_deficit_flag", 0)
 
             # NEW: Additional risk factors from views
-            combined_distress = row.get("combined_distress_score", 50)
+            combined_distress = row.get("combined_distress_risk_score", 50)
             wc_deteriorating = row.get("wc_deteriorating_flag", 0)
             debt_deleveraging = row.get("debt_deleveraging", 0)  # Negative = more debt
             interest_coverage = row.get("interest_coverage", 5.0)
@@ -1961,7 +2133,7 @@ class CreditRiskProbabilityModel:
             record.update(
                 {
                     "beta_stability_score": beta_stability,
-                    "combined_distress_score": combined_distress,
+                    "combined_distress_risk_score": combined_distress,
                     "distress_probability": prob,
                     "liquidity_stress_score": liquidity_stress,
                     "cash_runway_months": cash_runway,
@@ -3164,6 +3336,14 @@ def export_probability_analytics_results(
             probability_df[col] = pd.to_numeric(probability_df[col], errors="coerce").astype(
                 "Int64"
             )
+
+    # Also cast streak_df columns to proper numeric dtypes
+    for col in _NUMERIC_CAST_COLS:
+        if col in streak_df.columns:
+            streak_df[col] = pd.to_numeric(streak_df[col], errors="coerce")
+    for col in _INTEGER_CAST_COLS:
+        if col in streak_df.columns:
+            streak_df[col] = pd.to_numeric(streak_df[col], errors="coerce").astype("Int64")
 
     # 1. Export probability analysis (Issue 3: table_name is canonical for both DB and CSV)
     _safe_export(probability_df, "earnings_probability_analysis")

@@ -33,14 +33,14 @@ SELECT "ISIN"                                                                   
        -- 3-year estimated CAGR: (FY3E / LTM)^(1/3) - 1
        CASE
            WHEN "FCF (LTM)" > 0 AND "FCF - Est Avg (FY3E)" > 0
-               THEN (safe_power("FCF - Est Avg (FY3E)" /
+               THEN (POWER("FCF - Est Avg (FY3E)" /
                            NULLIF("FCF (LTM)", 0), 1.0 / 3.0) - 1) * 100
            END                                                                     AS fcf_est_cagr_3y,
 
        -- 5-year estimated CAGR: (FY5E / LTM)^(1/5) - 1
        CASE
            WHEN "FCF (LTM)" > 0 AND "FCF - Est Avg (FY5E)" > 0
-               THEN (safe_power("FCF - Est Avg (FY5E)" /
+               THEN (POWER("FCF - Est Avg (FY5E)" /
                            NULLIF("FCF (LTM)", 0), 1.0 / 5.0) - 1) * 100
            END                                                                     AS fcf_est_cagr_5y,
 
@@ -77,7 +77,7 @@ SELECT "ISIN"                                                                   
         CASE WHEN "FCF - Est Avg (FY2E)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "FCF - Est Avg (FY3E)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "FCF - Est Avg (FY4E)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "FCF - Est Avg (FY5E)" > 0 THEN 1 ELSE 0 END) / 5.0 * 100       AS fcf_est_trajectory_score,
+        CASE WHEN "FCF - Est Avg (FY5E)" > 0 THEN 1 ELSE 0 END) / 5.0 * 100        AS fcf_est_trajectory_score,
 
        -- All 5 forward estimates positive
        CASE

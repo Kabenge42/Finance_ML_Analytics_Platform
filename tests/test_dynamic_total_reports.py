@@ -50,23 +50,29 @@ class TestBeatProbabilityResultNewFields(unittest.TestCase):
             industry="",
             country="",
             exchange="",
+            historical_beats=3,
+            total_reports=5,
+            dynamic_total_reports=5,
+            historical_beat_rate=0.5,
             prior_alpha=2,
             prior_beta=2,
             posterior_alpha=3,
             posterior_beta=3,
-            prior_mean=0.5,
-            posterior_mean=0.5,
+            posterior_beat_prob=0.5,
             posterior_std=0.1,
-            credible_interval_90=(0.3, 0.7),
-            credible_interval_95=(0.2, 0.8),
-            beat_probability=0.5,
+            ci_90_lower=0.3,
+            ci_90_upper=0.7,
+            ci_95_lower=0.2,
+            ci_95_upper=0.8,
             confidence_score=0.7,
-            historical_beat_rate=0.5,
-            n_observations=5,
+            prior_influence_pct=10.0,
+            effective_sample_size=5.0,
+            classification_confidence="Medium",
+            beat_classification="uncertain",
         )
-        self.assertIsNone(r.dynamic_total_reports)
         self.assertIsNone(r.analyst_count)
         self.assertIsNone(r.eps_norm_est_ntm)
+        self.assertIsNone(r.eps_positive_streak)
 
     def test_new_fields_set(self):
         r = BeatProbabilityResult(
@@ -76,24 +82,31 @@ class TestBeatProbabilityResultNewFields(unittest.TestCase):
             industry="",
             country="",
             exchange="",
+            historical_beats=3,
+            total_reports=10,
+            dynamic_total_reports=10,
+            historical_beat_rate=0.5,
             prior_alpha=2,
             prior_beta=2,
             posterior_alpha=3,
             posterior_beta=3,
-            prior_mean=0.5,
-            posterior_mean=0.5,
+            posterior_beat_prob=0.5,
             posterior_std=0.1,
-            credible_interval_90=(0.3, 0.7),
-            credible_interval_95=(0.2, 0.8),
-            beat_probability=0.5,
+            ci_90_lower=0.3,
+            ci_90_upper=0.7,
+            ci_95_lower=0.2,
+            ci_95_upper=0.8,
             confidence_score=0.7,
-            historical_beat_rate=0.5,
-            n_observations=5,
-            dynamic_total_reports=10,
+            prior_influence_pct=10.0,
+            effective_sample_size=5.0,
+            classification_confidence="Medium",
+            beat_classification="uncertain",
             analyst_count=5,
+            eps_positive_streak=3,
         )
         self.assertEqual(r.dynamic_total_reports, 10)
         self.assertEqual(r.analyst_count, 5)
+        self.assertEqual(r.eps_positive_streak, 3)
 
 
 class TestForwardAdjustedDynamicTotal(unittest.TestCase):

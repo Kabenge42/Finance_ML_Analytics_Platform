@@ -35,7 +35,7 @@ import os
 import warnings
 from pathlib import Path
 from typing import Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -47,11 +47,10 @@ from finance_ml.analytics.data_utils import (
     aggregate_probability_results,
     backfill_feature_columns,
     compute_metric_statistics,
-    export_to_csv,
     export_to_db,
-    export_to_json,
     get_equities_schema,
     get_identifier_cols_set,
+    get_view_category_mapping,
     load_all_feature_views,
     load_feature_data_from_db,
     load_equities_data_from_db,
@@ -63,7 +62,6 @@ from finance_ml.analytics.data_utils import (
 
 # --- Optimised operations ---
 from finance_ml.analytics.optimized_ops import (
-    fast_ruin_probability,
     get_optimization_status,
     vectorized_percentile_rank,
     vectorized_zscore,
@@ -117,6 +115,7 @@ from finance_ml.analytics.statistical_analysis import (
     run_category_probability_analytics,
     analyze_employee_productivity_frontier,
     analyze_reporting_lag_sentiment,
+    analyze_accounting_anomalies,
 )
 
 # --- InferenceData schema (ArviZ / xarray bridge) ---
@@ -124,45 +123,51 @@ try:
     from finance_ml.analytics.inference_schema import (
         ARVIZ_AVAILABLE,
         EquityCoordinates,
+        IdentifierCoordinates,
+        EquitiesSchemaMetadata,
+        FeatureRegistryMetadata,
+        FeatureViewSpec,
+        EquitiesMaterializedViewSpec,
+        FEATURE_VIEW_REGISTRY,
         build_beat_probability_inference_data,
         build_credit_risk_inference_data,
         build_monte_carlo_inference_data,
+        build_feature_view_inference_data,
+        load_identifier_coordinates_from_db,
+        load_equities_schema_metadata_from_db,
+        load_feature_registry_metadata_from_db,
+        load_feature_view_spec_from_db,
+        load_mv_equities_spec_from_db,
         summarize_inference_data,
     )
 except ImportError:
     ARVIZ_AVAILABLE = False
     EquityCoordinates = None  # type: ignore[assignment,misc]
+    IdentifierCoordinates = None  # type: ignore[assignment,misc]
 
 # --- Probabilistic visualizations (ArviZ-backed) ---
 # --- Other visualizations ---
-from finance_ml.analytics.visualizations._shared import PLOTLY_TEMPLATE
-from finance_ml.analytics.visualizations.probability_viz import (
+from finance_ml.analytics.visualizations import (
+    PLOTLY_TEMPLATE,
+    # Probabilistic (ArviZ-backed)
     create_bayesian_category_ridge,
     create_beat_probability_posterior,
     create_posterior_return_forest,
     create_ruin_probability_diagnostic,
     create_tri_model_posterior_comparison,
-)
-
-# --- Quality & risk visualizations ---
-from finance_ml.analytics.visualizations.quality_risk import (
+    # Quality & risk
+    create_accounting_anomaly_dashboard,
     create_altman_zscore_distribution,
     create_beneish_mscore_analysis,
     create_distress_early_warning_dashboard,
     create_piotroski_fscore_breakdown,
     create_quality_risk_quadrant,
     create_risk_tier_sunburst,
-)
-
-# --- Earnings quality visualizations ---
-from finance_ml.analytics.visualizations.earnings_quality import (
+    # Earnings quality
     create_enhanced_beat_probability_dashboard as create_enhanced_beat_prob_dash,
     create_gaap_divergence_plot,
     create_revision_momentum_chart,
-)
-
-# --- Expected returns visualizations (extracted from this module) ---
-from finance_ml.analytics.visualizations.expected_returns_viz import (
+    # Expected returns pipeline charts
     create_beat_vs_achievement_scatter,
     create_kalman_vs_raw_scatter,
     create_mc_return_distribution,
@@ -175,6 +180,8 @@ from finance_ml.analytics.visualizations.expected_returns_viz import (
     create_strong_consensus_bar,
     create_tri_model_agreement_histogram,
     create_var_analysis,
+    # MCSE convergence (for Step 7a parallel MCMC)
+    create_mcse_convergence_panel,
 )
 
 from finance_ml.logging_config import configure_logging
@@ -222,8 +229,8 @@ class PipelineConfig:
 
     mc_simulations: int = 50_000
     mc_max_stocks: int = 10_000
-    mcmc_chains: int = 4
-    mcmc_samples: int = 10_000
+    mcmc_chains: int = 6
+    mcmc_samples: int = 25_000
     beat_threshold: float = 0.6
     output_dir: str = "outputs/analytics"
     log_file: str | None = "logs/expected_returns_pipeline.log"
@@ -234,9 +241,9 @@ class PipelineConfig:
         """Build config from environment variables with sensible defaults."""
         return cls(
             mc_simulations=int(os.environ.get("ER_MC_SIMULATIONS", 50_000)),
-            mc_max_stocks=int(os.environ.get("ER_MC_MAX_STOCKS", 10_000)),
-            mcmc_chains=int(os.environ.get("ER_MCMC_CHAINS", 4)),
-            mcmc_samples=int(os.environ.get("ER_MCMC_SAMPLES", 10_000)),
+            mc_max_stocks=int(os.environ.get("ER_MC_MAX_STOCKS", 25_000)),
+            mcmc_chains=int(os.environ.get("ER_MCMC_CHAINS", 6)),
+            mcmc_samples=int(os.environ.get("ER_MCMC_SAMPLES", 25_000)),
             output_dir=os.environ.get("ER_OUTPUT_DIR", "outputs/analytics"),
             log_file=os.environ.get(
                 "ER_LOG_FILE", "logs/expected_returns_pipeline.log"
@@ -639,9 +646,9 @@ def print_model_statistics(
 def load_expected_returns_data(
     db_url: Optional[str] = None,
     schema: str = "public",
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, "IdentifierCoordinates | None"]:
     """
-    Load equities data from ``mv_equities`` via :func:`load_equities_data_from_db`.
+    Load equities data with full identifier coordinates.
 
     v3.2 migration: delegates to ``data_utils.load_equities_data_from_db``
     instead of the former ``_load_materialized_view('mv_expected_returns')``.
@@ -656,17 +663,25 @@ def load_expected_returns_data(
 
     Returns
     -------
-    pd.DataFrame
-        Feature DataFrame with identifier + all feature columns.
+    tuple[pd.DataFrame, IdentifierCoordinates | None]
+        Feature DataFrame and identifier coordinates (None on failure).
     """
     try:
         df = load_equities_data_from_db(db_url=db_url, schema=schema)
     except (ImportError, ValueError) as e:
         logger.warning("Failed to load equities data: %s", e)
-        df = pd.DataFrame()
+        return pd.DataFrame(), None
 
+    id_coords = None
     if df is not None and not df.empty:
         df = _apply_backfill_and_kalman(df)
+
+        # Build identifier coordinates for downstream use
+        try:
+            if IdentifierCoordinates is not None:
+                id_coords = IdentifierCoordinates.from_dataframe(df)
+        except (ValueError, KeyError):
+            id_coords = None
 
         # Validate feature coverage against expected categories
         global _feature_categories_cache
@@ -696,15 +711,15 @@ def load_expected_returns_data(
     else:
         logger.warning("No data loaded from mv_equities")
         df = pd.DataFrame()
-    return df
+    return df, id_coords
 
 
 def load_all_stock_features(
     db_url: Optional[str] = None,
     schema: str = "public",
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, dict[str, "FeatureViewSpec"]]:
     """
-    Load the full stock features superset via :func:`load_all_feature_views`.
+    Load full features with per-view specs for InferenceData construction.
 
     v3.2 migration: delegates to ``data_utils.load_all_feature_views``
     (merges all 17 ``vw_features_*`` views) to ensure full feature coverage,
@@ -719,27 +734,40 @@ def load_all_stock_features(
 
     Returns
     -------
-    pd.DataFrame
-        Full feature DataFrame.
+    tuple[pd.DataFrame, dict[str, FeatureViewSpec]]
+        Full feature DataFrame and per-view specifications.
     """
     try:
         df = load_all_feature_views(db_url=db_url, schema=schema)
     except (ImportError, ValueError) as e:
         logger.warning("Failed to load feature views: %s", e)
-        df = pd.DataFrame()
+        return pd.DataFrame(), {}
 
+    view_specs: dict[str, FeatureViewSpec] = {}
     if df is not None and not df.empty:
         df = _apply_backfill_and_kalman(df)
 
+        # Build view specs from registry
+        if FEATURE_VIEW_REGISTRY is not None:
+            for view_name, category in FEATURE_VIEW_REGISTRY.items():
+                try:
+                    spec = load_feature_view_spec_from_db(
+                        view_name, db_url=db_url, schema=schema
+                    )
+                    view_specs[view_name] = spec
+                except Exception:
+                    pass
+
         logger.info(
-            "Loaded all stock features: %d stocks × %d features",
+            "Loaded all stock features: %d stocks × %d features, %d view specs",
             len(df),
             len(df.columns),
+            len(view_specs),
         )
     else:
         logger.warning("No data loaded from feature views")
         df = pd.DataFrame()
-    return df
+    return df, view_specs
 
 
 def load_analytics_table(
@@ -997,9 +1025,9 @@ def run_monte_carlo_analysis(
 
 
 def run_price_target_achievement(
-        df: pd.DataFrame,
-        use_historical_targets: bool = True,
-        feature_df: pd.DataFrame | None = None,
+    df: pd.DataFrame,
+    use_historical_targets: bool = True,
+    feature_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """
     Estimate probability of reaching consensus price targets.
@@ -1050,12 +1078,15 @@ def run_price_target_achievement(
         "analyst_bullish_pct",
     ]
     if feature_df is not None and "ticker" in feature_df.columns:
-        missing_sentiment = [c for c in _SENTIMENT_COLS if c not in pt_df.columns and c in feature_df.columns]
+        missing_sentiment = [
+            c
+            for c in _SENTIMENT_COLS
+            if c not in pt_df.columns and c in feature_df.columns
+        ]
         if missing_sentiment:
-            sentiment_subset = (
-                feature_df[["ticker"] + missing_sentiment]
-                .drop_duplicates(subset="ticker")
-            )
+            sentiment_subset = feature_df[
+                ["ticker"] + missing_sentiment
+            ].drop_duplicates(subset="ticker")
             pt_df = pt_df.merge(sentiment_subset, on="ticker", how="left")
             logger.info(
                 "Price target achievement: merged %d sentiment columns from feature views",
@@ -1126,6 +1157,22 @@ def run_kalman_filter(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _safe_pct_change(
+    current: pd.Series,
+    previous: pd.Series,
+) -> pd.Series:
+    """Compute ``((current - previous) / |previous|) * 100``, replacing ±inf with NaN."""
+    prev = pd.to_numeric(previous, errors="coerce")
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = ((current - prev) / prev.abs()) * 100.0
+    return result.replace([np.inf, -np.inf], np.nan)
+
+
+def _compute_spread(high: pd.Series, low: pd.Series) -> pd.Series:
+    """Compute numeric spread ``high − low``."""
+    return pd.to_numeric(high, errors="coerce") - pd.to_numeric(low, errors="coerce")
+
+
 def _enrich_with_historical_target_drift(
     df: pd.DataFrame,
     hist_available: dict[str, list[str]],
@@ -1164,122 +1211,124 @@ def _enrich_with_historical_target_drift(
     pd.DataFrame
         Input DataFrame with additional derived columns appended.
     """
-    targets = hist_available["historical_targets"]
-    targets_high = hist_available["historical_targets_high"]
-    targets_low = hist_available["historical_targets_low"]
-    targets_median = hist_available["historical_targets_median"]
-    prices = hist_available["historical_prices"]
-
-    if (
-        not targets
-        and not prices
-        and not targets_high
-        and not targets_low
-        and not targets_median
-    ):
+    hist_keys = [
+        "historical_targets",
+        "historical_targets_high",
+        "historical_targets_low",
+        "historical_targets_median",
+        "historical_prices",
+    ]
+    if not any(hist_available[k] for k in hist_keys):
         logger.debug(
             "No historical price/target columns found — skipping drift enrichment"
         )
         return df
 
     # --- Consensus target drift ---
-    current_target = df.get("price_target")
-    if current_target is not None:
-        for horizon, col in [
+    _add_drift_columns(
+        df,
+        current_col="price_target",
+        horizons=[
             ("1m", "price_target_1m_ago"),
             ("3m", "price_target_3m_ago"),
             ("6m", "price_target_6m_ago"),
             ("1y", "price_target_1y_ago"),
-        ]:
-            if col in df.columns:
-                prev = pd.to_numeric(df[col], errors="coerce")
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    drift = ((current_target - prev) / prev.abs()) * 100.0
-                df[f"pt_drift_{horizon}"] = drift.replace([np.inf, -np.inf], np.nan)
+        ],
+        output_prefix="pt_drift",
+    )
 
     # --- Spread evolution (high − low band width change) ---
     current_high = df.get("price_target_high")
     current_low = df.get("price_target_low")
     if current_high is not None and current_low is not None:
-        current_spread = pd.to_numeric(current_high, errors="coerce") - pd.to_numeric(
-            current_low, errors="coerce"
-        )
+        current_spread = _compute_spread(current_high, current_low)
         for horizon, high_col, low_col in [
             ("1m", "price_target_high_1m_ago", "price_target_low_1m_ago"),
             ("3m", "price_target_high_3m_ago", "price_target_low_3m_ago"),
         ]:
             if high_col in df.columns and low_col in df.columns:
-                prev_spread = pd.to_numeric(
-                    df[high_col], errors="coerce"
-                ) - pd.to_numeric(df[low_col], errors="coerce")
+                prev_spread = _compute_spread(df[high_col], df[low_col])
                 df[f"pt_spread_change_{horizon}"] = current_spread - prev_spread
 
     # --- Median target drift ---
-    current_median = df.get("price_target_median")
-    if current_median is not None:
-        for horizon, col in [
+    _add_drift_columns(
+        df,
+        current_col="price_target_median",
+        horizons=[
             ("1m", "price_target_median_1m_ago"),
             ("3m", "price_target_median_3m_ago"),
-        ]:
-            if col in df.columns:
-                prev = pd.to_numeric(df[col], errors="coerce")
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    drift = ((current_median - prev) / prev.abs()) * 100.0
-                df[f"pt_median_drift_{horizon}"] = drift.replace(
-                    [np.inf, -np.inf], np.nan
-                )
+        ],
+        output_prefix="pt_median_drift",
+    )
 
     # --- Historical price anchor (best-available recent price) ---
     anchor_chain = ["price_5d_ago", "price_1w_ago", "price_1m_ago"]
     anchor = pd.Series(np.nan, index=df.index, dtype=float)
     for col in anchor_chain:
-        if col in df.columns:
-            fill_mask = anchor.isna()
-            if fill_mask.any():
-                anchor = anchor.fillna(pd.to_numeric(df[col], errors="coerce"))
+        if col in df.columns and anchor.isna().any():
+            anchor = anchor.fillna(pd.to_numeric(df[col], errors="coerce"))
     if anchor.notna().any():
         df["historical_price_anchor"] = anchor
 
     # --- Price momentum vs historical levels ---
-    last_price = df.get("last_price")
-    if last_price is not None:
-        last_price_num = pd.to_numeric(last_price, errors="coerce")
-        for horizon, col in [("1m", "price_1m_ago"), ("3m", "price_3m_ago")]:
-            if col in df.columns:
-                prev = pd.to_numeric(df[col], errors="coerce")
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    pct_change = ((last_price_num - prev) / prev.abs()) * 100.0
-                df[f"price_vs_historical_{horizon}"] = pct_change.replace(
-                    [np.inf, -np.inf], np.nan
-                )
+    _add_drift_columns(
+        df,
+        current_col="last_price",
+        horizons=[
+            ("1m", "price_1m_ago"),
+            ("3m", "price_3m_ago"),
+        ],
+        output_prefix="price_vs_historical",
+    )
 
     # --- Target-vs-price convergence signal ---
     if "pt_drift_1m" in df.columns and "price_vs_historical_1m" in df.columns:
-        # Positive = target rising faster than price (expanding upside)
-        # Negative = price rising faster than target (converging/narrowing upside)
         df["target_vs_price_convergence_1m"] = (
             df["pt_drift_1m"] - df["price_vs_historical_1m"]
         )
 
-    n_derived = sum(
-        1
-        for c in df.columns
-        if c.startswith(
-            (
-                "pt_drift_",
-                "pt_spread_change_",
-                "pt_median_drift_",
-                "historical_price_anchor",
-                "price_vs_historical_",
-                "target_vs_price_convergence_",
-            )
-        )
+    _DERIVED_PREFIXES = (
+        "pt_drift_",
+        "pt_spread_change_",
+        "pt_median_drift_",
+        "historical_price_anchor",
+        "price_vs_historical_",
+        "target_vs_price_convergence_",
     )
+    n_derived = sum(1 for c in df.columns if c.startswith(_DERIVED_PREFIXES))
     logger.info(
         "Historical target drift enrichment: %d derived columns added", n_derived
     )
-
     return df
+
+
+def _add_drift_columns(
+    df: pd.DataFrame,
+    current_col: str,
+    horizons: list[tuple[str, str]],
+    output_prefix: str,
+) -> None:
+    """
+    Add percentage-drift columns to *df* for each horizon where both
+    the *current_col* and the historical column exist.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to mutate in place.
+    current_col : str
+        Column name for the current value (e.g. ``"price_target"``).
+    horizons : list[tuple[str, str]]
+        Pairs of ``(horizon_label, historical_column_name)``.
+    output_prefix : str
+        Prefix for the output column, e.g. ``"pt_drift"`` → ``"pt_drift_1m"``.
+    """
+    current = df.get(current_col)
+    if current is None:
+        return
+    for horizon, hist_col in horizons:
+        if hist_col in df.columns:
+            df[f"{output_prefix}_{horizon}"] = _safe_pct_change(current, df[hist_col])
 
 
 def run_earnings_beat_analysis(df: pd.DataFrame) -> pd.DataFrame:
@@ -1360,25 +1409,25 @@ def run_earnings_beat_analysis(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_credit_risk_analysis(
-    df: pd.DataFrame,
-    feature_df: pd.DataFrame | None = None,
+        df: pd.DataFrame,
+        feature_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """
     Run credit risk and ruin probability analysis.
 
-    Uses ``CreditRiskProbabilityModel`` for Bayesian distress estimation,
-    ``fast_ruin_probability`` for Monte Carlo ruin simulation,
-    ``calculate_ruin_probability`` for analytical ruin estimates,
-    and ``detect_accounting_anomalies`` for Beneish-style red flags.
+    Uses ``CreditRiskProbabilityModel`` for Bayesian distress estimation
+    and ``calculate_ruin_probability`` for analytical ruin estimates
+    (modified Gambler's Ruin framework).
+
+    Accounting anomaly detection has been extracted to
+    ``run_accounting_anomaly_analysis`` (Step 5e).
 
     Parameters
     ----------
     df : pd.DataFrame
         Feature DataFrame with financial health columns.
     feature_df : pd.DataFrame or None, optional
-        Full feature DataFrame (e.g. from ``load_all_feature_views``)
-        containing quality/risk and leverage columns. When provided,
-        missing columns are merged to avoid neutral-default fallbacks.
+        Full feature DataFrame for merging missing columns.
     """
     credit_df = df.copy()
 
@@ -1389,7 +1438,7 @@ def run_credit_risk_analysis(
         "liquidity_stress_score",
         "cash_runway_months",
         "accumulated_deficit_flag",
-        "combined_distress_score",
+        "combined_distress_risk_score",
         "wc_deteriorating_flag",
         "debt_deleveraging",
         "interest_coverage",
@@ -1398,13 +1447,13 @@ def run_credit_risk_analysis(
     ]
     if feature_df is not None and "ticker" in feature_df.columns:
         missing_risk = [
-            c for c in _CREDIT_RISK_COLS
+            c
+            for c in _CREDIT_RISK_COLS
             if c not in credit_df.columns and c in feature_df.columns
         ]
         if missing_risk:
-            risk_subset = (
-                feature_df[["ticker"] + missing_risk]
-                .drop_duplicates(subset="ticker")
+            risk_subset = feature_df[["ticker"] + missing_risk].drop_duplicates(
+                subset="ticker"
             )
             credit_df = credit_df.merge(risk_subset, on="ticker", how="left")
             logger.info(
@@ -1415,56 +1464,26 @@ def run_credit_risk_analysis(
     credit_model = CreditRiskProbabilityModel()
     credit = credit_model.analyze_dataframe(credit_df)
 
-    ruin = fast_ruin_probability(credit_df, n_simulations=2000, n_days=252)
-    if not ruin.empty and not credit.empty and "ticker" in ruin.columns:
-        credit = credit.merge(
-            ruin[["ticker", "ruin_probability", "survival_probability", "risk_tier"]],
-            on="ticker",
-            how="left",
-            suffixes=("", "_mc"),
-        )
-
-    # --- Analytical ruin probability (Gambler's Ruin) ---
+    # --- Ruin probability (Gambler's Ruin framework) ---
     try:
-        ruin_analytical = calculate_ruin_probability(credit_df)
-        if not ruin_analytical.empty and "ticker" in ruin_analytical.columns:
+        ruin = calculate_ruin_probability(credit_df)
+        if not ruin.empty and not credit.empty and "ticker" in ruin.columns:
             ruin_cols = [
                 c
-                for c in ruin_analytical.columns
+                for c in ruin.columns
                 if c != "ticker" and c not in credit.columns
             ]
             if ruin_cols:
                 credit = credit.merge(
-                    ruin_analytical[["ticker"] + ruin_cols],
+                    ruin[["ticker"] + ruin_cols],
                     on="ticker",
                     how="left",
                 )
                 logger.info(
-                    "Analytical ruin enrichment: %d columns added", len(ruin_cols)
+                    "Ruin probability enrichment: %d columns added", len(ruin_cols)
                 )
     except Exception as e:
-        logger.warning("Analytical ruin probability failed: %s", e)
-
-    # --- Accounting anomaly detection (Beneish M-Score style) ---
-    try:
-        anomalies = detect_accounting_anomalies(credit_df)
-        if not anomalies.empty and "ticker" in anomalies.columns:
-            anom_cols = [
-                c
-                for c in anomalies.columns
-                if c != "ticker" and c not in credit.columns
-            ]
-            if anom_cols:
-                credit = credit.merge(
-                    anomalies[["ticker"] + anom_cols],
-                    on="ticker",
-                    how="left",
-                )
-                logger.info(
-                    "Accounting anomaly enrichment: %d columns added", len(anom_cols)
-                )
-    except Exception as e:
-        logger.warning("Accounting anomaly detection failed: %s", e)
+        logger.warning("Ruin probability calculation failed: %s", e)
 
     logger.info("Credit risk analysis: %d stocks processed", len(credit))
     return credit
@@ -1492,6 +1511,99 @@ def run_dividend_safety_analysis(df: pd.DataFrame) -> pd.DataFrame:
     div_safety = model.analyze_dataframe(df)
     logger.info("Dividend safety analysis: %d stocks processed", len(div_safety))
     return div_safety
+
+def run_accounting_anomaly_analysis(
+        df: pd.DataFrame,
+        feature_df: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """
+    Run standalone accounting anomaly detection and analytics.
+
+    Delegates to ``detect_accounting_anomalies`` from statistical_analysis
+    and then to ``analyze_accounting_anomalies`` for extended sector-level
+    and distribution analytics.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Feature DataFrame with quality/risk and earnings columns.
+    feature_df : pd.DataFrame or None, optional
+        Full feature DataFrame for merging missing accounting columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with anomaly scores, tiers, per-feature flags,
+        Mahalanobis distance, Benford's Law test, and sector-relative scoring.
+    """
+    anomaly_df = df.copy()
+
+    # Merge accounting quality features from feature views if missing
+    _ACCOUNTING_COLS = [
+        "exceptional_items_frequency",
+        "non_operating_income_share",
+        "gaap_adj_eps_gap_pct",
+        "asset_sale_boost",
+        "ebitda_adjustment_ratio",
+        "eps_adjustment_ratio",
+        "exceptional_items_to_ebitda",
+        "restructuring_intensity",
+        "goodwill_change_rate",
+        # ── EPS adjustment features ──
+        "eps_adj_ltm",
+        "eps_adjustment_ratio_comp",
+        "eps_adjustment_spread_ltm",
+        "eps_adjustment_spread_fy",
+        "eps_adjustment_pct",
+        # ── Net income adjustment features ──
+        "net_income_adjustment_ratio_ltm",
+        "net_income_adjustment_ratio_fy",
+        "net_income_adjustment_pct",
+        # ── EBITDA / EBIT adjustment features ──
+        "ebitda_adjustment_pct_ltm",
+        "ebitda_adjustment_pct_fy",
+        "ebit_adjustment_pct_ltm",
+        "ebit_adjustment_pct_fy",
+        # ── GAAP vs non-GAAP spread & revision features ──
+        "forward_eps_gaap_adj_spread",
+        "gaap_vs_norm_revision_spread",
+        "gaap_revision_momentum",
+        "gaap_revision_1m",
+        "gaap_revision_3m",
+        "gaap_revision_6m",
+        "gaap_revision_1y",
+        # ── Earnings quality & discontinuities ──
+        "discontinued_ops_impact",
+        "earnings_quality_warning",
+        "revision_quality_divergence",
+        # ── Surprise & growth acceleration ──
+        "eps_growth_accel",
+        "eps_surprise_pct",
+        "revenue_surprise_pct",
+    ]
+    if feature_df is not None and "ticker" in feature_df.columns:
+        missing_acct = [
+            c for c in _ACCOUNTING_COLS
+            if c not in anomaly_df.columns and c in feature_df.columns
+        ]
+        if missing_acct:
+            acct_subset = feature_df[["ticker"] + missing_acct].drop_duplicates(
+                subset="ticker"
+            )
+            anomaly_df = anomaly_df.merge(acct_subset, on="ticker", how="left")
+            logger.info(
+                "Accounting anomaly analysis: merged %d columns from feature views",
+                len(missing_acct),
+            )
+
+    # Run multi-layered anomaly detection
+    result = detect_accounting_anomalies(anomaly_df)
+
+    # Run extended analytics (sector breakdown, distribution summary)
+    result = analyze_accounting_anomalies(result)
+
+    logger.info("Accounting anomaly analysis: %d stocks processed", len(result))
+    return result
 
 
 def run_category_probability_analysis(
@@ -1916,7 +2028,10 @@ def build_expected_returns_summary(
     kal: pd.DataFrame,
     pt: pd.DataFrame,
     earn: pd.DataFrame,
+    anomaly_results: pd.DataFrame,
     source_df: pd.DataFrame | None = None,
+    credit: pd.DataFrame | None = None,
+    div_safety: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """
     Merge four expected-return model results into a unified summary DataFrame.
@@ -1924,6 +2039,9 @@ def build_expected_returns_summary(
     v3.0: ``source_df`` is loaded from ``mv_all_stock_features`` (full
     superset) so that all identifier and market-data columns are available
     for enrichment without needing a backfill step.
+
+    v3.3: Added optional ``credit`` and ``div_safety`` DataFrames to enrich
+    the summary with credit-risk and dividend-safety columns.
     """
     if mc.empty or kal.empty or pt.empty or earn.empty:
         logger.warning(
@@ -1996,8 +2114,16 @@ def build_expected_returns_summary(
                 [
                     "ticker",
                     "posterior_beat_prob",
+                    "posterior_std",
                     "confidence_score",
                     "beat_classification",
+                    "resampled_posterior_mean",
+                    "technical_adjustment",
+                    "momentum_signal",
+                    "volatility_regime_score",
+                    "credible_interval_90",
+                    "credible_interval_95",
+                    "prob_beat_given_momentum",
                 ]
             ],
             on="ticker",
@@ -2005,11 +2131,124 @@ def build_expected_returns_summary(
         )
     )
 
+    # Merge anomaly results (accounting anomaly detection columns)
+    _ANOMALY_COLS = [
+        "exceptional_items_frequency_anomaly_flag",
+        "gaap_adj_eps_gap_pct_anomaly_flag",
+        "asset_sale_boost_anomaly_flag",
+        "ebitda_adjustment_ratio_anomaly_flag",
+        "eps_adjustment_ratio_anomaly_flag",
+        "exceptional_items_to_ebitda_anomaly_flag",
+        "restructuring_intensity_anomaly_flag",
+        "goodwill_change_rate_anomaly_flag",
+        "accounting_anomaly_score",
+        "sector_relative_anomaly",
+        "anomaly_feature_count",
+        "accounting_anomaly_tier",
+        "anomaly_severity_score",
+        "anomaly_risk_rank",
+        "sector_anomaly_percentile",
+        "multi_flag_alert",
+    ]
+    if (
+            anomaly_results is not None
+            and not anomaly_results.empty
+            and "ticker" in anomaly_results.columns
+    ):
+        available_anomaly = [
+            c for c in _ANOMALY_COLS if c in anomaly_results.columns
+        ]
+        if available_anomaly:
+            anomaly_subset = anomaly_results[
+                ["ticker"] + available_anomaly
+                ].drop_duplicates(subset="ticker")
+            summary = summary.merge(anomaly_subset, on="ticker", how="left")
+            logger.info(
+                "Enriched expected_returns_summary with %d anomaly columns",
+                len(available_anomaly),
+            )
+
+    # Merge credit risk columns
+    _CREDIT_COLS = [
+        "beta_stability_score",
+        "distress_probability",
+        "liquidity_stress_score",
+        "cash_runway_months",
+        "altman_z_score",
+        "altman_z_trend",
+        "risk_level",
+        "ci_lower",
+        "ci_upper",
+        "data_quality_score",
+        "wealth_buffer",
+        "ruin_probability",
+        "survival_probability",
+    ]
+    if (
+            credit is not None
+            and not credit.empty
+            and "ticker" in credit.columns
+    ):
+        available_credit = [
+            c for c in _CREDIT_COLS if c in credit.columns
+        ]
+        if available_credit:
+            credit_subset = credit[
+                ["ticker"] + available_credit
+                ].drop_duplicates(subset="ticker")
+            summary = summary.merge(credit_subset, on="ticker", how="left")
+            logger.info(
+                "Enriched expected_returns_summary with %d credit risk columns",
+                len(available_credit),
+            )
+
+    # Merge dividend safety columns
+    _DIV_SAFETY_COLS = [
+        "high_yield_flag",
+        "dividend_cut_probability",
+        "fcf_dividend_coverage",
+        "payout_ratio",
+        "dividend_streak",
+        "dividend_consistency",
+        "yield_vs_5y_avg",
+        "sustainable_flag",
+        "safety_score",
+        "risk_category",
+    ]
+    if (
+            div_safety is not None
+            and not div_safety.empty
+            and "ticker" in div_safety.columns
+    ):
+        available_div = [
+            c for c in _DIV_SAFETY_COLS if c in div_safety.columns
+        ]
+        if available_div:
+            div_subset = div_safety[
+                ["ticker"] + available_div
+                ].drop_duplicates(subset="ticker")
+            summary = summary.merge(div_subset, on="ticker", how="left")
+            logger.info(
+                "Enriched expected_returns_summary with %d dividend safety columns",
+                len(available_div),
+            )
+
     if summary.empty:
         logger.warning(
             "Expected returns summary: no overlapping tickers across all 4 models"
         )
         return summary
+
+    # Enrich with market-data columns from mc (if present there)
+    for col in available_market:
+        if col not in summary.columns and col in mc.columns:
+            price_map = (
+                mc[["ticker", col]]
+                .drop_duplicates(subset="ticker")
+                .set_index("ticker")[col]
+            )
+            summary[col] = summary["ticker"].map(price_map)
+            logger.debug("Merged market-data column '%s' from mc", col)
 
     # Enrich from source_df (mv_all_stock_features)
     if source_df is not None and "ticker" in source_df.columns:
@@ -2234,7 +2473,7 @@ def compute_sector_return_analytics(
     results = []
     for sector, group in summary.groupby(group_col):
         n = len(group)
-        row = {"sector": sector, "count": n}
+        row = {group_col: sector, "count": n}
 
         for col, prefix in [
             ("expected_upside_pct", "mc"),
@@ -2259,7 +2498,7 @@ def compute_sector_return_analytics(
                 (group["agreement_score"] >= 3).mean() * 100
             )
             row["pct_full_consensus"] = float(
-                (group["agreement_score"] == 4).mean() * 100
+                (group["agreement_score"] == 3).mean() * 100
             )
         if "weighted_agreement" in group.columns:
             row["mean_weighted_agreement"] = float(group["weighted_agreement"].mean())
@@ -2613,22 +2852,24 @@ def run_resampled_posterior_analysis(
 
 
 def export_expected_returns_results(
-    mc: pd.DataFrame,
-    pt: pd.DataFrame,
-    kal: pd.DataFrame,
-    tri: pd.DataFrame,
-    strong: pd.DataFrame,
-    beat: pd.DataFrame,
-    summary: pd.DataFrame = None,
-    credit: pd.DataFrame = None,
-    div_safety: pd.DataFrame = None,
-    screens: dict[str, pd.DataFrame] = None,
-    output_dir: str = "outputs/analytics",
+        mc: pd.DataFrame,
+        pt: pd.DataFrame,
+        kal: pd.DataFrame,
+        tri: pd.DataFrame,
+        strong: pd.DataFrame,
+        beat: pd.DataFrame,
+        summary: pd.DataFrame = None,
+        credit: pd.DataFrame = None,
+        div_safety: pd.DataFrame = None,
+        anomaly_results: pd.DataFrame = None,
+        screens: dict[str, pd.DataFrame] = None,
+        output_dir: str = "outputs/analytics",
 ) -> dict[str, str]:
     """
     Export all expected returns analytics to the ``analytics`` schema.
 
     v3.0: Added dividend safety and screening results exports.
+    v3.2: Added accounting anomaly analysis export.
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     exports: dict[str, str] = {}
@@ -2643,6 +2884,7 @@ def export_expected_returns_results(
         (summary, "expected_returns_summary"),
         (credit, "credit_risk_analysis"),
         (div_safety, "dividend_safety_analysis"),
+        (anomaly_results, "accounting_anomaly_analysis"),
     ]
 
     for df, table in _EXPORT_PAIRS:
@@ -2651,8 +2893,6 @@ def export_expected_returns_results(
                 reordered_df = reorder_with_identifiers(df)
                 cfg = ExportConfig(table_name=table)
                 export_to_db(reordered_df, cfg)
-                export_to_csv(reordered_df, cfg)
-                export_to_json(reordered_df, cfg)
                 exports[table] = f"analytics.{table}"
                 logger.info("Exported %d rows → analytics.%s", len(df), table)
             except Exception as e:
@@ -2704,20 +2944,22 @@ def main(config: PipelineConfig | None = None):
 
     Steps:
         1.  Load feature data from materialized views (+ Kalman momentum filtering)
+        1b. Pre-compute historical target drift enrichment
         2.  Run Monte Carlo simulation
         3.  Run Price Target Achievement model
         4.  Run Kalman filter
         5.  Run Earnings Beat analysis
-        5b. Run Credit Risk & Dividend Safety analysis
-        5c. Run Stock Screening (+ productivity frontier & reporting lag enrichment)
-        5d. Resampled Bayesian posterior returns (v3.1)
+        5b. Run Accounting Anomaly Detection
+        5c. Run Credit Risk & Dividend Safety analysis
+        5d. Run Stock Screening (+ productivity frontier & reporting lag enrichment)
+        5e. Resampled Bayesian posterior returns (v3.1)
         6.  Build tri-model & quad-model alignment
         7.  Build expected_returns_summary (+ hierarchical sector MCMC)
         7a. Parallel MCMC return analysis with Gelman-Rubin convergence (v3.1)
         7b. Run per-category Bayesian probability analytics
-        8.  Generate visualizations
-        9.  Build InferenceData (ArviZ)
-        10. Export results
+        8.  Build InferenceData (ArviZ)
+        9.  Generate visualizations (consuming InferenceData)
+        10. Export results (deduplicated)
     """
     cfg = config or PipelineConfig.from_env()
 
@@ -2766,7 +3008,7 @@ def main(config: PipelineConfig | None = None):
     )
     _log_and_print("-" * 80)
 
-    df = load_expected_returns_data()
+    df, id_coords = load_expected_returns_data()
     if df.empty:
         _log_and_print("✗ No data loaded from mv_equities. Check DB_URL.")
         return
@@ -2775,14 +3017,17 @@ def main(config: PipelineConfig | None = None):
         f"✓ Loaded mv_equities: {len(df):,} stocks × {len(df.columns)} features"
     )
 
-    df_all = load_all_stock_features()
+    df_all, view_specs = load_all_stock_features()
     if not df_all.empty:
         _log_and_print(
             f"✓ Loaded feature views: {len(df_all):,} stocks × {len(df_all.columns)} features"
         )
+        if view_specs:
+            _log_and_print(f"  View specs loaded: {len(view_specs)} views")
     else:
         _log_and_print("⚠️ Feature views not loaded — screening will use mv_equities")
         df_all = df.copy()  # Defensive copy to prevent mutation of primary DataFrame
+        view_specs = {}
 
     df_features = load_analytics_table()
     if not df_features.empty:
@@ -2791,6 +3036,48 @@ def main(config: PipelineConfig | None = None):
         )
     else:
         _log_and_print("⚠️ mv_all_stock_features not loaded — continuing without it")
+
+    # ── Step 1a: Load schema metadata for InferenceData construction ──
+    schema_metadata: EquitiesSchemaMetadata | None = None
+    feature_registry: FeatureRegistryMetadata | None = None
+    mv_equities_spec: EquitiesMaterializedViewSpec | None = None
+    try:
+        schema_metadata = load_equities_schema_metadata_from_db()
+        feature_registry = load_feature_registry_metadata_from_db()
+        _log_and_print(f"  Schema metadata: {len(schema_metadata.column_names)} columns")
+        _log_and_print(f"  Feature registry: {len(feature_registry.function_names)} functions")
+    except Exception as e:
+        _log_and_print(f"  Schema metadata unavailable: {e}")
+
+    # Load mv_equities materialized view spec (column classification)
+    try:
+        mv_equities_spec = load_mv_equities_spec_from_db()
+        _log_and_print(
+            f"  mv_equities spec: {len(mv_equities_spec.price_columns)} price, "
+            f"{len(mv_equities_spec.financial_columns)} financial, "
+            f"{len(mv_equities_spec.historical_price_columns)} historical cols"
+        )
+    except Exception as e:
+        _log_and_print(f"  mv_equities spec unavailable: {e}")
+
+    # Enrich identifier coordinates from dedicated view when available
+    if id_coords is None:
+        try:
+            id_coords = load_identifier_coordinates_from_db()
+            _log_and_print(
+                f"  IdentifierCoordinates (from DB): {len(id_coords.tickers)} tickers"
+            )
+        except Exception as e:
+            logger.debug("load_identifier_coordinates_from_db failed: %s", e)
+
+    # ── Step 1b: Pre-compute historical target drift enrichment (used by Steps 2, 3, 4) ──
+    _log_and_print("")
+    _log_and_print("📦 Step 1b: Pre-computing historical target drift enrichment...")
+    _log_and_print("-" * 80)
+    hist_available = _resolve_available_historical_cols(df)
+    _log_historical_coverage(hist_available)
+    df_enriched = _enrich_with_historical_target_drift(df.copy(), hist_available)
+    _log_and_print(f"✓ Historical drift enrichment complete ({len(df_enriched.columns) - len(df.columns)} derived columns)")
 
     _log_and_print("")
 
@@ -2803,20 +3090,11 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("-" * 80)
 
     try:
-        hist_coverage = _resolve_available_historical_cols(df)
-        hist_total = sum(len(v) for v in hist_coverage.values())
-        _log_and_print(
-            f"  Historical price/target columns available: {hist_total} / {len(ALL_HISTORICAL_PRICE_TARGET_COLS)}"
-        )
-        for cat, cols in hist_coverage.items():
-            if cols:
-                _log_and_print(f"    {cat}: {len(cols)} columns")
-
         mc = run_monte_carlo_analysis(
-            df,
+            df_enriched,
             n_simulations=cfg.mc_simulations,
             max_stocks=cfg.mc_max_stocks,
-            use_historical_targets=True,
+            use_historical_targets=False,
         )
         if not mc.empty and _has_required_columns(
             mc, ["expected_upside_pct", "prob_positive_upside"], "Monte Carlo"
@@ -2894,7 +3172,9 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("-" * 80)
 
     try:
-        pt = run_price_target_achievement(df, use_historical_targets=True, feature_df=df_all)
+        pt = run_price_target_achievement(
+            df_enriched, use_historical_targets=False, feature_df=df_all
+        )
         if not pt.empty and _has_required_columns(
             pt,
             ["achievement_probability", "expected_return_prob_weighted"],
@@ -2951,7 +3231,7 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("-" * 80)
 
     try:
-        kal = run_kalman_filter(df, use_historical_targets=True)
+        kal = run_kalman_filter(df_enriched, use_historical_targets=False)
         if not kal.empty and _has_required_columns(kal, ["filtered_upside"], "Kalman"):
             _log_and_print(f"✓ {len(kal):,} stocks filtered")
             _log_and_print(
@@ -2995,9 +3275,143 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("")
 
     # ========================================================================
-    # 5b. CREDIT RISK & DIVIDEND SAFETY
+    # 5b. ACCOUNTING ANOMALY DETECTION (moved before credit risk)
     # ========================================================================
-    _log_and_print("🛡️ Step 5b: Credit risk & dividend safety analysis...")
+    _log_and_print("🔬 Step 5b: Accounting anomaly detection & analytics...")
+    _log_and_print("-" * 80)
+
+    anomaly_results = pd.DataFrame()
+    try:
+        anomaly_results = run_accounting_anomaly_analysis(df, feature_df=df_all)
+
+        if not anomaly_results.empty and "accounting_anomaly_score" in anomaly_results.columns:
+            # ── Tier distribution ──
+            if "accounting_anomaly_tier" in anomaly_results.columns:
+                tier_counts = anomaly_results["accounting_anomaly_tier"].value_counts()
+                _log_and_print("  Anomaly tier distribution:")
+                for tier_label in ["Clean", "Watch", "Flag", "Alert"]:
+                    count = tier_counts.get(tier_label, 0)
+                    pct = count / len(anomaly_results) * 100 if len(anomaly_results) > 0 else 0
+                    _log_and_print(f"    {tier_label}: {count:,} ({pct:.1f}%)")
+
+            # ── Score statistics ──
+            score_stats = compute_metric_statistics(anomaly_results["accounting_anomaly_score"])
+            if score_stats:
+                _log_and_print(
+                    f"  Anomaly score — mean: {score_stats['mean']:.1f}, "
+                    f"median: {score_stats['median']:.1f}, "
+                    f"std: {score_stats['std']:.1f}, "
+                    f"max: {score_stats['max']:.1f}"
+                )
+
+            # ── Anomaly feature count ──
+            if "anomaly_feature_count" in anomaly_results.columns:
+                flagged = (anomaly_results["anomaly_feature_count"] > 0).sum()
+                multi_flagged = (anomaly_results["anomaly_feature_count"] >= 3).sum()
+                _log_and_print(
+                    f"  Stocks with ≥1 flagged feature: {flagged:,}, ≥3 flags: {multi_flagged:,}"
+                )
+
+            # ── Per-feature flag summary ──
+            flag_cols = [c for c in anomaly_results.columns if c.endswith("_anomaly_flag")]
+            if flag_cols:
+                _log_and_print("  Per-feature anomaly flags:")
+                for fc in sorted(flag_cols):
+                    feat_name = fc.replace("_anomaly_flag", "")
+                    n_flagged = anomaly_results[fc].sum() if fc in anomaly_results.columns else 0
+                    if n_flagged > 0:
+                        _log_and_print(f"    {feat_name}: {int(n_flagged):,} stocks flagged")
+
+            # ── Mahalanobis distance ──
+            if "mahalanobis_distance" in anomaly_results.columns:
+                mahal = anomaly_results["mahalanobis_distance"].dropna()
+                if len(mahal) > 0:
+                    _log_and_print(
+                        f"  Mahalanobis distance — computed: {len(mahal):,}, "
+                        f"mean: {mahal.mean():.2f}, p95: {mahal.quantile(0.95):.2f}"
+                    )
+
+            # ── Sector-relative anomaly ──
+            if "sector_relative_anomaly" in anomaly_results.columns:
+                sra = anomaly_results["sector_relative_anomaly"].dropna()
+                sector_outliers = (sra.abs() > 2.0).sum()
+                _log_and_print(
+                    f"  Sector-relative outliers (|z| > 2): {sector_outliers:,}"
+                )
+
+            # ── Benford's Law test ──
+            if "benford_chi2_pvalue" in anomaly_results.columns:
+                bp = anomaly_results["benford_chi2_pvalue"].dropna()
+                if len(bp) > 0:
+                    p_val = bp.iloc[0]
+                    verdict = "⚠️ suspicious" if p_val < 0.05 else "✓ consistent"
+                    _log_and_print(
+                        f"  Benford's Law chi² p-value: {p_val:.4f} ({verdict})"
+                    )
+
+            # ── Distribution fit summary ──
+            dist_cols = [c for c in anomaly_results.columns if c.endswith("_dist_name")]
+            if dist_cols:
+                _log_and_print("  Best-fit distributions per feature:")
+                for dc in sorted(dist_cols):
+                    feat_name = dc.replace("_dist_name", "")
+                    dist_name = anomaly_results[dc].mode().iloc[0] if len(anomaly_results[dc].dropna()) > 0 else "n/a"
+                    pval_col = f"{feat_name}_dist_pvalue"
+                    pval = anomaly_results[pval_col].mean() if pval_col in anomaly_results.columns else float("nan")
+                    _log_and_print(
+                        f"    {feat_name}: {dist_name} (mean KS p={pval:.3f})"
+                    )
+
+            # ── Export accounting anomaly analysis to DB ──
+            try:
+                anomaly_export_cols = ["ticker"] + [
+                    c for c in anomaly_results.columns
+                    if c.startswith("accounting_anomaly")
+                       or c.endswith("_z_robust")
+                       or c.endswith("_anomaly_flag")
+                       or c.endswith("_dist_name")
+                       or c.endswith("_dist_pvalue")
+                       or c in (
+                           "anomaly_feature_count",
+                           "mahalanobis_distance",
+                           "sector_relative_anomaly",
+                           "benford_chi2_pvalue",
+                       )
+                ]
+                # Include identifier columns
+                id_cols = load_identifier_columns()
+                for id_col in id_cols:
+                    if id_col in anomaly_results.columns and id_col not in anomaly_export_cols:
+                        anomaly_export_cols.insert(1, id_col)
+
+                anomaly_export = anomaly_results[
+                    [c for c in anomaly_export_cols if c in anomaly_results.columns]
+                ].copy()
+
+                if not anomaly_export.empty:
+                    anomaly_export = reorder_with_identifiers(anomaly_export)
+                    anomaly_cfg = ExportConfig(table_name="accounting_anomaly_analysis")
+                    export_to_db(anomaly_export, anomaly_cfg)
+                    _log_and_print(
+                        f"  ✓ Exported {len(anomaly_export):,} rows → analytics.accounting_anomaly_analysis"
+                    )
+            except Exception as e:
+                logger.warning("Accounting anomaly DB export failed: %s", e)
+
+            _log_and_print(f"✓ Accounting anomaly analysis complete: {len(anomaly_results):,} stocks")
+        else:
+            _log_and_print("  ⚠️ No accounting anomaly features available")
+
+    except Exception as e:
+        logger.error("Step 5b (Accounting Anomaly) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5b failed: {e}", logging.ERROR)
+
+    _log_and_print("")
+
+    # ========================================================================
+    # 5c. CREDIT RISK & DIVIDEND SAFETY
+    # ========================================================================
+    _log_and_print("🛡️ Step 5c: Credit risk & dividend safety analysis...")
     _log_and_print("-" * 80)
 
     try:
@@ -3016,6 +3430,22 @@ def main(config: PipelineConfig | None = None):
                     f"  Mean ruin probability: {credit['ruin_probability'].mean():.3f}"
                 )
 
+            # ── Merge anomaly columns into credit for downstream alignment ──
+            if not anomaly_results.empty and "ticker" in anomaly_results.columns:
+                anom_cols = [
+                    c for c in anomaly_results.columns
+                    if c != "ticker" and c not in credit.columns
+                ]
+                if anom_cols:
+                    credit = credit.merge(
+                        anomaly_results[["ticker"] + anom_cols],
+                        on="ticker",
+                        how="left",
+                    )
+                    _log_and_print(
+                        f"  Merged {len(anom_cols)} anomaly columns into credit risk DataFrame"
+                    )
+
         div_safety = run_dividend_safety_analysis(df_all)
         if not div_safety.empty:
             at_risk = (
@@ -3028,15 +3458,15 @@ def main(config: PipelineConfig | None = None):
             )
 
     except Exception as e:
-        logger.error("Step 5b (Credit/Dividend) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5b failed: {e}", logging.ERROR)
+        logger.error("Step 5c (Credit/Dividend) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5c failed: {e}", logging.ERROR)
 
     _log_and_print("")
 
     # ========================================================================
-    # 5c. STOCK SCREENING (v3.0 — NEW)
+    # 5d. STOCK SCREENING (v3.0 — NEW)
     # ========================================================================
-    _log_and_print("🔍 Step 5c: Running stock screening strategies...")
+    _log_and_print("🔍 Step 5d: Running stock screening strategies...")
     _log_and_print("-" * 80)
 
     try:
@@ -3066,15 +3496,15 @@ def main(config: PipelineConfig | None = None):
                 _log_and_print(f"  \u2713 {name}: {len(screen_df):,} stocks")
 
     except Exception as e:
-        logger.error("Step 5c (Screening) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5c failed: {e}", logging.ERROR)
+        logger.error("Step 5d (Screening) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5d failed: {e}", logging.ERROR)
 
     _log_and_print("")
 
     # ========================================================================
-    # 5d. RESAMPLED POSTERIOR RETURNS (v3.1 — NEW)
+    # 5e. RESAMPLED POSTERIOR RETURNS (v3.1 — NEW)
     # ========================================================================
-    _log_and_print("\U0001f9ea Step 5d: Resampled Bayesian posterior returns...")
+    _log_and_print("\U0001f9ea Step 5e: Resampled Bayesian posterior returns...")
     _log_and_print("-" * 80)
 
     try:
@@ -3091,8 +3521,8 @@ def main(config: PipelineConfig | None = None):
             _log_and_print("  \u26a0\ufe0f Resampled posterior returns: no results")
 
     except Exception as e:
-        logger.error("Step 5d (Resampled Posterior) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5d failed: {e}", logging.ERROR)
+        logger.error("Step 5e (Resampled Posterior) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5e failed: {e}", logging.ERROR)
 
     _log_and_print("")
 
@@ -3134,8 +3564,19 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("📋 Step 7: Building expected_returns_summary (4-model merge)...")
     _log_and_print("-" * 80)
 
+    # Prefer df_features (mv_all_stock_features) as the enrichment source
+    # because it is the full superset containing both identifier and market-data
+    # columns.  df_all (feature views) may lack market-data columns after the
+    # v3.2 migration to load_all_feature_views.  Fall back through df_all → df.
+    _enrichment_source = (
+        df_features if not df_features.empty else df_all if not df_all.empty else df
+    )
+
     try:
-        summary = build_expected_returns_summary(mc, kal, pt, beat, source_df=df_all)
+        summary = build_expected_returns_summary(
+            mc, kal, pt, beat, anomaly_results, source_df=_enrichment_source,
+            credit=credit, div_safety=div_safety,
+        )
         if not summary.empty:
             _log_and_print(f"  ✓ {len(summary):,} stocks in expected_returns_summary")
             full_consensus = (summary["agreement_score"] == 4).sum()
@@ -3250,11 +3691,14 @@ def main(config: PipelineConfig | None = None):
                         logger.debug("Hierarchical MCMC skipped: %s", e)
 
                 top_sectors = sector_analytics.head(5)
+                group_col = (
+                    "industry" if "industry" in sector_analytics.columns else "sector"
+                )
                 for _, row in top_sectors.iterrows():
                     consensus = row.get("pct_full_consensus", 0)
                     ra = row.get("risk_adjusted_return", 0)
                     _log_and_print(
-                        f"     {row['sector']}: MC mean={row.get('mc_mean', 0):.1f}%, "
+                        f"     {row.get(group_col, 'Unknown')}: MC mean={row.get('mc_mean', 0):.1f}%, "
                         f"consensus={consensus:.0f}%, risk-adj={ra:.2f}"
                     )
         else:
@@ -3268,9 +3712,6 @@ def main(config: PipelineConfig | None = None):
 
     _log_and_print("")
 
-    # ========================================================================
-    # 7b. PER-CATEGORY BAYESIAN PROBABILITY ANALYTICS (v3.0 — NEW)
-    # ========================================================================
     # ========================================================================
     # 7a. PARALLEL MCMC RETURN ANALYSIS (v3.1 — NEW)
     # ========================================================================
@@ -3289,6 +3730,14 @@ def main(config: PipelineConfig | None = None):
                 f"converged={mcmc_result.get('converged', False)}, "
                 f"posterior mean={mcmc_result.get('posterior_mean', float('nan')):.2f}"
             )
+
+            # Generate MCSE convergence visualization if InferenceData available
+            if ARVIZ_AVAILABLE and mcmc_result.get("inference_data") is not None:
+                create_mcse_convergence_panel(
+                    mcmc_result["inference_data"],
+                    var_name="expected_return",
+                ).write_html(output_dir / "er_mcse_convergence.html")
+                _log_and_print("   ✓ er_mcse_convergence.html")
         else:
             _log_and_print("  \u26a0\ufe0f Parallel MCMC: skipped or insufficient data")
 
@@ -3302,7 +3751,29 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("-" * 80)
 
     try:
-        category_analytics = run_category_probability_analysis(df_all)
+        # Build categories from all 17 vw_features_* views for full feature coverage
+        view_mapping = get_view_category_mapping()
+        all_categories: dict[str, list[str]] = {}
+        for view_name, info in view_mapping.items():
+            cat_label = info.get("category", view_name)
+            feat_cols = info.get("feature_cols", [])
+            if feat_cols:
+                # Merge features if multiple views map to the same category
+                if cat_label in all_categories:
+                    all_categories[cat_label].extend(
+                        c for c in feat_cols if c not in all_categories[cat_label]
+                    )
+                else:
+                    all_categories[cat_label] = list(feat_cols)
+        _log_and_print(
+            f"  Feature categories from {len(view_mapping)} views → "
+            f"{len(all_categories)} categories, "
+            f"{sum(len(v) for v in all_categories.values())} total features"
+        )
+
+        category_analytics = run_category_probability_analysis(
+            df_all, categories=all_categories
+        )
         if category_analytics:
             _log_and_print(f"  ✓ Analyzed {len(category_analytics)} categories")
             for cat_name, cat_result in category_analytics.items():
@@ -3311,6 +3782,8 @@ def main(config: PipelineConfig | None = None):
                 _log_and_print(
                     f"    {cat_name}: {n_feat} features — {len(bayesian_keys)} posteriors"
                 )
+        else:
+            _log_and_print("  ⚠️ No categories had sufficient features for analysis")
 
     except Exception as e:
         logger.error("Step 7b (Category Analytics) failed: %s", e, exc_info=True)
@@ -3319,9 +3792,196 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("")
 
     # ========================================================================
-    # 8. VISUALIZATIONS
+    # 8. INFERENCE DATA (ArviZ) — built before visualizations
     # ========================================================================
-    _log_and_print("📈 Step 8: Generating visualizations...")
+    idata_mc = None
+    idata_beat = None
+    idata_credit = None
+    if ARVIZ_AVAILABLE:
+        _log_and_print("🧪 Step 8: Building InferenceData (ArviZ)...")
+        _log_and_print("-" * 80)
+        try:
+            if not mc.empty:
+                idata_mc = build_monte_carlo_inference_data(
+                    mc, df_all, n_simulations=25_000
+                )
+                idata_summary = summarize_inference_data(idata_mc)
+                _log_and_print(
+                    f"   ✓ MC InferenceData: {idata_summary.get('n_draws', 0)} draws, "
+                    f"{idata_summary.get('n_equities', 0)} equities"
+                )
+                if idata_summary.get("r_hat"):
+                    for var, rhat in idata_summary["r_hat"].items():
+                        _log_and_print(f"     R̂ ({var}): {rhat:.4f}")
+
+            if not beat.empty and "posterior_alpha" in beat.columns:
+                idata_beat = build_beat_probability_inference_data(
+                    beat,
+                    df_all,
+                    n_posterior_samples=4000,
+                    n_chains=4,
+                )
+                beat_summary = summarize_inference_data(idata_beat)
+                _log_and_print(
+                    f"   ✓ Beat InferenceData: {beat_summary.get('n_chains', 0)} chains × "
+                    f"{beat_summary.get('n_draws', 0)} draws"
+                )
+            if not credit.empty:
+                idata_credit = build_credit_risk_inference_data(
+                    credit,
+                    df_all,
+                )
+                credit_summary = summarize_inference_data(idata_credit)
+                _log_and_print(
+                    f"   ✓ Credit Risk InferenceData: "
+                    f"{credit_summary.get('n_equities', 0)} equities"
+                )
+
+            # Log EquityCoordinates for traceability
+            if EquityCoordinates is not None and not df_all.empty:
+                try:
+                    coords = EquityCoordinates.from_dataframe(df_all)
+                    _log_and_print(
+                        f"   ✓ EquityCoordinates: {len(coords.tickers)} tickers, "
+                        f"{len(coords.sectors)} sectors"
+                    )
+                except Exception as e:
+                    logger.debug("EquityCoordinates construction skipped: %s", e)
+
+            # Build per-view InferenceData for ArviZ diagnostics
+            if df_features is not None and not df_features.empty:
+                _log_and_print("   Building per-view feature InferenceData...")
+                for view_name in FEATURE_VIEW_REGISTRY:
+                    try:
+                        idata_view = build_feature_view_inference_data(
+                            view_name, df_features
+                        )
+                        view_summary = summarize_inference_data(idata_view)
+                        _log_and_print(
+                            f"     ✓ {view_name}: "
+                            f"{view_summary.get('n_equities', 0)} equities"
+                        )
+                    except Exception as e:
+                        logger.debug(
+                            "InferenceData for %s failed: %s", view_name, e
+                        )
+
+        except Exception as e:
+            _log_and_print(f"   ⚠️ InferenceData error: {e}")
+        _log_and_print("")
+    else:
+        _log_and_print("⏭️  Step 8: ArviZ not available — skipping InferenceData\n")
+
+    # ========================================================================
+    # 8b. ENRICH DataFrames WITH VIZ-CRITICAL COLUMNS
+    # ========================================================================
+    # Columns like altman_z_score, piotroski_f_score, beneish_m_score,
+    # distress_risk_score, accounting_quality_score live in feature views
+    # (df_all / df_features) but may be absent from df (mv_equities) and
+    # beat.  Merge them so downstream viz functions find them.
+    _VIZ_REQUIRED_COLUMNS: dict[str, list[str]] = {
+        "create_quality_risk_quadrant": ["piotroski_f_score", "altman_z_score"],
+        "create_distress_early_warning_dashboard": [
+            "altman_z_score",
+            "piotroski_f_score",
+            "distress_risk_score",
+            "combined_distress_risk_score",
+        ],
+        "create_beneish_mscore_analysis": [
+            "beneish_m_score",
+            "accounting_quality_score",
+            "accruals_quality",
+        ],
+        "create_enhanced_beat_prob_dash": [
+            "posterior_beat_prob",
+            "eps_revision_momentum",
+            "gaap_adj_eps_gap_pct",
+            "historical_beat_rate",
+            "quarterly_beat_streak",
+            "classification_confidence",
+        ],
+        "create_earnings_probability_dashboard": [
+            "posterior_beat_prob",
+            "confidence_score",
+            "historical_beat_rate",
+            "gaap_revision_momentum",
+            "gaap_norm_spread",
+            "quarterly_beat_streak",
+        ],
+        "create_mcse_convergence_panel": [],  # uses InferenceData, not a DataFrame
+    }
+
+    _viz_needed_cols: set[str] = {
+        col for cols in _VIZ_REQUIRED_COLUMNS.values() for col in cols
+    }
+
+    # Pick the richest available source for missing columns
+    _viz_source = (
+        df_features if not df_features.empty
+        else df_all if not df_all.empty
+        else pd.DataFrame()
+    )
+
+    # --- Enrich df (mv_equities) ---
+    if (
+        not df.empty
+        and not _viz_source.empty
+        and "ticker" in df.columns
+        and "ticker" in _viz_source.columns
+    ):
+        _missing_in_df = [
+            c for c in _viz_needed_cols
+            if c not in df.columns and c in _viz_source.columns
+        ]
+        if _missing_in_df:
+            _src_subset = (
+                _viz_source[["ticker"] + _missing_in_df]
+                .drop_duplicates(subset="ticker")
+            )
+            df = df.merge(_src_subset, on="ticker", how="left")
+            _log_and_print(
+                f"  ✓ Enriched df (mv_equities) with {len(_missing_in_df)} viz-critical columns"
+            )
+
+    # --- Enrich beat ---
+    if (
+        not beat.empty
+        and not _viz_source.empty
+        and "ticker" in beat.columns
+        and "ticker" in _viz_source.columns
+    ):
+        _missing_in_beat = [
+            c for c in _viz_needed_cols
+            if c not in beat.columns and c in _viz_source.columns
+        ]
+        if _missing_in_beat:
+            _src_subset = (
+                _viz_source[["ticker"] + _missing_in_beat]
+                .drop_duplicates(subset="ticker")
+            )
+            beat = beat.merge(_src_subset, on="ticker", how="left")
+            _log_and_print(
+                f"  ✓ Enriched beat with {len(_missing_in_beat)} viz-critical columns"
+            )
+
+    # --- Validate coverage ---
+    _all_df_cols = set(df.columns) | set(beat.columns)
+    _viz_gaps: dict[str, list[str]] = {}
+    for func_name, required in _VIZ_REQUIRED_COLUMNS.items():
+        missing = [c for c in required if c not in _all_df_cols]
+        if missing:
+            _viz_gaps[func_name] = missing
+    if _viz_gaps:
+        _log_and_print(f"  ⚠️ Viz column coverage gaps after enrichment: {_viz_gaps}")
+    else:
+        _log_and_print("  ✓ All viz column requirements satisfied")
+
+    _log_and_print("")
+
+    # ========================================================================
+    # 9. VISUALIZATIONS (consuming InferenceData)
+    # ========================================================================
+    _log_and_print("📈 Step 9: Generating visualizations...")
     _log_and_print("-" * 80)
 
     try:
@@ -3330,7 +3990,9 @@ def main(config: PipelineConfig | None = None):
                 output_dir / "er_mc_distribution.html"
             )
             _log_and_print("   ✓ er_mc_distribution.html")
-            create_sector_risk_reward_scatter(mc).write_html(
+            create_sector_risk_reward_scatter(
+                mc, identifier_coords=id_coords
+            ).write_html(
                 output_dir / "er_sector_risk_reward.html"
             )
             _log_and_print("   ✓ er_sector_risk_reward.html")
@@ -3352,7 +4014,9 @@ def main(config: PipelineConfig | None = None):
                 output_dir / "er_tri_model_agreement.html"
             )
             _log_and_print("   ✓ er_tri_model_agreement.html")
-            create_sector_heatmap(tri).write_html(output_dir / "er_sector_heatmap.html")
+            create_sector_heatmap(
+                tri, schema_metadata=schema_metadata
+            ).write_html(output_dir / "er_sector_heatmap.html")
             _log_and_print("   ✓ er_sector_heatmap.html")
 
         if not strong.empty:
@@ -3438,14 +4102,22 @@ def main(config: PipelineConfig | None = None):
             )
             _log_and_print("   ✓ er_beneish_mscore.html")
 
-        if not df.empty and "distress_risk_score" in df.columns:
+        if not df.empty and "combined_distress_risk_score" in df.columns:
             create_risk_tier_sunburst(df).write_html(
                 output_dir / "er_risk_tier_sunburst.html"
             )
             _log_and_print("   ✓ er_risk_tier_sunburst.html")
 
+        if not anomaly_results.empty and "accounting_anomaly_score" in anomaly_results.columns:
+            create_accounting_anomaly_dashboard(anomaly_results).write_html(
+                output_dir / "er_accounting_anomaly_dashboard.html"
+            )
+            _log_and_print("   ✓ er_accounting_anomaly_dashboard.html")
+
         if not credit.empty and "ruin_probability" in credit.columns:
-            create_ruin_probability_diagnostic(credit, top_n=20).write_html(
+            create_ruin_probability_diagnostic(
+                credit, top_n=20, identifier_coords=id_coords
+            ).write_html(
                 output_dir / "er_ruin_probability_diagnostic.html"
             )
             _log_and_print("   ✓ er_ruin_probability_diagnostic.html")
@@ -3533,66 +4205,6 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("")
 
     # ========================================================================
-    # 9. INFERENCE DATA (ArviZ)
-    # ========================================================================
-    if ARVIZ_AVAILABLE:
-        _log_and_print("🧪 Step 9: Building InferenceData (ArviZ)...")
-        _log_and_print("-" * 80)
-        try:
-            if not mc.empty:
-                idata_mc = build_monte_carlo_inference_data(
-                    mc, df_all, n_simulations=25_000
-                )
-                idata_summary = summarize_inference_data(idata_mc)
-                _log_and_print(
-                    f"   ✓ MC InferenceData: {idata_summary.get('n_draws', 0)} draws, "
-                    f"{idata_summary.get('n_equities', 0)} equities"
-                )
-                if idata_summary.get("r_hat"):
-                    for var, rhat in idata_summary["r_hat"].items():
-                        _log_and_print(f"     R̂ ({var}): {rhat:.4f}")
-
-            if not beat.empty and "posterior_alpha" in beat.columns:
-                idata_beat = build_beat_probability_inference_data(
-                    beat,
-                    df_all,
-                    n_posterior_samples=4000,
-                    n_chains=4,
-                )
-                beat_summary = summarize_inference_data(idata_beat)
-                _log_and_print(
-                    f"   ✓ Beat InferenceData: {beat_summary.get('n_chains', 0)} chains × "
-                    f"{beat_summary.get('n_draws', 0)} draws"
-                )
-            if not credit.empty:
-                idata_credit = build_credit_risk_inference_data(
-                    credit,
-                    df_all,
-                )
-                credit_summary = summarize_inference_data(idata_credit)
-                _log_and_print(
-                    f"   ✓ Credit Risk InferenceData: "
-                    f"{credit_summary.get('n_equities', 0)} equities"
-                )
-
-            # Log EquityCoordinates for traceability
-            if EquityCoordinates is not None and not df_all.empty:
-                try:
-                    coords = EquityCoordinates.from_dataframe(df_all)
-                    _log_and_print(
-                        f"   ✓ EquityCoordinates: {len(coords.tickers)} tickers, "
-                        f"{len(coords.sectors)} sectors"
-                    )
-                except Exception as e:
-                    logger.debug("EquityCoordinates construction skipped: %s", e)
-
-        except Exception as e:
-            _log_and_print(f"   ⚠️ InferenceData error: {e}")
-        _log_and_print("")
-    else:
-        _log_and_print("⏭️  Step 9: ArviZ not available — skipping InferenceData\n")
-
-    # ========================================================================
     # 10. EXPORT RESULTS
     # ========================================================================
     _log_and_print("💾 Step 10: Exporting results...")
@@ -3608,6 +4220,7 @@ def main(config: PipelineConfig | None = None):
         summary=summary,
         credit=credit,
         div_safety=div_safety,
+        anomaly_results=anomaly_results,
         screens=screens,
         output_dir=str(output_dir),
     )
@@ -3617,13 +4230,13 @@ def main(config: PipelineConfig | None = None):
     # Export probability analytics results (beat + streak + credit + dividend)
     try:
         streak_analyzer = EPSStreakAnalyzer()
-        streak_df = streak_analyzer.analyze_dataframe(df)
+        streak_df = streak_analyzer.analyze_dataframe(df_all if not df_all.empty else df)
         prob_exports = export_probability_analytics_results(
             probability_df=beat,
             streak_df=streak_df,
             output_dir=output_dir,
-            credit_risk_df=credit,
-            dividend_safety_df=div_safety,
+            credit_risk_df=None,       # Already exported in export_expected_returns_results
+            dividend_safety_df=None,   # Already exported in export_expected_returns_results
         )
         for pname, pdest in prob_exports.items():
             _log_and_print(f"   ✓ {pname} → {pdest}")
@@ -3674,7 +4287,9 @@ def main(config: PipelineConfig | None = None):
     _log_and_print(f"    Earnings beat analyses:    {len(beat):,}")
     _log_and_print(f"    Credit risk analyses:      {len(credit):,}")
     _log_and_print(f"    Dividend safety analyses:  {len(div_safety):,}")
+    _log_and_print(f"    Accounting anomaly analyses: {len(anomaly_results):,}")
     _log_and_print("")
+
     _log_and_print("  Alignment:")
     _log_and_print(f"    Tri-model aligned:         {len(tri):,}")
     _log_and_print(f"    Strong consensus picks:    {len(strong):,}")

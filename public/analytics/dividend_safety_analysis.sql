@@ -31,6 +31,7 @@ create table analytics.dividend_safety_analysis
     next_fy_end_date                  date,
     next_income_statement_report_date date,
     reference_date                    date,
+    high_yield_flag                   bigint,
     dividend_cut_probability          double precision,
     fcf_dividend_coverage             double precision,
     payout_ratio                      double precision,
