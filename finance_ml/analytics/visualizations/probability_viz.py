@@ -1182,3 +1182,207 @@ def create_feature_view_posterior_panel(
         template=PLOTLY_TEMPLATE,
     )
     return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 8. Accounting Anomaly Conditional Probability Visualization
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_anomaly_conditional_probability_chart(
+    df: pd.DataFrame,
+    cond_probs: pd.DataFrame | None = None,
+    top_n: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """
+    Four-panel dashboard for Bayesian conditional anomaly probabilities.
+
+    Visualises output from
+    :meth:`AccountingAnomalyProbabilityModel.calculate_conditional_probabilities`
+    and the per-row ``anomaly_conditional_probability`` column.
+
+    Panels:
+    1. Per-feature P(Anomaly|High) vs P(Anomaly|Low) — paired bar chart
+    2. Feature separation scores (horizontal bar, descending)
+    3. Lift ratios per feature (high vs low, grouped bar)
+    4. Per-stock conditional P(Anomaly) histogram with tier overlay
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame produced by ``AccountingAnomalyProbabilityModel.analyze_dataframe``.
+        Must contain ``anomaly_conditional_probability``.
+    cond_probs : pd.DataFrame or None
+        Output of ``calculate_conditional_probabilities``.  If *None* the
+        model will be instantiated to compute it from *df*.
+    top_n : int, default 20
+        Maximum number of features to display.
+    title : str, optional
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with a 4-panel conditional probability dashboard.
+    """
+    title = title or "Accounting Anomaly — Conditional Probability Analysis"
+
+    if "anomaly_conditional_probability" not in df.columns:
+        return create_no_data_figure(
+            f"{title} — run AccountingAnomalyProbabilityModel.analyze_dataframe first"
+        )
+
+    # Compute conditional probabilities if not supplied
+    if cond_probs is None:
+        from finance_ml.analytics.probability_analytics import (
+            AccountingAnomalyProbabilityModel,
+        )
+        cond_probs = AccountingAnomalyProbabilityModel().calculate_conditional_probabilities(df)
+
+    has_tier = "accounting_anomaly_tier" in df.columns
+    tier_colors = {
+        "Clean": "#00A878",
+        "Watch": "#FFD93D",
+        "Flag": "#FF8C42",
+        "Alert": "#E63946",
+    }
+
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=(
+            "P(Anomaly | Feature High) vs P(Anomaly | Feature Low)",
+            "Feature Separation Scores",
+            "Lift Ratios by Feature",
+            "Per-Stock Conditional P(Anomaly) Distribution",
+        ),
+        vertical_spacing=0.14,
+        horizontal_spacing=0.12,
+    )
+
+    if not cond_probs.empty:
+        cp = cond_probs.head(top_n)
+        features = cp["feature"].tolist()
+
+        # ── Panel 1: Paired bar — P(Anomaly|High) vs P(Anomaly|Low) ──
+        fig.add_trace(
+            go.Bar(
+                y=features,
+                x=cp["p_anomaly_high"],
+                orientation="h",
+                name="P(Anomaly|High)",
+                marker_color="#E63946",
+                opacity=0.8,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Bar(
+                y=features,
+                x=cp["p_anomaly_low"],
+                orientation="h",
+                name="P(Anomaly|Low)",
+                marker_color="#00A878",
+                opacity=0.8,
+            ),
+            row=1,
+            col=1,
+        )
+        fig.update_xaxes(title_text="Probability", row=1, col=1)
+
+        # ── Panel 2: Separation scores ──
+        fig.add_trace(
+            go.Bar(
+                y=features,
+                x=cp["separation"],
+                orientation="h",
+                marker_color="#6C63FF",
+                showlegend=False,
+                hovertemplate="<b>%{y}</b><br>Separation: %{x:.4f}<extra></extra>",
+            ),
+            row=1,
+            col=2,
+        )
+        fig.update_xaxes(title_text="Separation", row=1, col=2)
+
+        # ── Panel 3: Lift ratios (grouped bar) ──
+        fig.add_trace(
+            go.Bar(
+                y=features,
+                x=cp["lift_high"],
+                orientation="h",
+                name="Lift (High)",
+                marker_color="#FF8C42",
+                opacity=0.8,
+            ),
+            row=2,
+            col=1,
+        )
+        fig.add_trace(
+            go.Bar(
+                y=features,
+                x=cp["lift_low"],
+                orientation="h",
+                name="Lift (Low)",
+                marker_color="#0A7EA4",
+                opacity=0.8,
+            ),
+            row=2,
+            col=1,
+        )
+        # Add base-rate reference line
+        if "base_anomaly_rate" in cp.columns and len(cp) > 0:
+            fig.add_vline(
+                x=1.0,
+                line_dash="dash",
+                line_color="grey",
+                row=2,
+                col=1,
+            )
+        fig.update_xaxes(title_text="Lift Ratio", row=2, col=1)
+
+    # ── Panel 4: Per-stock conditional probability histogram ──
+    if has_tier:
+        for tier in ["Clean", "Watch", "Flag", "Alert"]:
+            tier_data = df.loc[
+                df["accounting_anomaly_tier"] == tier,
+                "anomaly_conditional_probability",
+            ].dropna()
+            if len(tier_data) > 0:
+                fig.add_trace(
+                    go.Histogram(
+                        x=tier_data,
+                        name=f"{tier}",
+                        marker_color=tier_colors.get(tier, "#0A7EA4"),
+                        opacity=0.65,
+                    ),
+                    row=2,
+                    col=2,
+                )
+    else:
+        fig.add_trace(
+            go.Histogram(
+                x=df["anomaly_conditional_probability"].dropna(),
+                marker_color="#0A7EA4",
+                opacity=0.7,
+                name="P(Anomaly)",
+            ),
+            row=2,
+            col=2,
+        )
+    fig.update_xaxes(title_text="Conditional P(Anomaly)", row=2, col=2)
+    fig.update_yaxes(title_text="Count", row=2, col=2)
+
+    fig.update_layout(
+        title=title,
+        template=PLOTLY_TEMPLATE,
+        height=1000,
+        width=1200,
+        showlegend=True,
+        barmode="group",
+        margin=dict(l=180, r=40, t=80, b=60),
+    )
+
+    return fig

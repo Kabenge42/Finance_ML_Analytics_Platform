@@ -219,7 +219,274 @@ class AccountingAnomalyResult:
     benford_chi2_pvalue: float
     anomaly_severity_score: float
     multi_flag_alert: bool
+    anomaly_conditional_probability: float
 
+
+@dataclass
+class AccountingAnomalyProbabilityModel:
+    """
+    Bayesian-informed accounting anomaly detection and analytics model.
+
+    Wraps ``detect_accounting_anomalies`` (statistical_analysis.py) and
+    ``analyze_accounting_anomalies`` into a single, composable probability
+    model following the same interface as CreditRiskProbabilityModel,
+    DividendCutProbabilityModel, and PriceTargetAchievementModel.
+
+    Parameters
+    ----------
+    anomaly_z_threshold : float or None
+        Robust z-score threshold for flagging anomalies. None = auto-derived.
+    tier_bins : list[float] or None
+        Bin edges for anomaly tier classification. None = auto-derived.
+    tier_labels : list[str] or None
+        Labels for the tier bins. None = ['Clean', 'Watch', 'Flag', 'Alert'].
+    severity_anomaly_weight : float
+        Weight for anomaly_score in severity computation (default 0.7).
+    severity_feature_weight : float
+        Weight for feature_count in severity computation (default 0.3).
+    multi_flag_threshold : int
+        Minimum flagged features to trigger multi_flag_alert (default 3).
+    """
+
+    anomaly_z_threshold: float | None = None
+    tier_bins: list[float] | None = None
+    tier_labels: list[str] | None = None
+    severity_anomaly_weight: float = 0.7
+    severity_feature_weight: float = 0.3
+    multi_flag_threshold: int = 3
+
+    def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Run full accounting anomaly detection + extended analytics.
+
+        Delegates to ``detect_accounting_anomalies`` for multi-layered
+        statistical detection (robust z-scores, distribution fitting,
+        Mahalanobis distance, Benford's Law), then computes:
+        - anomaly_severity_score (weighted combination)
+        - anomaly_risk_rank (universe percentile)
+        - sector_anomaly_percentile (within-sector rank)
+        - multi_flag_alert (boolean threshold)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Financial data with accounting quality columns.
+
+        Returns
+        -------
+        pd.DataFrame
+            Enriched DataFrame with all anomaly detection and analytics columns.
+        """
+        from finance_ml.analytics.statistical_analysis import (
+            detect_accounting_anomalies,
+        )
+
+        # Phase 1: Multi-layered anomaly detection
+        result = detect_accounting_anomalies(
+            df,
+            anomaly_z_threshold=self.anomaly_z_threshold,
+            tier_bins=self.tier_bins,
+            tier_labels=self.tier_labels,
+        )
+
+        if "accounting_anomaly_score" not in result.columns:
+            return result
+
+        # Phase 2: Extended analytics (severity, ranking, sector percentile)
+        feature_count = result.get(
+            "anomaly_feature_count", pd.Series(0, index=result.index)
+        )
+
+        result["anomaly_severity_score"] = (
+            result["accounting_anomaly_score"] * self.severity_anomaly_weight
+            + feature_count.clip(0, 9) / 9 * 100 * self.severity_feature_weight
+        )
+
+        # Universe-level percentile rank
+        severity = result["anomaly_severity_score"].dropna()
+        if len(severity) > 1:
+            result["anomaly_risk_rank"] = (
+                result["anomaly_severity_score"].rank(pct=True, ascending=True) * 100
+            )
+        else:
+            result["anomaly_risk_rank"] = 50.0
+
+        # Sector-level percentile
+        sector_col = "industry" if "industry" in result.columns else "sector"
+        if sector_col in result.columns:
+            result["sector_anomaly_percentile"] = (
+                result.groupby(sector_col)["accounting_anomaly_score"]
+                .rank(pct=True, ascending=True)
+                * 100
+            )
+        else:
+            result["sector_anomaly_percentile"] = result["anomaly_risk_rank"]
+
+        # Multi-flag alert
+        result["multi_flag_alert"] = feature_count >= self.multi_flag_threshold
+
+        # Phase 3: Conditional probability of anomaly per row
+        # Compute per-feature conditional probabilities
+        cond_probs = self.calculate_conditional_probabilities(result)
+
+        if not cond_probs.empty:
+            # For each row, compute a weighted average P(Anomaly) across
+            # features based on whether the row's feature value is above or
+            # below the median, weighted by each feature's separation score.
+            prob_col = pd.Series(0.0, index=result.index)
+            total_sep = 0.0
+
+            for _, cp_row in cond_probs.iterrows():
+                feat = cp_row["feature"]
+                if feat not in result.columns:
+                    continue
+                sep = cp_row["separation"]
+                if sep <= 0:
+                    continue
+
+                feat_data = result[feat]
+                median_val = feat_data.median()
+                # Assign P(Anomaly|High) or P(Anomaly|Low) per row
+                row_prob = pd.Series(
+                    np.where(
+                        feat_data > median_val,
+                        cp_row["p_anomaly_high"],
+                        cp_row["p_anomaly_low"],
+                    ),
+                    index=result.index,
+                )
+                # NaN features get the base rate
+                row_prob = row_prob.where(feat_data.notna(), cp_row["base_anomaly_rate"])
+                prob_col += row_prob * sep
+                total_sep += sep
+
+            if total_sep > 0:
+                result["anomaly_conditional_probability"] = prob_col / total_sep
+            else:
+                result["anomaly_conditional_probability"] = cond_probs.iloc[0][
+                    "base_anomaly_rate"
+                ]
+        else:
+            # Fallback: use severity score normalized to [0, 1]
+            max_sev = result["anomaly_severity_score"].max()
+            if max_sev > 0:
+                result["anomaly_conditional_probability"] = (
+                    result["anomaly_severity_score"] / max_sev
+                )
+            else:
+                result["anomaly_conditional_probability"] = 0.0
+
+        logger.info(
+            "AccountingAnomalyProbabilityModel: severity computed for %d stocks, "
+            "%d multi-flag alerts, mean conditional P(anomaly)=%.3f",
+            len(result),
+            result["multi_flag_alert"].sum(),
+            result["anomaly_conditional_probability"].mean(),
+        )
+
+        return result
+
+    def calculate_conditional_probabilities(
+        self,
+        df: pd.DataFrame,
+        anomaly_threshold: float = 50.0,
+        min_sample_size: int = 10,
+    ) -> pd.DataFrame:
+        """
+        Calculate conditional probability of anomaly given each accounting feature.
+
+        Follows the same Bayesian-informed pattern as
+        :func:`~finance_ml.analytics.statistical_analysis.calculate_conditional_probabilities`,
+        adapted for accounting anomaly detection:
+
+        - P(Anomaly | High Feature) vs P(Anomaly | Low Feature)
+        - Lift ratios relative to the base anomaly rate
+        - Separation score for feature importance ranking
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame that has already been processed by :meth:`analyze_dataframe`
+            (must contain ``anomaly_severity_score``).
+        anomaly_threshold : float, default 50.0
+            Severity score above which a stock is classified as anomalous.
+        min_sample_size : int, default 10
+            Minimum observations required per feature to compute probabilities.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns: ``feature``, ``p_anomaly_high``,
+            ``p_anomaly_low``, ``lift_high``, ``lift_low``, ``separation``,
+            ``base_anomaly_rate``, sorted by ``separation`` descending.
+        """
+        _empty_cols = [
+            "feature",
+            "p_anomaly_high",
+            "p_anomaly_low",
+            "lift_high",
+            "lift_low",
+            "separation",
+            "base_anomaly_rate",
+        ]
+
+        if "anomaly_severity_score" not in df.columns:
+            return pd.DataFrame(columns=_empty_cols)
+
+        is_anomaly = df["anomaly_severity_score"] >= anomaly_threshold
+        base_anomaly_rate = float(is_anomaly.mean())
+
+        # Identify accounting features: raw columns that have a corresponding
+        # _z_robust column (produced by detect_accounting_anomalies), plus any
+        # _anomaly_flag columns.
+        raw_features = [
+            col.replace("_z_robust", "")
+            for col in df.columns
+            if col.endswith("_z_robust")
+            and col.replace("_z_robust", "") in df.columns
+        ]
+
+        results = []
+        for feature in raw_features:
+            data = df[[feature, "anomaly_severity_score"]].dropna()
+            if len(data) < min_sample_size:
+                continue
+            if not pd.api.types.is_numeric_dtype(data[feature]):
+                continue
+
+            median_val = data[feature].median()
+            feat_anomaly = data["anomaly_severity_score"] >= anomaly_threshold
+
+            high_mask = data[feature] > median_val
+            if high_mask.sum() == 0 or (~high_mask).sum() == 0:
+                continue
+
+            p_anomaly_high = float(feat_anomaly[high_mask].mean())
+            p_anomaly_low = float(feat_anomaly[~high_mask].mean())
+
+            lift_high = (
+                p_anomaly_high / base_anomaly_rate if base_anomaly_rate > 0 else 1.0
+            )
+            lift_low = (
+                p_anomaly_low / base_anomaly_rate if base_anomaly_rate > 0 else 1.0
+            )
+
+            results.append(
+                {
+                    "feature": feature,
+                    "p_anomaly_high": p_anomaly_high,
+                    "p_anomaly_low": p_anomaly_low,
+                    "lift_high": lift_high,
+                    "lift_low": lift_low,
+                    "separation": abs(p_anomaly_high - p_anomaly_low),
+                    "base_anomaly_rate": base_anomaly_rate,
+                }
+            )
+
+        if not results:
+            return pd.DataFrame(columns=_empty_cols)
+
+        return pd.DataFrame(results).sort_values("separation", ascending=False)
 
 
 @dataclass

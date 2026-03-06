@@ -427,10 +427,6 @@ SELECT
     csf.marketing_vs_5y_avg,
     csf.sga_vs_5y_avg,
     csf.sga_efficiency_trend,
-    csf.opex_to_revenue AS opex_to_revenue_fq,
-    csf.opex_to_revenue_fy,
-    csf.opex_qoq_growth,
-    csf.opex_yoy_growth,
 
     -- calc_rnd_temporal_features
     rtf.rnd_ltm,

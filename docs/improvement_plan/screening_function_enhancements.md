@@ -1,17 +1,20 @@
-"""
-Stock screening and filtering utilities for feature analytics.
+# Dynamic Parameter Generation for Screening Functions
 
-This module provides functions for:
-- Multi-factor stock screening
-- Quality scoring and ranking
-- Feature-based filtering
-- Investment strategy screening
-"""
+Instead of relying on hardcoded thresholds (like `min_fscore=5`, `max_pe_ratio=30`, etc.), we can derive them from the
+actual data distribution using the statistical analysis functions. This makes the screeners adaptive to different market
+regimes and datasets.
 
-from __future__ import annotations
+Here's the approach:
 
-from typing import Optional
+1. **Add a utility function** that computes distribution-aware thresholds from `run_category_probability_analytics`
+2. **Modify each screener** to optionally accept `"auto"` or `None` for parameters, triggering dynamic computation
 
+---
+
+## 1. Add the dynamic threshold engine
+
+```python
+# ... existing code ...
 import pandas as pd
 
 
@@ -35,7 +38,7 @@ def _compute_dynamic_thresholds(
     df : pd.DataFrame
         Input data used to estimate distributions.
     feature_threshold_specs : dict[str, dict]
-        Mapping of feature name -> spec dict with keys:
+        Mapping of feature name → spec dict with keys:
         - 'direction': 'min' (keep above threshold) or 'max' (keep below)
         - 'percentile': target percentile for the cutoff (e.g. 25 for Q1)
         - 'fallback': hardcoded default if the feature is missing or
@@ -44,9 +47,9 @@ def _compute_dynamic_thresholds(
     Returns
     -------
     dict[str, float]
-        Mapping of feature name -> computed threshold value.
+        Mapping of feature name → computed threshold value.
     """
-    from finance_ml.analytics.statistical_analysis import run_category_probability_analytics
+    from statistical_analysis import run_category_probability_analytics
 
     features = [f for f in feature_threshold_specs if f in df.columns]
     thresholds: dict[str, float] = {}
@@ -117,30 +120,26 @@ def _compute_dynamic_thresholds(
 
     return thresholds
 
-
 # =============================================================================
 # Column resolution helpers (align with equities_schema_metadata aliases)
 # =============================================================================
+# ... existing code ...
+```
 
+## 2. Modify the screening functions
 
-def _resolve_col(df: pd.DataFrame, *candidates: str) -> str | None:
-    """Return the first column name present in df, or None."""
-    for col in candidates:
-        if col in df.columns:
-            return col
-    return None
-
-
+```python
+# ... existing code ...
 def create_enhanced_screener(
-    df: pd.DataFrame,
-    min_fscore: int | None = None,
-    min_quality_momentum: float | None = None,
-    max_distress_risk: float | None = None,
-    min_eps_trajectory: float | None = None,
-    min_fcf_positive_years: int | None = None,
-    require_deleveraging: bool = False,
-    require_secular_trend: bool = False,
-    sector_filter: str = "All",
+        df: pd.DataFrame,
+        min_fscore: int | None = None,
+        min_quality_momentum: float | None = None,
+        max_distress_risk: float | None = None,
+        min_eps_trajectory: float | None = None,
+        min_fcf_positive_years: int | None = None,
+        require_deleveraging: bool = False,
+        require_secular_trend: bool = False,
+        sector_filter: str = "All",
 ) -> pd.DataFrame:
     """
     Enhanced stock screener with multiple quality and momentum criteria.
@@ -150,17 +149,17 @@ def create_enhanced_screener(
     df : pd.DataFrame
         Input DataFrame with stock features
     min_fscore : int or None
-        Minimum Piotroski F-Score (0-9). None -> derived from distribution
+        Minimum Piotroski F-Score (0-9). None → derived from distribution
         (25th percentile of fitted distribution).
     min_quality_momentum : float or None
-        Minimum quality momentum score. None -> 25th percentile.
+        Minimum quality momentum score. None → 25th percentile.
     max_distress_risk : float or None
         Maximum distress risk score (inverted: higher = safer).
-        None -> 75th percentile.
+        None → 75th percentile.
     min_eps_trajectory : float or None
-        Minimum EPS trajectory score. None -> 25th percentile.
+        Minimum EPS trajectory score. None → 25th percentile.
     min_fcf_positive_years : int or None
-        Minimum FCF positive years (0-5). None -> 25th percentile.
+        Minimum FCF positive years (0-5). None → 25th percentile.
     require_deleveraging : bool, default False
         Only stocks actively reducing debt
     require_secular_trend : bool, default False
@@ -219,10 +218,10 @@ def create_enhanced_screener(
 
     # Apply filters
     mask = (
-        (df["piotroski_f_score"] >= eff_min_fscore)
-        & (df["combined_distress_risk_score"] >= (100 - eff_max_distress))
-        & (df["eps_trajectory_score"] >= eff_min_eps_traj)
-        & (df["fcf_positive_years"] >= eff_min_fcf_yrs)
+            (df["piotroski_f_score"] >= eff_min_fscore)
+            & (df["combined_distress_risk_score"] >= (100 - eff_max_distress))
+            & (df["eps_trajectory_score"] >= eff_min_eps_traj)
+            & (df["fcf_positive_years"] >= eff_min_fcf_yrs)
     )
 
     if require_deleveraging and "debt_deleveraging" in df.columns:
@@ -249,12 +248,12 @@ def create_enhanced_screener(
 
 
 def screen_earnings_quality(
-    df: pd.DataFrame,
-    min_quality_score: float | None = None,
-    max_adjustment_pct: float | None = None,
-    require_positive_revisions: bool = False,
-    min_positive_years: int | None = None,
-    sector_filter: str = "All",
+        df: pd.DataFrame,
+        min_quality_score: float | None = None,
+        max_adjustment_pct: float | None = None,
+        require_positive_revisions: bool = False,
+        min_positive_years: int | None = None,
+        sector_filter: str = "All",
 ) -> pd.DataFrame:
     """
     Screen stocks based on earnings quality criteria.
@@ -264,13 +263,13 @@ def screen_earnings_quality(
     df : pd.DataFrame
         Input DataFrame
     min_quality_score : float or None
-        Minimum earnings quality composite score (0-100). None -> 25th pctl.
+        Minimum earnings quality composite score (0-100). None → 25th pctl.
     max_adjustment_pct : float or None
-        Maximum absolute EPS adjustment percentage. None -> 75th pctl.
+        Maximum absolute EPS adjustment percentage. None → 75th pctl.
     require_positive_revisions : bool, default False
         Only include stocks with positive GAAP revision flag
     min_positive_years : int or None
-        Minimum net income positive years (0-5). None -> 25th pctl.
+        Minimum net income positive years (0-5). None → 25th pctl.
     sector_filter : str, default 'All'
         Filter by sector
 
@@ -328,12 +327,12 @@ def screen_earnings_quality(
 
 
 def screen_value_opportunities(
-    df: pd.DataFrame,
-    max_pe_ratio: float | None = None,
-    min_upside_potential: float | None = None,
-    max_price_to_tangible_book: float | None = None,
-    min_quality_score: float | None = None,
-    require_positive_fcf: bool = True,
+        df: pd.DataFrame,
+        max_pe_ratio: float | None = None,
+        min_upside_potential: float | None = None,
+        max_price_to_tangible_book: float | None = None,
+        min_quality_score: float | None = None,
+        require_positive_fcf: bool = True,
 ) -> pd.DataFrame:
     """
     Screen for value investment opportunities.
@@ -343,13 +342,13 @@ def screen_value_opportunities(
     df : pd.DataFrame
         Input DataFrame
     max_pe_ratio : float or None
-        Maximum P/E ratio. None -> 75th percentile of fitted distribution.
+        Maximum P/E ratio. None → 75th percentile of fitted distribution.
     min_upside_potential : float or None
-        Minimum analyst upside potential (%). None -> 25th pctl.
+        Minimum analyst upside potential (%). None → 25th pctl.
     max_price_to_tangible_book : float or None
-        Maximum price to tangible book ratio. None -> 75th pctl.
+        Maximum price to tangible book ratio. None → 75th pctl.
     min_quality_score : float or None
-        Minimum quality score. None -> 25th pctl.
+        Minimum quality score. None → 25th pctl.
     require_positive_fcf : bool, default True
         Require positive free cash flow
 
@@ -390,7 +389,7 @@ def screen_value_opportunities(
 
     if "price_to_tangible_book" in df.columns:
         mask &= (df["price_to_tangible_book"] > 0) & (
-            df["price_to_tangible_book"] <= eff_max_ptb
+                df["price_to_tangible_book"] <= eff_max_ptb
         )
 
     if "piotroski_f_score" in df.columns:
@@ -408,12 +407,12 @@ def screen_value_opportunities(
 
 
 def screen_growth_momentum(
-    df: pd.DataFrame,
-    min_revenue_growth: float | None = None,
-    min_eps_growth: float | None = None,
-    min_price_momentum_1y: float | None = None,
-    min_secular_trend_score: float | None = None,
-    require_rnd_investment: bool = False,
+        df: pd.DataFrame,
+        min_revenue_growth: float | None = None,
+        min_eps_growth: float | None = None,
+        min_price_momentum_1y: float | None = None,
+        min_secular_trend_score: float | None = None,
+        require_rnd_investment: bool = False,
 ) -> pd.DataFrame:
     """
     Screen for growth and momentum stocks.
@@ -423,13 +422,13 @@ def screen_growth_momentum(
     df : pd.DataFrame
         Input DataFrame
     min_revenue_growth : float or None
-        Minimum revenue YoY growth (%). None -> 25th pctl.
+        Minimum revenue YoY growth (%). None → 25th pctl.
     min_eps_growth : float or None
-        Minimum EPS YoY growth (%). None -> 25th pctl.
+        Minimum EPS YoY growth (%). None → 25th pctl.
     min_price_momentum_1y : float or None
-        Minimum 1-year price momentum (%). None -> 25th pctl.
+        Minimum 1-year price momentum (%). None → 25th pctl.
     min_secular_trend_score : float or None
-        Minimum long-term trend score. None -> 25th pctl.
+        Minimum long-term trend score. None → 25th pctl.
     require_rnd_investment : bool, default False
         Require R&D investment
 
@@ -488,12 +487,12 @@ def screen_growth_momentum(
 
 
 def screen_dividend_quality(
-    df: pd.DataFrame,
-    min_dividend_yield: float | None = None,
-    min_dividend_streak: int | None = None,
-    max_payout_ratio: float | None = None,
-    min_fcf_coverage: float | None = None,
-    require_dividend_growth: bool = True,
+        df: pd.DataFrame,
+        min_dividend_yield: float | None = None,
+        min_dividend_streak: int | None = None,
+        max_payout_ratio: float | None = None,
+        min_fcf_coverage: float | None = None,
+        require_dividend_growth: bool = True,
 ) -> pd.DataFrame:
     """
     Screen for quality dividend stocks.
@@ -503,13 +502,13 @@ def screen_dividend_quality(
     df : pd.DataFrame
         Input DataFrame
     min_dividend_yield : float or None
-        Minimum dividend yield (%). None -> 25th pctl.
+        Minimum dividend yield (%). None → 25th pctl.
     min_dividend_streak : int or None
-        Minimum consecutive years of dividends. None -> 25th pctl.
+        Minimum consecutive years of dividends. None → 25th pctl.
     max_payout_ratio : float or None
-        Maximum dividend payout ratio (%). None -> 75th pctl.
+        Maximum dividend payout ratio (%). None → 75th pctl.
     min_fcf_coverage : float or None
-        Minimum FCF dividend coverage ratio. None -> 25th pctl.
+        Minimum FCF dividend coverage ratio. None → 25th pctl.
     require_dividend_growth : bool, default True
         Require expected dividend growth
 
@@ -567,10 +566,10 @@ def screen_dividend_quality(
 
 
 def screen_valuation_reversion_candidates(
-    df: pd.DataFrame,
-    min_discount_pct: float | None = None,
-    min_quality_score: float | None = None,
-    max_distress_risk: float | None = None,
+        df: pd.DataFrame,
+        min_discount_pct: float | None = None,
+        min_quality_score: float | None = None,
+        max_distress_risk: float | None = None,
 ) -> pd.DataFrame:
     """
     Find stocks trading at a deep discount to their 3-year historical mean
@@ -581,12 +580,12 @@ def screen_valuation_reversion_candidates(
     df : pd.DataFrame
         Input DataFrame
     min_discount_pct : float or None
-        Minimum discount % vs 3Y avg. None -> derived from p_e_vs_3y_avg
+        Minimum discount % vs 3Y avg. None → derived from p_e_vs_3y_avg
         distribution (25th percentile inverted).
     min_quality_score : float or None
-        Minimum quality score. None -> 25th pctl.
+        Minimum quality score. None → 25th pctl.
     max_distress_risk : float or None
-        Maximum distress risk. None -> 75th pctl.
+        Maximum distress risk. None → 75th pctl.
 
     Features: p_e_vs_3y_avg, ev_ebitda_vs_3y_avg, p_b_momentum_yoy
     """
@@ -631,10 +630,10 @@ def screen_valuation_reversion_candidates(
 
 
 def screen_integrity_filtered_growth(
-    df: pd.DataFrame,
-    min_revenue_growth: float | None = None,
-    min_accounting_quality: float | None = None,
-    max_dilution_score: float | None = None,
+        df: pd.DataFrame,
+        min_revenue_growth: float | None = None,
+        min_accounting_quality: float | None = None,
+        max_dilution_score: float | None = None,
 ) -> pd.DataFrame:
     """
     Growth portfolio filter that excludes companies with low accounting quality
@@ -645,11 +644,11 @@ def screen_integrity_filtered_growth(
     df : pd.DataFrame
         Input DataFrame
     min_revenue_growth : float or None
-        Minimum revenue growth %. None -> 75th pctl (growth filter is selective).
+        Minimum revenue growth %. None → 75th pctl (growth filter is selective).
     min_accounting_quality : float or None
-        Minimum accounting quality score. None -> 25th pctl.
+        Minimum accounting quality score. None → 25th pctl.
     max_dilution_score : float or None
-        Maximum dilution score. None -> 75th pctl.
+        Maximum dilution score. None → 75th pctl.
 
     Features: accounting_quality_score, dilution_score, merger_impact_ratio
     """
@@ -693,12 +692,12 @@ def screen_integrity_filtered_growth(
 
 
 def screen_financial_health(
-    df: pd.DataFrame,
-    min_distress_score: float | None = None,
-    max_debt_to_equity: float | None = None,
-    min_current_ratio: float | None = None,
-    min_interest_coverage: float | None = None,
-    require_positive_wc: bool = True,
+        df: pd.DataFrame,
+        min_distress_score: float | None = None,
+        max_debt_to_equity: float | None = None,
+        min_current_ratio: float | None = None,
+        min_interest_coverage: float | None = None,
+        require_positive_wc: bool = True,
 ) -> pd.DataFrame:
     """
     Screen for financially healthy companies.
@@ -708,13 +707,13 @@ def screen_financial_health(
     df : pd.DataFrame
         Input DataFrame
     min_distress_score : float or None
-        Minimum distress risk score (higher = safer). None -> 25th pctl.
+        Minimum distress risk score (higher = safer). None → 25th pctl.
     max_debt_to_equity : float or None
-        Maximum debt-to-equity ratio. None -> 75th pctl.
+        Maximum debt-to-equity ratio. None → 75th pctl.
     min_current_ratio : float or None
-        Minimum current ratio. None -> 25th pctl.
+        Minimum current ratio. None → 25th pctl.
     min_interest_coverage : float or None
-        Minimum interest coverage ratio. None -> 25th pctl.
+        Minimum interest coverage ratio. None → 25th pctl.
     require_positive_wc : bool, default True
         Require positive working capital
 
@@ -772,116 +771,19 @@ def screen_financial_health(
         result = result.sort_values("combined_distress_risk_score", ascending=False)
 
     return result
+# ... existing code ...
+```
 
+## 3. Update the remaining screeners
 
-def rank_stocks_by_composite_score(
-    df: pd.DataFrame, weights: Optional[dict] = None, export: bool = False
-) -> pd.DataFrame:
-    """
-    Rank stocks by composite quality score with customizable weights.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame
-    weights : dict, optional
-        Dictionary of score weights. Default weights:
-        - piotroski_f_score: 0.25
-        - combined_distress_risk_score: 0.25
-        - earnings_quality_composite: 0.25
-        - cash_flow_quality_score: 0.25
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with composite_score column, sorted by score
-
-    Examples
-    --------
-    >>> ranked = rank_stocks_by_composite_score(df)
-    >>> top_10 = ranked.head(10)
-    """
-    if weights is None:
-        weights = {
-            "piotroski_f_score": 0.25,
-            "combined_distress_risk_score": 0.25,
-            "earnings_quality_composite": 0.25,
-            "cash_flow_quality_score": 0.25,
-        }
-
-    result = df.copy()
-    result["composite_score"] = 0
-
-    for score_col, weight in weights.items():
-        if score_col in result.columns:
-            # Normalize to 0-100 scale
-            if score_col == "piotroski_f_score":
-                normalized = result[score_col] / 9 * 100
-            else:
-                normalized = result[score_col]
-
-            result["composite_score"] += normalized.fillna(50) * weight
-
-    result = result.sort_values("composite_score", ascending=False)
-
-    if export:
-        try:
-            from finance_ml.analytics.data_utils import export_to_analytics_db
-
-            export_cols = ["ticker", "name", "sector", "industry", "composite_score"]
-            available = [c for c in export_cols if c in result.columns]
-            export_to_analytics_db(result[available], "composite_scores_statistics")
-        except Exception:
-            pass
-
-    return result
-
-
-def create_sector_relative_ranking(
-    df: pd.DataFrame, metric: str, sector_col: str = "industry"
-) -> pd.DataFrame:
-    """
-    Create sector-relative rankings for a metric.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame
-    metric : str
-        Metric column name to rank
-    sector_col : str, default 'industry'
-        Sector grouping column
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with sector_rank and sector_percentile columns
-
-    Examples
-    --------
-    >>> ranked = create_sector_relative_ranking(df, 'roe')
-    >>> top_in_sector = ranked[ranked['sector_percentile'] > 75]
-    """
-    if metric not in df.columns or sector_col not in df.columns:
-        return df
-
-    result = df.copy()
-
-    # Rank within sector
-    result["sector_rank"] = result.groupby(sector_col)[metric].rank(ascending=False, method="min")
-
-    # Calculate percentile within sector
-    result["sector_percentile"] = result.groupby(sector_col)[metric].rank(pct=True) * 100
-
-    return result
-
-
+```python
+# ... existing code ...
 def screen_garp_opportunities(
-    df: pd.DataFrame,
-    max_peg_ratio: float | None = None,
-    min_eps_growth: float | None = None,
-    max_pe_ratio: float | None = None,
-    min_quality_score: float | None = None,
+        df: pd.DataFrame,
+        max_peg_ratio: float | None = None,
+        min_eps_growth: float | None = None,
+        max_pe_ratio: float | None = None,
+        min_quality_score: float | None = None,
 ) -> pd.DataFrame:
     """
     Screen for Growth at a Reasonable Price (GARP) opportunities.
@@ -893,13 +795,13 @@ def screen_garp_opportunities(
     df : pd.DataFrame
         Input DataFrame
     max_peg_ratio : float or None
-        Maximum PEG ratio. None -> 75th pctl of fitted distribution.
+        Maximum PEG ratio. None → 75th pctl of fitted distribution.
     min_eps_growth : float or None
-        Minimum EPS growth (%). None -> 25th pctl.
+        Minimum EPS growth (%). None → 25th pctl.
     max_pe_ratio : float or None
-        Maximum P/E ratio. None -> 75th pctl.
+        Maximum P/E ratio. None → 75th pctl.
     min_quality_score : float or None
-        Minimum quality score (0-100). None -> 25th pctl.
+        Minimum quality score (0-100). None → 25th pctl.
 
     Returns
     -------
@@ -948,11 +850,11 @@ def screen_garp_opportunities(
 
 
 def screen_high_yield_safe_dividends(
-    df: pd.DataFrame,
-    min_yield: float | None = None,
-    max_payout: float | None = None,
-    min_distress_score: float | None = None,
-    min_fcf_coverage: float | None = None,
+        df: pd.DataFrame,
+        min_yield: float | None = None,
+        max_payout: float | None = None,
+        min_distress_score: float | None = None,
+        min_fcf_coverage: float | None = None,
 ) -> pd.DataFrame:
     """
     Screen for high-yielding dividends that are well-covered and safe.
@@ -962,13 +864,13 @@ def screen_high_yield_safe_dividends(
     df : pd.DataFrame
         Input DataFrame
     min_yield : float or None
-        Minimum dividend yield (%). None -> 25th pctl.
+        Minimum dividend yield (%). None → 25th pctl.
     max_payout : float or None
-        Maximum dividend payout ratio (%). None -> 75th pctl.
+        Maximum dividend payout ratio (%). None → 75th pctl.
     min_distress_score : float or None
-        Minimum financial health score. None -> 25th pctl.
+        Minimum financial health score. None → 25th pctl.
     min_fcf_coverage : float or None
-        Minimum FCF dividend coverage. None -> 25th pctl.
+        Minimum FCF dividend coverage. None → 25th pctl.
 
     Returns
     -------
@@ -1015,228 +917,25 @@ def screen_high_yield_safe_dividends(
         result = result.sort_values(yield_col, ascending=False)
 
     return result
+```
 
+---
 
-def screen_low_volatility_quality(
-    df: pd.DataFrame,
-    max_volatility_1y: float | None = None,
-    min_quality_score: float | None = None,
-    min_beta_stability: float | None = None,
-    max_beta_1y: float | None = None,
-    require_low_vol_regime: bool = False,
-) -> pd.DataFrame:
-    """
-    Screen for low-volatility, high-quality stocks.
+## How it works
 
-    Leverages volatility surface features (Enhancement 2) and beta risk
-    features (Enhancement 3) for risk-adjusted stock selection.
+| Layer                                 | What it does                                                                                                                                               |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`_compute_dynamic_thresholds`**     | Central engine that takes a `{feature → spec}` dict and returns computed cutoffs                                                                           |
+| **Strategy 1 — Fitted distribution**  | Uses `fit_distributions_by_category` (Normal / Student-t / Skew Normal, selected by AIC) to compute the exact quantile from the best-fit CDF               |
+| **Strategy 2 — Bayesian posterior**   | Falls back to `bayesian_category_analysis` posterior mean ± std and draws the quantile from the posterior Normal                                           |
+| **Strategy 3 — Empirical percentile** | Last resort: simple `data.quantile()`                                                                                                                      |
+| **Each screener**                     | Parameters default to `None`. When `None`, the spec is added; when the user passes an explicit value, it's used directly — **full backward compatibility** |
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame with volatility and quality features
-    max_volatility_1y : float or None
-        Maximum 1-year volatility. None -> 75th pctl.
-    min_quality_score : float or None
-        Minimum Piotroski F-Score. None -> 25th pctl.
-    min_beta_stability : float or None
-        Minimum beta stability score. None -> 25th pctl.
-    max_beta_1y : float or None
-        Maximum 1-year beta. None -> 75th pctl.
-    require_low_vol_regime : bool, default False
-        Only include stocks in low-volatility regime
+### Key design choices
 
-    Returns
-    -------
-    pd.DataFrame
-        Low-volatility quality stocks sorted by volatility
-    """
-    vol_col = _resolve_col(df, "volatility_1y", "volatility_regime")
-
-    specs: dict[str, dict] = {}
-    if max_volatility_1y is None and vol_col is not None:
-        specs[vol_col] = {"direction": "max", "percentile": 75, "fallback": 30}
-    if min_quality_score is None:
-        specs["piotroski_f_score"] = {"direction": "min", "percentile": 25, "fallback": 5}
-    if min_beta_stability is None and "beta_stability_score" in df.columns:
-        specs["beta_stability_score"] = {"direction": "min", "percentile": 25, "fallback": 50}
-    if max_beta_1y is None and "beta_1y" in df.columns:
-        specs["beta_1y"] = {"direction": "max", "percentile": 75, "fallback": 1.2}
-
-    dynamic = _compute_dynamic_thresholds(df, specs) if specs else {}
-
-    eff_max_vol = max_volatility_1y if max_volatility_1y is not None else dynamic.get(vol_col, 30) if vol_col else 30
-    eff_min_quality = min_quality_score if min_quality_score is not None else dynamic.get("piotroski_f_score", 5)
-    eff_min_beta_stab = min_beta_stability if min_beta_stability is not None else dynamic.get("beta_stability_score", 50)
-    eff_max_beta = max_beta_1y if max_beta_1y is not None else dynamic.get("beta_1y", 1.2)
-
-    mask = pd.Series([True] * len(df), index=df.index)
-
-    if vol_col is not None and vol_col in df.columns:
-        mask &= df[vol_col] <= eff_max_vol
-
-    if "piotroski_f_score" in df.columns:
-        mask &= df["piotroski_f_score"] >= eff_min_quality
-
-    if "beta_stability_score" in df.columns:
-        mask &= df["beta_stability_score"] >= eff_min_beta_stab
-
-    if "beta_1y" in df.columns:
-        mask &= df["beta_1y"] <= eff_max_beta
-
-    if require_low_vol_regime and "volatility_compression" in df.columns:
-        mask &= df["volatility_compression"] > 0
-
-    result = df[mask].copy()
-
-    if vol_col is not None and vol_col in result.columns:
-        result = result.sort_values(vol_col)
-
-    return result
-
-
-def screen_fcf_growth_compounders(
-    df: pd.DataFrame,
-    min_fcf_est_cagr: float | None = None,
-    min_fcf_positive_years: int | None = None,
-    max_effective_tax_rate: float | None = None,
-    require_net_buyback: bool = False,
-    min_operating_leverage: float | None = None,
-) -> pd.DataFrame:
-    """
-    Screen for FCF growth compounders with favorable tax and capital allocation.
-
-    Leverages FCF estimate curve (Enhancement 9), tax rate features
-    (Enhancement 4), share dilution tracking (Enhancement 12), and
-    OpEx temporal features (Enhancement 5).
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame with FCF, tax, and dilution features
-    min_fcf_est_cagr : float or None
-        Minimum estimated FCF CAGR (%). None -> 25th pctl.
-    min_fcf_positive_years : int or None
-        Minimum FCF positive years. None -> 25th pctl.
-    max_effective_tax_rate : float or None
-        Maximum effective tax rate. None -> 75th pctl.
-    require_net_buyback : bool, default False
-        Only include stocks with net share buybacks
-    min_operating_leverage : float or None
-        Minimum operating leverage score. None -> 25th pctl.
-
-    Returns
-    -------
-    pd.DataFrame
-        FCF compounders sorted by estimated FCF CAGR
-    """
-    specs: dict[str, dict] = {}
-    if min_fcf_est_cagr is None and "fcf_est_cagr_5y" in df.columns:
-        specs["fcf_est_cagr_5y"] = {"direction": "min", "percentile": 25, "fallback": 5}
-    if min_fcf_positive_years is None and "fcf_positive_years" in df.columns:
-        specs["fcf_positive_years"] = {"direction": "min", "percentile": 25, "fallback": 3}
-    if max_effective_tax_rate is None and "effective_tax_rate_ltm" in df.columns:
-        specs["effective_tax_rate_ltm"] = {"direction": "max", "percentile": 75, "fallback": 0.35}
-    if min_operating_leverage is None and "operating_leverage_score" in df.columns:
-        specs["operating_leverage_score"] = {"direction": "min", "percentile": 25, "fallback": 0}
-
-    dynamic = _compute_dynamic_thresholds(df, specs) if specs else {}
-
-    eff_min_cagr = min_fcf_est_cagr if min_fcf_est_cagr is not None else dynamic.get("fcf_est_cagr_5y", 5)
-    eff_min_fcf_yrs = min_fcf_positive_years if min_fcf_positive_years is not None else int(
-        dynamic.get("fcf_positive_years", 3))
-    eff_max_tax = max_effective_tax_rate if max_effective_tax_rate is not None else dynamic.get(
-        "effective_tax_rate_ltm", 0.35)
-    eff_min_op_lev = min_operating_leverage if min_operating_leverage is not None else dynamic.get(
-        "operating_leverage_score", 0)
-
-    mask = pd.Series([True] * len(df), index=df.index)
-
-    if "fcf_est_cagr_5y" in df.columns:
-        mask &= df["fcf_est_cagr_5y"] >= eff_min_cagr
-
-    if "fcf_positive_years" in df.columns:
-        mask &= df["fcf_positive_years"] >= eff_min_fcf_yrs
-
-    if "effective_tax_rate_ltm" in df.columns:
-        mask &= df["effective_tax_rate_ltm"] <= eff_max_tax
-
-    if require_net_buyback and "net_buyback_flag" in df.columns:
-        mask &= df["net_buyback_flag"] == 1
-
-    if "operating_leverage_score" in df.columns:
-        mask &= df["operating_leverage_score"] >= eff_min_op_lev
-
-    result = df[mask].copy()
-
-    if "fcf_est_cagr_5y" in result.columns:
-        result = result.sort_values("fcf_est_cagr_5y", ascending=False)
-
-    return result
-
-
-def screen_total_return_leaders(
-    df: pd.DataFrame,
-    min_total_return_ytd: float | None = None,
-    min_total_return_5y: float | None = None,
-    min_analyst_rating: float | None = None,
-    max_volatility: float | None = None,
-) -> pd.DataFrame:
-    """
-    Screen for total return leaders using direct reference columns.
-
-    Leverages Enhancement 1 direct reference columns (total returns,
-    analyst rating) combined with volatility surface features.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame with total return and analyst features
-    min_total_return_ytd : float or None
-        Minimum YTD total return (%). None -> 25th pctl.
-    min_total_return_5y : float or None
-        Minimum 5Y total return (%). None -> 25th pctl.
-    min_analyst_rating : float or None
-        Minimum analyst rating (1-5 scale). None -> no filter.
-    max_volatility : float or None
-        Maximum 1Y volatility. None -> 75th pctl.
-
-    Returns
-    -------
-    pd.DataFrame
-        Total return leaders sorted by YTD return
-    """
-    specs: dict[str, dict] = {}
-    if min_total_return_ytd is None and "total_return_ytd" in df.columns:
-        specs["total_return_ytd"] = {"direction": "min", "percentile": 25, "fallback": 0}
-    if min_total_return_5y is None and "total_return_5y" in df.columns:
-        specs["total_return_5y"] = {"direction": "min", "percentile": 25, "fallback": 0}
-    if max_volatility is None and "volatility_1y" in df.columns:
-        specs["volatility_1y"] = {"direction": "max", "percentile": 75, "fallback": 40}
-
-    dynamic = _compute_dynamic_thresholds(df, specs) if specs else {}
-
-    eff_min_ytd = min_total_return_ytd if min_total_return_ytd is not None else dynamic.get("total_return_ytd", 0)
-    eff_min_5y = min_total_return_5y if min_total_return_5y is not None else dynamic.get("total_return_5y", 0)
-    eff_max_vol = max_volatility if max_volatility is not None else dynamic.get("volatility_1y", 40)
-
-    mask = pd.Series([True] * len(df), index=df.index)
-
-    if "total_return_ytd" in df.columns:
-        mask &= df["total_return_ytd"] >= eff_min_ytd
-
-    if "total_return_5y" in df.columns:
-        mask &= df["total_return_5y"] >= eff_min_5y
-
-    if min_analyst_rating is not None and "analyst_rating" in df.columns:
-        mask &= df["analyst_rating"] <= min_analyst_rating  # lower = more bullish
-
-    if "volatility_1y" in df.columns:
-        mask &= df["volatility_1y"] <= eff_max_vol
-
-    result = df[mask].copy()
-
-    if "total_return_ytd" in result.columns:
-        result = result.sort_values("total_return_ytd", ascending=False)
-
-    return result
+- **`"direction"`** (`"min"` / `"max"`) documents intent but the threshold computation is the same — you pick the
+  *percentile* that makes sense (e.g., 25th for "keep above" filters, 75th for "keep below" filters).
+- **`"fallback"`** matches the original hardcoded defaults so behavior is identical if the statistical pipeline can't
+  run (missing columns, too few rows, etc.).
+- **`rank_stocks_by_composite_score`** and **`create_sector_relative_ranking`** are left unchanged — they don't use
+  threshold-based filtering.

@@ -1042,3 +1042,290 @@ def create_accounting_anomaly_dashboard(
     fig.update_yaxes(title_text="Mahalanobis Distance", row=2, col=2)
 
     return fig
+
+
+def create_anomaly_severity_dashboard(
+        df: pd.DataFrame,
+        group_col: str = "industry",
+        top_n: int = 25,
+) -> go.Figure:
+    """
+    Multi-panel dashboard for Bayesian-informed accounting anomaly severity.
+
+    Visualises the enriched columns produced by
+    :class:`~finance_ml.analytics.probability_analytics.AccountingAnomalyProbabilityModel`:
+
+    Panels:
+    1. Severity Score vs Conditional P(Anomaly) scatter — colour by tier
+    2. Top-N stocks by anomaly severity (horizontal bar)
+    3. Sector anomaly percentile box-plot
+    4. Multi-flag alert distribution (pie) + risk-rank histogram overlay
+    5. Conditional probability density by anomaly tier
+    6. Severity vs Risk Rank scatter with multi-flag highlights
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame produced by ``AccountingAnomalyProbabilityModel.analyze_dataframe``.
+        Expected columns: ``anomaly_severity_score``, ``anomaly_conditional_probability``,
+        ``anomaly_risk_rank``, ``sector_anomaly_percentile``, ``multi_flag_alert``,
+        ``accounting_anomaly_tier``.
+    group_col : str, default 'industry'
+        Column used for sector/industry grouping.
+    top_n : int, default 25
+        Number of top-severity stocks to display in the bar panel.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure with a 6-panel severity analytics dashboard.
+    """
+    if "anomaly_severity_score" not in df.columns:
+        return create_no_data_figure(
+            "Anomaly Severity Dashboard — run AccountingAnomalyProbabilityModel first"
+        )
+
+    tier_colors = {
+        "Clean": "#00A878",
+        "Watch": "#FFD93D",
+        "Flag": "#FF8C42",
+        "Alert": "#E63946",
+    }
+
+    fig = make_subplots(
+        rows=3,
+        cols=2,
+        subplot_titles=(
+            "Severity Score vs Conditional P(Anomaly)",
+            f"Top {top_n} Stocks by Anomaly Severity",
+            "Sector Anomaly Percentile Distribution",
+            "Multi-Flag Alert Breakdown",
+            "Conditional P(Anomaly) Density by Tier",
+            "Severity vs Risk Rank",
+        ),
+        vertical_spacing=0.10,
+        horizontal_spacing=0.12,
+        specs=[
+            [{"type": "scatter"}, {"type": "bar"}],
+            [{"type": "box"}, {"type": "pie"}],
+            [{"type": "histogram"}, {"type": "scatter"}],
+        ],
+    )
+
+    has_tier = "accounting_anomaly_tier" in df.columns
+    has_cond_prob = "anomaly_conditional_probability" in df.columns
+    has_risk_rank = "anomaly_risk_rank" in df.columns
+    has_sector_pct = "sector_anomaly_percentile" in df.columns
+    has_multi_flag = "multi_flag_alert" in df.columns
+    ticker_col = "ticker" if "ticker" in df.columns else None
+
+    # ── Panel 1: Severity vs Conditional Probability scatter ──
+    if has_cond_prob:
+        if has_tier:
+            for tier in ["Clean", "Watch", "Flag", "Alert"]:
+                mask = df["accounting_anomaly_tier"] == tier
+                sub = df.loc[mask]
+                if sub.empty:
+                    continue
+                fig.add_trace(
+                    go.Scatter(
+                        x=sub["anomaly_severity_score"],
+                        y=sub["anomaly_conditional_probability"],
+                        mode="markers",
+                        marker=dict(
+                            size=5,
+                            color=tier_colors.get(tier, "#0A7EA4"),
+                            opacity=0.6,
+                        ),
+                        name=tier,
+                        hovertemplate=(
+                            "<b>%{customdata[0]}</b><br>"
+                            "Severity: %{x:.1f}<br>"
+                            "P(Anomaly): %{y:.3f}<extra></extra>"
+                        )
+                        if ticker_col
+                        else None,
+                        customdata=sub[[ticker_col]].values if ticker_col else None,
+                    ),
+                    row=1,
+                    col=1,
+                )
+        else:
+            fig.add_trace(
+                go.Scatter(
+                    x=df["anomaly_severity_score"],
+                    y=df["anomaly_conditional_probability"],
+                    mode="markers",
+                    marker=dict(size=5, color="#0A7EA4", opacity=0.5),
+                    name="Stocks",
+                ),
+                row=1,
+                col=1,
+            )
+    fig.update_xaxes(title_text="Severity Score", row=1, col=1)
+    fig.update_yaxes(title_text="P(Anomaly)", row=1, col=1)
+
+    # ── Panel 2: Top-N severity bar chart ──
+    top = df.nlargest(top_n, "anomaly_severity_score")
+    labels = top[ticker_col] if ticker_col else top.index.astype(str)
+    bar_colors = (
+        [tier_colors.get(t, "#0A7EA4") for t in top["accounting_anomaly_tier"]]
+        if has_tier
+        else "#E63946"
+    )
+    fig.add_trace(
+        go.Bar(
+            y=labels,
+            x=top["anomaly_severity_score"],
+            orientation="h",
+            marker_color=bar_colors,
+            showlegend=False,
+            hovertemplate="<b>%{y}</b><br>Severity: %{x:.1f}<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+    fig.update_xaxes(title_text="Severity Score", row=1, col=2)
+
+    # ── Panel 3: Sector anomaly percentile box-plot ──
+    if has_sector_pct and group_col in df.columns:
+        sector_medians = (
+            df.groupby(group_col)["sector_anomaly_percentile"]
+            .median()
+            .sort_values(ascending=False)
+        )
+        top_sectors = sector_medians.head(12).index.tolist()
+        plot_df = df[df[group_col].isin(top_sectors)]
+        for sector in top_sectors:
+            sec_data = plot_df.loc[
+                plot_df[group_col] == sector, "sector_anomaly_percentile"
+            ]
+            fig.add_trace(
+                go.Box(
+                    y=sec_data,
+                    name=sector[:20],
+                    marker_color="#6C63FF",
+                    showlegend=False,
+                ),
+                row=2,
+                col=1,
+            )
+    fig.update_yaxes(title_text="Sector Anomaly Percentile", row=2, col=1)
+
+    # ── Panel 4: Multi-flag alert pie ──
+    if has_multi_flag:
+        alert_counts = df["multi_flag_alert"].value_counts()
+        pie_labels = [
+            f"Multi-Flag ({int(alert_counts.get(True, 0))})",
+            f"Normal ({int(alert_counts.get(False, 0))})",
+        ]
+        pie_values = [
+            int(alert_counts.get(True, 0)),
+            int(alert_counts.get(False, 0)),
+        ]
+        fig.add_trace(
+            go.Pie(
+                labels=pie_labels,
+                values=pie_values,
+                marker_colors=["#E63946", "#00A878"],
+                textinfo="label+percent",
+                hole=0.35,
+            ),
+            row=2,
+            col=2,
+        )
+
+    # ── Panel 5: Conditional probability density by tier ──
+    if has_cond_prob and has_tier:
+        for tier in ["Clean", "Watch", "Flag", "Alert"]:
+            tier_data = df.loc[
+                df["accounting_anomaly_tier"] == tier,
+                "anomaly_conditional_probability",
+            ].dropna()
+            if len(tier_data) > 0:
+                fig.add_trace(
+                    go.Histogram(
+                        x=tier_data,
+                        name=f"{tier} P(A)",
+                        marker_color=tier_colors.get(tier, "#0A7EA4"),
+                        opacity=0.6,
+                        showlegend=False,
+                    ),
+                    row=3,
+                    col=1,
+                )
+    elif has_cond_prob:
+        fig.add_trace(
+            go.Histogram(
+                x=df["anomaly_conditional_probability"].dropna(),
+                marker_color="#0A7EA4",
+                opacity=0.7,
+                showlegend=False,
+            ),
+            row=3,
+            col=1,
+        )
+    fig.update_xaxes(title_text="Conditional P(Anomaly)", row=3, col=1)
+    fig.update_yaxes(title_text="Count", row=3, col=1)
+
+    # ── Panel 6: Severity vs Risk Rank with multi-flag highlight ──
+    if has_risk_rank:
+        if has_multi_flag:
+            normal = df[~df["multi_flag_alert"]]
+            flagged = df[df["multi_flag_alert"]]
+            fig.add_trace(
+                go.Scatter(
+                    x=normal["anomaly_severity_score"],
+                    y=normal["anomaly_risk_rank"],
+                    mode="markers",
+                    marker=dict(size=4, color="#0A7EA4", opacity=0.3),
+                    name="Normal",
+                    showlegend=False,
+                ),
+                row=3,
+                col=2,
+            )
+            if not flagged.empty:
+                fig.add_trace(
+                    go.Scatter(
+                        x=flagged["anomaly_severity_score"],
+                        y=flagged["anomaly_risk_rank"],
+                        mode="markers",
+                        marker=dict(
+                            size=7,
+                            color="#E63946",
+                            symbol="diamond",
+                            opacity=0.8,
+                        ),
+                        name="Multi-Flag",
+                        showlegend=False,
+                    ),
+                    row=3,
+                    col=2,
+                )
+        else:
+            fig.add_trace(
+                go.Scatter(
+                    x=df["anomaly_severity_score"],
+                    y=df["anomaly_risk_rank"],
+                    mode="markers",
+                    marker=dict(size=4, color="#0A7EA4", opacity=0.4),
+                    showlegend=False,
+                ),
+                row=3,
+                col=2,
+            )
+    fig.update_xaxes(title_text="Severity Score", row=3, col=2)
+    fig.update_yaxes(title_text="Risk Rank (percentile)", row=3, col=2)
+
+    fig.update_layout(
+        title="Accounting Anomaly Severity — Bayesian Analytics Dashboard",
+        template=PLOTLY_TEMPLATE,
+        height=1400,
+        width=1200,
+        showlegend=True,
+        barmode="overlay",
+        margin=dict(l=120, r=40, t=80, b=60),
+    )
+
+    return fig

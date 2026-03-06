@@ -69,6 +69,7 @@ from finance_ml.analytics.optimized_ops import (
 
 # --- Probability models ---
 from finance_ml.analytics.probability_analytics import (
+    AccountingAnomalyProbabilityModel,
     CategoryProbabilityAnalyzer,
     CreditRiskProbabilityModel,
     DividendCutProbabilityModel,
@@ -87,11 +88,14 @@ from finance_ml.analytics.screening import (
     rank_stocks_by_composite_score,
     screen_dividend_quality,
     screen_earnings_quality,
+    screen_fcf_growth_compounders,
     screen_financial_health,
     screen_garp_opportunities,
     screen_growth_momentum,
     screen_high_yield_safe_dividends,
     screen_integrity_filtered_growth,
+    screen_low_volatility_quality,
+    screen_total_return_leaders,
     screen_valuation_reversion_candidates,
     screen_value_opportunities,
 )
@@ -102,7 +106,6 @@ from finance_ml.analytics.statistical_analysis import (
     bayesian_earnings_beat_model,
     calculate_conditional_probabilities,
     calculate_ruin_probability,
-    detect_accounting_anomalies,
     fit_distributions_by_category,
     fit_gaussian_copula,
     hierarchical_mcmc_by_sector,
@@ -115,7 +118,6 @@ from finance_ml.analytics.statistical_analysis import (
     run_category_probability_analytics,
     analyze_employee_productivity_frontier,
     analyze_reporting_lag_sentiment,
-    analyze_accounting_anomalies,
 )
 
 # --- InferenceData schema (ArviZ / xarray bridge) ---
@@ -157,6 +159,7 @@ from finance_ml.analytics.visualizations import (
     create_tri_model_posterior_comparison,
     # Quality & risk
     create_accounting_anomaly_dashboard,
+    create_anomaly_severity_dashboard,
     create_altman_zscore_distribution,
     create_beneish_mscore_analysis,
     create_distress_early_warning_dashboard,
@@ -182,6 +185,8 @@ from finance_ml.analytics.visualizations import (
     create_var_analysis,
     # MCSE convergence (for Step 7a parallel MCMC)
     create_mcse_convergence_panel,
+    # Bayesian anomaly conditional probability
+    create_anomaly_conditional_probability_chart,
 )
 
 from finance_ml.logging_config import configure_logging
@@ -1515,13 +1520,29 @@ def run_dividend_safety_analysis(df: pd.DataFrame) -> pd.DataFrame:
 def run_accounting_anomaly_analysis(
         df: pd.DataFrame,
         feature_df: pd.DataFrame | None = None,
+        *,
+        severity_anomaly_weight: float = 0.7,
+        severity_feature_weight: float = 0.3,
+        multi_flag_threshold: int = 3,
+        anomaly_z_threshold: float | None = None,
+        tier_bins: list[float] | None = None,
+        tier_labels: list[str] | None = None,
 ) -> pd.DataFrame:
     """
     Run standalone accounting anomaly detection and analytics.
 
-    Delegates to ``detect_accounting_anomalies`` from statistical_analysis
-    and then to ``analyze_accounting_anomalies`` for extended sector-level
-    and distribution analytics.
+    Delegates to :class:`AccountingAnomalyProbabilityModel` which wraps
+    ``detect_accounting_anomalies`` for multi-layered statistical detection
+    (robust z-scores, distribution fitting, Mahalanobis distance, Benford's
+    Law) and then computes extended analytics including:
+
+    - ``anomaly_severity_score`` — weighted combination of anomaly score
+      and feature count
+    - ``anomaly_risk_rank`` — universe-level percentile rank
+    - ``sector_anomaly_percentile`` — within-sector rank
+    - ``multi_flag_alert`` — boolean threshold flag
+    - ``anomaly_conditional_probability`` — Bayesian-informed per-row
+      conditional P(anomaly) via separation-weighted feature contributions
 
     Parameters
     ----------
@@ -1529,19 +1550,31 @@ def run_accounting_anomaly_analysis(
         Feature DataFrame with quality/risk and earnings columns.
     feature_df : pd.DataFrame or None, optional
         Full feature DataFrame for merging missing accounting columns.
+    severity_anomaly_weight : float, default 0.7
+        Weight for anomaly_score in severity computation.
+    severity_feature_weight : float, default 0.3
+        Weight for feature_count in severity computation.
+    multi_flag_threshold : int, default 3
+        Minimum flagged features to trigger multi_flag_alert.
+    anomaly_z_threshold : float or None
+        Robust z-score threshold for flagging anomalies. None = auto-derived.
+    tier_bins : list[float] or None
+        Bin edges for anomaly tier classification. None = auto-derived.
+    tier_labels : list[str] or None
+        Labels for the tier bins. None = ['Clean', 'Watch', 'Flag', 'Alert'].
 
     Returns
     -------
     pd.DataFrame
         DataFrame with anomaly scores, tiers, per-feature flags,
-        Mahalanobis distance, Benford's Law test, and sector-relative scoring.
+        Mahalanobis distance, Benford's Law test, sector-relative scoring,
+        severity scores, risk ranks, and conditional anomaly probabilities.
     """
     anomaly_df = df.copy()
 
     # Merge accounting quality features from feature views if missing
     _ACCOUNTING_COLS = [
         "exceptional_items_frequency",
-        "non_operating_income_share",
         "gaap_adj_eps_gap_pct",
         "asset_sale_boost",
         "ebitda_adjustment_ratio",
@@ -1596,11 +1629,16 @@ def run_accounting_anomaly_analysis(
                 len(missing_acct),
             )
 
-    # Run multi-layered anomaly detection
-    result = detect_accounting_anomalies(anomaly_df)
-
-    # Run extended analytics (sector breakdown, distribution summary)
-    result = analyze_accounting_anomalies(result)
+    # Use the new model class with configurable parameters
+    model = AccountingAnomalyProbabilityModel(
+        anomaly_z_threshold=anomaly_z_threshold,
+        tier_bins=tier_bins,
+        tier_labels=tier_labels,
+        severity_anomaly_weight=severity_anomaly_weight,
+        severity_feature_weight=severity_feature_weight,
+        multi_flag_threshold=multi_flag_threshold,
+    )
+    result = model.analyze_dataframe(anomaly_df)
 
     logger.info("Accounting anomaly analysis: %d stocks processed", len(result))
     return result
@@ -1722,25 +1760,16 @@ def run_stock_screening(
     """
     screens: dict[str, pd.DataFrame] = {}
 
-    # Quality screening
+    # Quality screening (dynamic thresholds from data distributions)
     try:
-        screens["quality"] = create_enhanced_screener(
-            df_all,
-            min_fscore=6,
-            min_quality_momentum=40,
-            min_fcf_positive_years=3,
-        )
+        screens["quality"] = create_enhanced_screener(df_all)
         logger.info("Quality screen: %d stocks", len(screens["quality"]))
     except Exception as e:
         logger.warning("Quality screening failed: %s", e)
 
     # Earnings quality
     try:
-        screens["earnings_quality"] = screen_earnings_quality(
-            df_all,
-            min_quality_score=60,
-            min_positive_years=3,
-        )
+        screens["earnings_quality"] = screen_earnings_quality(df_all)
         logger.info(
             "Earnings quality screen: %d stocks", len(screens["earnings_quality"])
         )
@@ -1749,66 +1778,42 @@ def run_stock_screening(
 
     # Value opportunities
     try:
-        screens["value"] = screen_value_opportunities(
-            df_all,
-            max_pe_ratio=25,
-            min_upside_potential=20,
-        )
+        screens["value"] = screen_value_opportunities(df_all)
         logger.info("Value screen: %d stocks", len(screens["value"]))
     except Exception as e:
         logger.warning("Value screening failed: %s", e)
 
     # Growth momentum
     try:
-        screens["growth"] = screen_growth_momentum(
-            df_all,
-            min_revenue_growth=10,
-            min_eps_growth=10,
-        )
+        screens["growth"] = screen_growth_momentum(df_all)
         logger.info("Growth screen: %d stocks", len(screens["growth"]))
     except Exception as e:
         logger.warning("Growth screening failed: %s", e)
 
     # GARP (Growth at a Reasonable Price)
     try:
-        screens["garp"] = screen_garp_opportunities(
-            df_all,
-            max_peg_ratio=1.5,
-            min_eps_growth=10,
-        )
+        screens["garp"] = screen_garp_opportunities(df_all)
         logger.info("GARP screen: %d stocks", len(screens["garp"]))
     except Exception as e:
         logger.warning("GARP screening failed: %s", e)
 
     # Dividend quality
     try:
-        screens["dividend"] = screen_dividend_quality(
-            df_all,
-            min_dividend_yield=2.0,
-            min_dividend_streak=3,
-        )
+        screens["dividend"] = screen_dividend_quality(df_all)
         logger.info("Dividend screen: %d stocks", len(screens["dividend"]))
     except Exception as e:
         logger.warning("Dividend screening failed: %s", e)
 
     # Financial health
     try:
-        screens["healthy"] = screen_financial_health(
-            df_all,
-            min_distress_score=70,
-            min_current_ratio=1.2,
-        )
+        screens["healthy"] = screen_financial_health(df_all)
         logger.info("Financial health screen: %d stocks", len(screens["healthy"]))
     except Exception as e:
         logger.warning("Financial health screening failed: %s", e)
 
     # Valuation reversion candidates
     try:
-        screens["valuation_reversion"] = screen_valuation_reversion_candidates(
-            df_all,
-            min_discount_pct=20.0,
-            min_quality_score=50.0,
-        )
+        screens["valuation_reversion"] = screen_valuation_reversion_candidates(df_all)
         logger.info(
             "Valuation reversion screen: %d stocks", len(screens["valuation_reversion"])
         )
@@ -1817,11 +1822,7 @@ def run_stock_screening(
 
     # Integrity-filtered growth
     try:
-        screens["integrity_growth"] = screen_integrity_filtered_growth(
-            df_all,
-            min_revenue_growth=15.0,
-            min_accounting_quality=60.0,
-        )
+        screens["integrity_growth"] = screen_integrity_filtered_growth(df_all)
         logger.info(
             "Integrity growth screen: %d stocks", len(screens["integrity_growth"])
         )
@@ -1830,12 +1831,7 @@ def run_stock_screening(
 
     # High-yield safe dividends
     try:
-        screens["high_yield_safe"] = screen_high_yield_safe_dividends(
-            df_all,
-            min_yield=3.0,
-            max_payout=70.0,
-            min_distress_score=70.0,
-        )
+        screens["high_yield_safe"] = screen_high_yield_safe_dividends(df_all)
         logger.info(
             "High-yield safe dividend screen: %d stocks",
             len(screens["high_yield_safe"]),
@@ -1857,6 +1853,36 @@ def run_stock_screening(
         )
     except Exception as e:
         logger.warning("Sector-relative ranking failed: %s", e)
+
+    # Low-volatility quality (Enhancement 2+3)
+    try:
+        screens["low_vol_quality"] = screen_low_volatility_quality(df_all)
+        logger.info(
+            "Low-volatility quality screen: %d stocks",
+            len(screens["low_vol_quality"]),
+        )
+    except Exception as e:
+        logger.warning("Low-volatility quality screening failed: %s", e)
+
+    # FCF growth compounders (Enhancement 4+5+9+12)
+    try:
+        screens["fcf_compounders"] = screen_fcf_growth_compounders(df_all)
+        logger.info(
+            "FCF compounders screen: %d stocks",
+            len(screens["fcf_compounders"]),
+        )
+    except Exception as e:
+        logger.warning("FCF compounders screening failed: %s", e)
+
+    # Total return leaders (Enhancement 1)
+    try:
+        screens["total_return_leaders"] = screen_total_return_leaders(df_all)
+        logger.info(
+            "Total return leaders screen: %d stocks",
+            len(screens["total_return_leaders"]),
+        )
+    except Exception as e:
+        logger.warning("Total return leaders screening failed: %s", e)
 
     return screens
 
@@ -2133,14 +2159,6 @@ def build_expected_returns_summary(
 
     # Merge anomaly results (accounting anomaly detection columns)
     _ANOMALY_COLS = [
-        "exceptional_items_frequency_anomaly_flag",
-        "gaap_adj_eps_gap_pct_anomaly_flag",
-        "asset_sale_boost_anomaly_flag",
-        "ebitda_adjustment_ratio_anomaly_flag",
-        "eps_adjustment_ratio_anomaly_flag",
-        "exceptional_items_to_ebitda_anomaly_flag",
-        "restructuring_intensity_anomaly_flag",
-        "goodwill_change_rate_anomaly_flag",
         "accounting_anomaly_score",
         "sector_relative_anomaly",
         "anomaly_feature_count",
@@ -2149,6 +2167,7 @@ def build_expected_returns_summary(
         "anomaly_risk_rank",
         "sector_anomaly_percentile",
         "multi_flag_alert",
+        "anomaly_conditional_probability"
     ]
     if (
             anomaly_results is not None
@@ -2177,8 +2196,6 @@ def build_expected_returns_summary(
         "altman_z_score",
         "altman_z_trend",
         "risk_level",
-        "ci_lower",
-        "ci_upper",
         "data_quality_score",
         "wealth_buffer",
         "ruin_probability",
@@ -3339,6 +3356,33 @@ def main(config: PipelineConfig | None = None):
                     f"  Sector-relative outliers (|z| > 2): {sector_outliers:,}"
                 )
 
+            # ── Severity score & conditional probability ──
+            if "anomaly_severity_score" in anomaly_results.columns:
+                sev = anomaly_results["anomaly_severity_score"].dropna()
+                if len(sev) > 0:
+                    _log_and_print(
+                        f"  Severity score — mean: {sev.mean():.2f}, "
+                        f"median: {sev.median():.2f}, max: {sev.max():.2f}"
+                    )
+
+            if "anomaly_conditional_probability" in anomaly_results.columns:
+                cond_p = anomaly_results["anomaly_conditional_probability"].dropna()
+                if len(cond_p) > 0:
+                    _log_and_print(
+                        f"  Conditional P(anomaly) — mean: {cond_p.mean():.3f}, "
+                        f"median: {cond_p.median():.3f}, max: {cond_p.max():.3f}"
+                    )
+
+            if "multi_flag_alert" in anomaly_results.columns:
+                n_alerts = anomaly_results["multi_flag_alert"].sum()
+                _log_and_print(f"  Multi-flag alerts: {int(n_alerts):,}")
+
+            if "anomaly_risk_rank" in anomaly_results.columns:
+                rank_data = anomaly_results["anomaly_risk_rank"].dropna()
+                if len(rank_data) > 0:
+                    top_risk = (rank_data >= 90).sum()
+                    _log_and_print(f"  Stocks in top 10% risk rank: {int(top_risk):,}")
+
             # ── Benford's Law test ──
             if "benford_chi2_pvalue" in anomaly_results.columns:
                 bp = anomaly_results["benford_chi2_pvalue"].dropna()
@@ -3373,6 +3417,11 @@ def main(config: PipelineConfig | None = None):
                        or c.endswith("_dist_pvalue")
                        or c in (
                            "anomaly_feature_count",
+                           "anomaly_severity_score",
+                           "anomaly_risk_rank",
+                           "sector_anomaly_percentile",
+                           "multi_flag_alert",
+                           "anomaly_conditional_probability",
                            "mahalanobis_distance",
                            "sector_relative_anomaly",
                            "benford_chi2_pvalue",
@@ -3679,7 +3728,7 @@ def main(config: PipelineConfig | None = None):
                                 )
                                 for level in xls["level"].unique():
                                     level_df = xls[xls["level"] == level]
-                                    top = level_df.nlargest(3, "posterior_mean")
+                                    top = level_df.nlargest(50, "posterior_mean")
                                     for _, row in top.iterrows():
                                         _log_and_print(
                                             f"     [{level}] {row['group']}: "
@@ -3690,7 +3739,7 @@ def main(config: PipelineConfig | None = None):
                     except Exception as e:
                         logger.debug("Hierarchical MCMC skipped: %s", e)
 
-                top_sectors = sector_analytics.head(5)
+                top_sectors = sector_analytics.head(50)
                 group_col = (
                     "industry" if "industry" in sector_analytics.columns else "sector"
                 )
@@ -4113,6 +4162,18 @@ def main(config: PipelineConfig | None = None):
                 output_dir / "er_accounting_anomaly_dashboard.html"
             )
             _log_and_print("   ✓ er_accounting_anomaly_dashboard.html")
+
+        if not anomaly_results.empty and "anomaly_severity_score" in anomaly_results.columns:
+            create_anomaly_severity_dashboard(anomaly_results).write_html(
+                output_dir / "er_anomaly_severity_dashboard.html"
+            )
+            _log_and_print("   ✓ er_anomaly_severity_dashboard.html")
+
+        if not anomaly_results.empty and "anomaly_conditional_probability" in anomaly_results.columns:
+            create_anomaly_conditional_probability_chart(anomaly_results).write_html(
+                output_dir / "er_anomaly_conditional_probability.html"
+            )
+            _log_and_print("   ✓ er_anomaly_conditional_probability.html")
 
         if not credit.empty and "ruin_probability" in credit.columns:
             create_ruin_probability_diagnostic(

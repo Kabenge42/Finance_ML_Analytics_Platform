@@ -24,7 +24,7 @@ import pandas as pd
 try:
     from numba import jit, prange
 
-    NUMBA_AVAILABLE = True
+    NUMBA_AVAILABLE = False
 except ImportError:
     NUMBA_AVAILABLE = False
 

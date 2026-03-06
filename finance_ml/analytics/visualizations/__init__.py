@@ -10,6 +10,9 @@ Modules:
 - profitability: Margin and profitability charts (DuPont, waterfall, quadrant)
 - technical: Technical analysis charts (momentum ribbon, 52w range, divergence)
 - temporal_analysis: Time series analysis (earnings calendar, inventory, FCF, dividends)
+- category_charts: Per-category charts including volatility surface, tax rate,
+  FCF estimates, OpEx efficiency, asset sales, share dilution, total returns,
+  dividend yield history, and interest income trends
 
 Most visualization functions are already available in the parent
 feature_analytics module. This package can be extended with additional
@@ -117,6 +120,7 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_risk_tier_sunburst",
             "create_distress_early_warning_dashboard",
             "create_accounting_anomaly_dashboard",
+            "create_anomaly_severity_dashboard",
         ],
     ),
     # Growth analysis visualization functions
@@ -174,6 +178,16 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_balance_sheet_composition_chart",
             "create_cost_structure_breakdown",
             "create_unusual_items_heatmap",
+            # Post-Enhancement 1–12 additions
+            "create_volatility_surface_chart",
+            "create_tax_rate_distribution",
+            "create_fcf_estimate_curve",
+            "create_opex_efficiency_scatter",
+            "create_asset_sale_impact_chart",
+            "create_share_dilution_scatter",
+            "create_total_return_comparison",
+            "create_dividend_yield_history_chart",
+            "create_interest_income_trend",
         ],
     ),
     # Probabilistic ArviZ-backed visualization functions
@@ -187,6 +201,7 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_bayesian_category_ridge",
             "create_tri_model_posterior_comparison",
             "create_feature_view_posterior_panel",
+            "create_anomaly_conditional_probability_chart",
         ],
     ),
     # Expected returns pipeline visualization functions

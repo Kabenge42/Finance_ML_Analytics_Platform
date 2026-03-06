@@ -70,6 +70,102 @@ def _normal_normal_conjugate_posterior(
 
 
 # =============================================================================
+# Dynamic threshold computation from statistical distributions
+# =============================================================================
+
+
+def _compute_dynamic_thresholds(
+        df: pd.DataFrame,
+        feature_threshold_specs: dict[str, dict],
+) -> dict[str, float]:
+    """
+    Compute thresholds dynamically from data distributions.
+
+    Uses ``run_category_probability_analytics`` to fit distributions and
+    derive percentile-based or posterior-based cutoffs for each feature.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data used to estimate distributions.
+    feature_threshold_specs : dict[str, dict]
+        Mapping of feature name -> spec dict with keys:
+        - 'direction': 'min' (keep above threshold) or 'max' (keep below)
+        - 'percentile': target percentile for the cutoff (e.g. 25 for Q1)
+        - 'fallback': hardcoded default if the feature is missing or
+          has insufficient data
+
+    Returns
+    -------
+    dict[str, float]
+        Mapping of feature name -> computed threshold value.
+    """
+    features = [f for f in feature_threshold_specs if f in df.columns]
+    thresholds: dict[str, float] = {}
+
+    if not features:
+        return {f: spec["fallback"] for f, spec in feature_threshold_specs.items()}
+
+    analytics = run_category_probability_analytics(
+        df, category_name="dynamic_threshold_estimation", features=features,
+    )
+
+    bayesian = analytics.get("bayesian_results", {})
+    dist_fits = analytics.get("distribution_fits", {})
+    summary = analytics.get("summary_statistics", {})
+
+    for feat, spec in feature_threshold_specs.items():
+        target_pct = spec["percentile"]
+        fallback = spec["fallback"]
+
+        if feat not in df.columns or feat not in summary:
+            thresholds[feat] = fallback
+            continue
+
+        data = df[feat].dropna()
+        if len(data) < 30:
+            thresholds[feat] = fallback
+            continue
+
+        # Strategy 1: Use fitted distribution quantile (most accurate)
+        if feat in dist_fits:
+            fit_info = dist_fits[feat]
+            dist_name = fit_info.get("best_distribution")
+            params = fit_info.get("params")
+            if dist_name and params:
+                dist_map = {
+                    "normal": stats.norm,
+                    "student_t": stats.t,
+                    "skew_normal": stats.skewnorm,
+                }
+                dist_obj = dist_map.get(dist_name)
+                if dist_obj is not None:
+                    try:
+                        thresholds[feat] = float(
+                            dist_obj.ppf(target_pct / 100.0, *params)
+                        )
+                        continue
+                    except Exception:
+                        pass
+
+        # Strategy 2: Use Bayesian posterior credible interval
+        if feat in bayesian:
+            post = bayesian[feat]
+            post_mean = post.get("posterior_mean", fallback)
+            post_std = post.get("posterior_std", 0)
+            if post_std > 0:
+                thresholds[feat] = float(
+                    stats.norm.ppf(target_pct / 100.0, post_mean, post_std)
+                )
+                continue
+
+        # Strategy 3: Empirical percentile fallback
+        thresholds[feat] = float(data.quantile(target_pct / 100.0))
+
+    return thresholds
+
+
+# =============================================================================
 # RESAMPLED BAYESIAN TECHNICAL ANALYSIS
 # =============================================================================
 
@@ -1115,6 +1211,8 @@ def calculate_ruin_probability(
         initial_capital_col: str = "market_cap",
         cash_burn_col: str = "cash_burn_rate",
         volatility_col: str = "volatility_regime",
+        risk_tier_bins: list[float] | None = None,
+        risk_tier_labels: list[str] | None = None,
 ) -> pd.DataFrame:
     """
     Calculate investor's ruin probability using modified Gambler's Ruin framework.
@@ -1138,6 +1236,13 @@ def calculate_ruin_probability(
         Column for cash burn rate
     volatility_col : str, default 'volatility_regime'
         Column for volatility measure
+    risk_tier_bins : list[float] or None
+        Bin edges for risk tier classification. None -> derived from
+        the ruin probability distribution quartiles; falls back to
+        ``[0, 0.15, 0.35, 0.60, 1.0]``.
+    risk_tier_labels : list[str] or None
+        Labels for the risk tiers. None -> ``['Low Risk', 'Moderate Risk',
+        'High Risk', 'Critical Risk']``.
 
     Returns
     -------
@@ -1203,10 +1308,41 @@ def calculate_ruin_probability(
     result["survival_probability"] = 1 - result["ruin_probability"]
 
     # ── 5. Risk tier classification (wider low-risk band) ──
+    if risk_tier_labels is None:
+        risk_tier_labels = ["Low Risk", "Moderate Risk", "High Risk", "Critical Risk"]
+
+    if risk_tier_bins is None:
+        # Derive bins from ruin probability distribution if sufficient data
+        ruin_data = result["ruin_probability"].dropna()
+        if len(ruin_data) >= 30:
+            specs: dict[str, dict] = {
+                "ruin_probability": {"direction": "max", "percentile": 75, "fallback": 0.60},
+            }
+            dynamic = _compute_dynamic_thresholds(result, specs)
+            q75 = dynamic.get("ruin_probability", 0.60)
+            # Build bins: [0, q25, q50, q75, 1.0] from distribution
+            q25 = float(ruin_data.quantile(0.25))
+            q50 = float(ruin_data.quantile(0.50))
+            # Ensure monotonically increasing and within [0, 1]
+            risk_tier_bins = [
+                0,
+                max(0.01, min(q25, 0.30)),
+                max(q25 + 0.01, min(q50, 0.55)),
+                max(q50 + 0.01, min(q75, 0.90)),
+                1.0,
+            ]
+            # Deduplicate: when quantiles collapse, edges can repeat
+            risk_tier_bins = sorted(set(risk_tier_bins))
+            # Adjust labels to match the (possibly reduced) number of bins
+            if len(risk_tier_bins) - 1 < len(risk_tier_labels):
+                risk_tier_labels = risk_tier_labels[: len(risk_tier_bins) - 1]
+        else:
+            risk_tier_bins = [0, 0.15, 0.35, 0.60, 1.0]
+
     result["risk_level"] = pd.cut(
         result["ruin_probability"],
-        bins=[0, 0.15, 0.35, 0.60, 1.0],
-        labels=["Low Risk", "Moderate Risk", "High Risk", "Critical Risk"],
+        bins=risk_tier_bins,
+        labels=risk_tier_labels,
     )
 
     return result
@@ -1401,8 +1537,8 @@ def kalman_filter_price_target(
     df: pd.DataFrame,
     observation_col: str = "last_price",
     target_col: str = "price_target",
-    process_variance: float = 1e-5,
-    measurement_variance: float = 0.1,
+    process_variance: float | None = None,
+    measurement_variance: float | None = None,
 ) -> pd.DataFrame:
     """
     Kalman filter for smoothing price targets and estimating true value.
@@ -1419,10 +1555,14 @@ def kalman_filter_price_target(
         Column with current price observations
     target_col : str, default 'price_target'
         Column with analyst price targets
-    process_variance : float, default 1e-5
-        Q - process noise covariance (how much true value changes)
-    measurement_variance : float, default 0.1
-        R - measurement noise covariance (analyst estimate error)
+    process_variance : float or None
+        Q - process noise covariance (how much true value changes).
+        None -> derived from the observation column distribution
+        (scaled variance); falls back to 1e-5.
+    measurement_variance : float or None
+        R - measurement noise covariance (analyst estimate error).
+        None -> derived from the target-observation residual
+        distribution; falls back to 0.1.
 
     Returns
     -------
@@ -1434,6 +1574,44 @@ def kalman_filter_price_target(
         - kalman_gain: Filter gain at each step
         - signal_strength: Confidence in the estimate (1/variance)
     """
+    # ── Dynamic variance computation ──
+    if process_variance is None or measurement_variance is None:
+        specs: dict[str, dict] = {}
+        if process_variance is None and observation_col in df.columns:
+            specs[observation_col] = {
+                "direction": "max", "percentile": 50, "fallback": 1e-5,
+            }
+        if measurement_variance is None and target_col in df.columns and observation_col in df.columns:
+            # Use the spread between target and observation as proxy
+            residual_col = "_kalman_residual_proxy"
+            df = df.copy()
+            obs_valid = df[observation_col].notna() & (df[observation_col] > 0)
+            tgt_valid = df[target_col].notna() & (df[target_col] > 0)
+            df[residual_col] = np.where(
+                obs_valid & tgt_valid,
+                ((df[target_col] - df[observation_col]) / df[observation_col]).abs(),
+                np.nan,
+            )
+            specs[residual_col] = {
+                "direction": "max", "percentile": 50, "fallback": 0.1,
+            }
+
+        if specs:
+            dynamic = _compute_dynamic_thresholds(df, specs)
+            if process_variance is None:
+                # Scale observation median to a small process variance
+                obs_median = dynamic.get(observation_col, 1e-5)
+                process_variance = max(1e-8, (obs_median / 1e6) ** 2) if obs_median > 0 else 1e-5
+            if measurement_variance is None:
+                measurement_variance = max(0.01, dynamic.get("_kalman_residual_proxy", 0.1))
+                # Clean up temporary column
+                if "_kalman_residual_proxy" in df.columns:
+                    df = df.drop(columns=["_kalman_residual_proxy"])
+        else:
+            if process_variance is None:
+                process_variance = 1e-5
+            if measurement_variance is None:
+                measurement_variance = 0.1
     if observation_col not in df.columns or target_col not in df.columns:
         return pd.DataFrame(
             columns=[
@@ -1916,7 +2094,12 @@ def analyze_employee_productivity_frontier(
     return result
 
 
-def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+def detect_accounting_anomalies(
+        df: pd.DataFrame,
+        anomaly_z_threshold: float | None = None,
+        tier_bins: list[float] | None = None,
+        tier_labels: list[str] | None = None,
+) -> pd.DataFrame:
     """
     Detect accounting anomalies using multi-layered statistical analysis.
 
@@ -1939,6 +2122,16 @@ def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
         - ebitda_adjustment_ratio, eps_adjustment_ratio
         - exceptional_items_to_ebitda, restructuring_intensity
         - goodwill_change_rate
+    anomaly_z_threshold : float or None
+        Robust z-score threshold for flagging anomalies. None -> derived
+        from the ``accounting_anomaly_score`` distribution (75th percentile
+        mapped to a z-score cutoff); falls back to 2.5.
+    tier_bins : list[float] or None
+        Bin edges for anomaly tier classification. None -> derived from
+        the score distribution quartiles; falls back to
+        ``[-0.1, 25, 50, 75, 100.1]``.
+    tier_labels : list[str] or None
+        Labels for the tier bins. None -> ``['Clean', 'Watch', 'Flag', 'Alert']``.
 
     Returns
     -------
@@ -1955,10 +2148,40 @@ def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
         - sector_relative_anomaly: Anomaly score relative to sector median
         - benford_chi2_pvalue: Benford's Law chi-squared p-value (if applicable)
     """
+    # ── Dynamic threshold computation ──
+    if anomaly_z_threshold is None:
+        specs: dict[str, dict] = {}
+        if "accounting_anomaly_score" in df.columns:
+            specs["accounting_anomaly_score"] = {
+                "direction": "max", "percentile": 75, "fallback": 2.5,
+            }
+        if specs:
+            dynamic = _compute_dynamic_thresholds(df, specs)
+            # Map the 75th-pctl score to a z-score proxy (normalize to ~2-3 range)
+            raw = dynamic.get("accounting_anomaly_score", 2.5)
+            anomaly_z_threshold = max(1.5, min(raw / 10.0, 4.0)) if raw > 10 else 2.5
+        else:
+            anomaly_z_threshold = 2.5
+
+    if tier_labels is None:
+        tier_labels = ["Clean", "Watch", "Flag", "Alert"]
+
+    if tier_bins is None:
+        # Derive tier bins from data distribution if score column exists
+        if "accounting_anomaly_score" in df.columns:
+            score_data = df["accounting_anomaly_score"].dropna()
+            if len(score_data) >= 30:
+                q25 = float(score_data.quantile(0.25))
+                q50 = float(score_data.quantile(0.50))
+                q75 = float(score_data.quantile(0.75))
+                tier_bins = [-0.1, q25, q50, q75, 100.1]
+            else:
+                tier_bins = [-0.1, 25, 50, 75, 100.1]
+        else:
+            tier_bins = [-0.1, 25, 50, 75, 100.1]
     features = [
         # ── Original features ──
         "exceptional_items_frequency",
-        "non_operating_income_share",
         "gaap_adj_eps_gap_pct",
         "asset_sale_boost",
         "ebitda_adjustment_ratio",
@@ -2069,7 +2292,7 @@ def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
             robust_z = pd.Series(0.0, index=result.index)
 
         result[f"{feat}_z_robust"] = robust_z.abs()
-        result[f"{feat}_anomaly_flag"] = robust_z.abs() > 2.5
+        result[f"{feat}_anomaly_flag"] = robust_z.abs() > anomaly_z_threshold
 
         # ── Layer 2: Distribution fitting per feature ──
         weight = feature_weights.get(feat, 1.0)
@@ -2208,8 +2431,8 @@ def detect_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
     # ── Composite anomaly tier ──
     result["accounting_anomaly_tier"] = pd.cut(
         result["accounting_anomaly_score"],
-        bins=[-0.1, 25, 50, 75, 100.1],
-        labels=["Clean", "Watch", "Flag", "Alert"],
+        bins=tier_bins,
+        labels=tier_labels,
     )
 
     return result
@@ -2252,78 +2475,25 @@ def analyze_reporting_lag_sentiment(df: pd.DataFrame) -> dict:
     }
 
 def analyze_accounting_anomalies(df: pd.DataFrame) -> pd.DataFrame:
-    """
+    """Deprecated: use AccountingAnomalyProbabilityModel.analyze_dataframe().
+
     Extended analytics layer on top of ``detect_accounting_anomalies`` output.
-
-    Adds sector-level summary statistics, cross-feature correlation analysis,
-    and risk-weighted composite indicators for downstream consumption.
-
-    This function expects a DataFrame that has already been processed by
-    ``detect_accounting_anomalies`` (i.e. contains ``accounting_anomaly_score``,
-    ``accounting_anomaly_tier``, per-feature ``_z_robust`` / ``_anomaly_flag``
-    columns, etc.).
-
-    If the input has not been processed yet, it is passed through
-    ``detect_accounting_anomalies`` first.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with accounting anomaly detection results.
-
-    Returns
-    -------
-    pd.DataFrame
-        Input DataFrame enriched with:
-        - anomaly_severity_score: Weighted combination of anomaly score and feature count
-        - anomaly_risk_rank: Percentile rank of severity within the universe
-        - sector_anomaly_percentile: Percentile of anomaly score within sector
-        - multi_flag_alert: Boolean — True if ≥3 features are flagged
+    This function now delegates to
+    :class:`~finance_ml.analytics.probability_analytics.AccountingAnomalyProbabilityModel`.
     """
-    if "accounting_anomaly_score" not in df.columns:
-        df = detect_accounting_anomalies(df)
+    import warnings
 
-    if "accounting_anomaly_score" not in df.columns:
-        return df
-
-    result = df.copy()
-
-    # ── Severity score: combine anomaly score with feature count ──
-    feature_count = result.get("anomaly_feature_count", pd.Series(0, index=result.index))
-    result["anomaly_severity_score"] = (
-            result["accounting_anomaly_score"] * 0.7
-            + feature_count.clip(0, 9) / 9 * 100 * 0.3
+    warnings.warn(
+        "analyze_accounting_anomalies() is deprecated. "
+        "Use AccountingAnomalyProbabilityModel().analyze_dataframe(df) instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    from finance_ml.analytics.probability_analytics import (
+        AccountingAnomalyProbabilityModel,
     )
 
-    # ── Universe-level percentile rank ──
-    severity = result["anomaly_severity_score"].dropna()
-    if len(severity) > 1:
-        result["anomaly_risk_rank"] = result["anomaly_severity_score"].rank(
-            pct=True, ascending=True
-        ) * 100
-    else:
-        result["anomaly_risk_rank"] = 50.0
-
-    # ── Sector-level percentile ──
-    sector_col = "industry" if "industry" in result.columns else "sector"
-    if sector_col in result.columns:
-        result["sector_anomaly_percentile"] = result.groupby(sector_col)[
-                                                  "accounting_anomaly_score"
-                                              ].rank(pct=True, ascending=True) * 100
-    else:
-        result["sector_anomaly_percentile"] = result["anomaly_risk_rank"]
-
-    # ── Multi-flag alert ──
-    result["multi_flag_alert"] = feature_count >= 3
-
-    logger.info(
-        "Accounting anomaly analytics: severity computed for %d stocks, "
-        "%d multi-flag alerts",
-        len(result),
-        result["multi_flag_alert"].sum(),
-    )
-
-    return result
+    return AccountingAnomalyProbabilityModel().analyze_dataframe(df)
 
 
 def run_category_probability_analytics(
@@ -2587,7 +2757,11 @@ def bayesian_earnings_beat_model(df: pd.DataFrame, n_total: int = 5) -> pd.DataF
     return pd.DataFrame(results)
 
 
-def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
+def analyze_distress_distribution(
+        df: pd.DataFrame,
+        high_risk_threshold: float | None = None,
+        low_risk_threshold: float | None = None,
+) -> go.Figure:
     """
     Analyze distress risk score distribution with tail risk metrics.
 
@@ -2599,6 +2773,14 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
         DataFrame containing:
         - combined_distress_risk_score
         - industry
+    high_risk_threshold : float or None
+        Score below which a stock is considered high risk. None -> derived
+        from the distress score distribution (25th percentile); falls back
+        to 30.
+    low_risk_threshold : float or None
+        Score above which a stock is considered low risk. None -> derived
+        from the distress score distribution (75th percentile); falls back
+        to 70.
 
     Returns
     -------
@@ -2610,6 +2792,29 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
         4. Tail risk by industry
     """
     distress_data = df["combined_distress_risk_score"].dropna()
+
+    # ── Dynamic threshold computation ──
+    if high_risk_threshold is None or low_risk_threshold is None:
+        specs: dict[str, dict] = {}
+        if high_risk_threshold is None:
+            specs["combined_distress_risk_score_low"] = {
+                "direction": "min", "percentile": 25, "fallback": 30,
+            }
+        if low_risk_threshold is None:
+            specs["combined_distress_risk_score_high"] = {
+                "direction": "min", "percentile": 75, "fallback": 70,
+            }
+        # Use the actual column for both specs
+        if len(distress_data) >= 30:
+            if high_risk_threshold is None:
+                high_risk_threshold = float(distress_data.quantile(0.25))
+            if low_risk_threshold is None:
+                low_risk_threshold = float(distress_data.quantile(0.75))
+        else:
+            if high_risk_threshold is None:
+                high_risk_threshold = 30
+            if low_risk_threshold is None:
+                low_risk_threshold = 70
 
     fig = make_subplots(
         rows=2,
@@ -2666,10 +2871,12 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
     )
     # Add risk thresholds
     fig.add_vline(
-        x=30, line_dash="dot", line_color="#e74c3c", row=1, col=2, annotation_text="High Risk (<30)"
+        x=high_risk_threshold, line_dash="dot", line_color="#e74c3c", row=1, col=2,
+        annotation_text=f"High Risk (<{high_risk_threshold:.0f})"
     )
     fig.add_vline(
-        x=70, line_dash="dot", line_color="#2ecc71", row=1, col=2, annotation_text="Low Risk (>70)"
+        x=low_risk_threshold, line_dash="dot", line_color="#2ecc71", row=1, col=2,
+        annotation_text=f"Low Risk (>{low_risk_threshold:.0f})"
     )
 
     # Panel 3: Q-Q Plot
@@ -2699,11 +2906,12 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
         col=1,
     )
 
-    # Panel 4: Tail risk by industry (% below 30)
+    # Panel 4: Tail risk by industry (% below high_risk_threshold)
     if "industry" in df.columns:
+        _hr_thresh = high_risk_threshold
         tail_risk = (
             df.groupby("industry")
-            .apply(lambda x: (x["combined_distress_risk_score"] < 30).mean() * 100, include_groups=False)
+            .apply(lambda x: (x["combined_distress_risk_score"] < _hr_thresh).mean() * 100, include_groups=False)
             .sort_values(ascending=False)
         )
 
@@ -2728,7 +2936,7 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
     # Compute tail risk metrics
     var_5 = np.percentile(distress_data, 5)
     var_1 = np.percentile(distress_data, 1)
-    high_risk_pct = (distress_data < 30).mean() * 100
+    high_risk_pct = (distress_data < high_risk_threshold).mean() * 100
 
     # Add annotations
     fig.add_annotation(
@@ -2766,7 +2974,7 @@ def analyze_distress_distribution(df: pd.DataFrame) -> go.Figure:
         yref="paper",
         x=1.08,
         y=0.7,
-        text=f"High Risk (<30): {high_risk_pct:.1f}%",
+        text=f"High Risk (<{high_risk_threshold:.0f}): {high_risk_pct:.1f}%",
         showarrow=False,
         font=dict(size=12),
     )

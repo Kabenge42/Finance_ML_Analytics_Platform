@@ -4256,6 +4256,196 @@ WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
 $$ LANGUAGE SQL;
 
+-- =============================================================================
+-- SECTION: TAX RATE FEATURES (NEW - Enhancement 4)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_tax_rate_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                   TEXT,
+                effective_tax_rate_ltm NUMERIC,
+                effective_tax_rate_fy  NUMERIC,
+                tax_rate_yoy_change    NUMERIC,
+                tax_rate_qoq_change    NUMERIC,
+                tax_rate_stability     NUMERIC,
+                low_tax_flag           INTEGER,
+                tax_rate_trend_4q      NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Effective Tax Rate - (Ratio) (LTM)",
+       "Effective Tax Rate - (Ratio) (FY)",
+       "Effective Tax Rate - (Ratio) (FY)" - "Effective Tax Rate - (Ratio) (-1FY)",
+       "Effective Tax Rate - (Ratio) (FQ)" - "Effective Tax Rate - (Ratio) (-1FQFQ)",
+       -- Stability: range across available quarterly periods (lower = more stable)
+       GREATEST(
+           COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
+           COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
+           COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
+           COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
+       ) - LEAST(
+           COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
+           COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
+           COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
+           COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
+       ),
+       CASE WHEN "Effective Tax Rate - (Ratio) (LTM)" < 0.10 THEN 1 ELSE 0 END,
+       -- Trend across 4 quarters (FQ vs avg of prior 3)
+       "Effective Tax Rate - (Ratio) (FQ)" -
+       (COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0) +
+        COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0) +
+        COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)) /
+       NULLIF((CASE WHEN "Effective Tax Rate - (Ratio) (-1FQFQ)" IS NOT NULL THEN 1 ELSE 0 END +
+               CASE WHEN "Effective Tax Rate - (Ratio) (-2FQFQ)" IS NOT NULL THEN 1 ELSE 0 END +
+               CASE WHEN "Effective Tax Rate - (Ratio) (-3FQFQ)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 0)
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: OPEX TEMPORAL FEATURES (NEW - Enhancement 5)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_opex_temporal_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                    TEXT,
+                opex_fq                 NUMERIC,
+                opex_ltm                NUMERIC,
+                opex_fy                 NUMERIC,
+                opex_qoq_growth         NUMERIC,
+                opex_yoy_growth         NUMERIC,
+                opex_vs_revenue_trend   NUMERIC,
+                sga_qoq_growth          NUMERIC,
+                sga_yoy_growth          NUMERIC,
+                operating_leverage_score NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Total Operating Expenses (FQ)",
+       "Total Operating Expenses (LTM)",
+       "Total Operating Expenses (FY)",
+       public.calc_change_ratio("Total Operating Expenses (FQ)",
+                                "Total Operating Expenses (-1FQFQ)"),
+       public.calc_change_ratio("Total Operating Expenses (FY)",
+                                "Total Operating Expenses (-1FY)"),
+       -- Change in opex/revenue ratio (FY vs -1FY)
+       (public.safe_divide("Total Operating Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) -
+        public.safe_divide("Total Operating Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)) * 100,
+       public.calc_change_ratio("Selling General & Admin Expenses/Total (FQ)",
+                                "Selling General & Admin Expenses/Total (-1FY)"),
+       public.calc_change_ratio("Selling General & Admin Expenses/Total (FY)",
+                                "Selling General & Admin Expenses/Total (-1FY)"),
+       -- Operating leverage: revenue growth minus opex growth
+       public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) -
+       public.calc_change_ratio("Total Operating Expenses (FY)"::NUMERIC, "Total Operating Expenses (-1FY)"::NUMERIC)
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: FCF ESTIMATE FEATURES (NEW - Enhancement 9)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_fcf_estimate_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin             TEXT,
+                fcf_est_avg_fy1e NUMERIC,
+                fcf_est_avg_fy2e NUMERIC,
+                fcf_est_avg_fy3e NUMERIC,
+                fcf_est_avg_fy4e NUMERIC,
+                fcf_est_avg_fy5e NUMERIC,
+                fcf_est_cagr_5y  NUMERIC,
+                fcf_est_trend    NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "FCF - Est Avg (FY1E)",
+       "FCF - Est Avg (FY2E)",
+       "FCF - Est Avg (FY3E)",
+       "FCF - Est Avg (FY4E)",
+       "FCF - Est Avg (FY5E)",
+       -- Implied 5Y CAGR from FY1E to FY5E
+       CASE
+           WHEN "FCF - Est Avg (FY1E)" > 0 AND "FCF - Est Avg (FY5E)" > 0
+               THEN (POWER(public.safe_divide("FCF - Est Avg (FY5E)",
+                                              "FCF - Est Avg (FY1E)"), 0.25) - 1) * 100
+           END,
+       -- Linear trend: (FY5E - FY1E) / FY1E
+       public.calc_change_ratio("FCF - Est Avg (FY5E)", "FCF - Est Avg (FY1E)")
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: ASSET SALE FEATURES (NEW - Enhancement 8)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_asset_sale_features(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                            TEXT,
+                gain_loss_on_sale_of_assets_ltm NUMERIC,
+                asset_sale_frequency            INTEGER,
+                asset_sale_trend                NUMERIC
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Gain (Loss) On Sale Of Assets (LTM)",
+       -- Count of non-zero periods across available quarters and years
+       (CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (FQ)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-1FQFQ)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-2FQFQ)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-3FQFQ)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-4FQFQ)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (FY)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-1FY)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-2FY)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-3FY)", 0)) > 0 THEN 1 ELSE 0 END +
+        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-4FY)", 0)) > 0 THEN 1 ELSE 0 END)::INTEGER,
+       -- Trend: FQ vs average of prior quarters
+       "Gain (Loss) On Sale Of Assets (FQ)" -
+       (COALESCE("Gain (Loss) On Sale Of Assets (-1FQFQ)", 0) +
+        COALESCE("Gain (Loss) On Sale Of Assets (-2FQFQ)", 0) +
+        COALESCE("Gain (Loss) On Sale Of Assets (-3FQFQ)", 0) +
+        COALESCE("Gain (Loss) On Sale Of Assets (-4FQFQ)", 0)) / 4.0
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
+-- =============================================================================
+-- SECTION: SHARE DILUTION TRACKING (NEW - Enhancement 12)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION calc_share_dilution_tracking(p_isin TEXT DEFAULT NULL)
+    RETURNS TABLE
+            (
+                isin                  TEXT,
+                shrs_out_1fy          NUMERIC,
+                shares_yoy_change_pct NUMERIC,
+                net_buyback_flag      INTEGER
+            )
+    STABLE PARALLEL SAFE
+AS
+$$
+SELECT "ISIN",
+       "Shrs Out (-1FY)",
+       public.calc_change_ratio("Shrs Out", "Shrs Out (-1FY)"),
+       CASE WHEN "Shrs Out" < "Shrs Out (-1FY)" THEN 1 ELSE 0 END
+FROM postgres.public.equities
+WHERE p_isin IS NULL
+   OR "ISIN" = p_isin;
+$$ LANGUAGE SQL;
+
 -- -----------------------------------------------------------------------------
 -- All Enhanced Features (Aggregation Function)
 -- -----------------------------------------------------------------------------
@@ -5693,6 +5883,45 @@ SELECT id.*,
        e."Shrs Out"              AS shares_outstanding,
 
        -- =========================================================================
+       -- Enhancement 1: Direct Reference Columns from equities
+       -- =========================================================================
+       e."Current Fiscal Quarter"           AS current_fiscal_quarter,
+       e."Dividend Record (Currency)"       AS dividend_record_currency,
+       e."Dividend Record (Amount)"         AS dividend_record_amount,
+       e."Dividend Per Share (LTM)"         AS dividend_per_share_ltm,
+       e."Description"                      AS description,
+       e."Market Cap (Country R)"           AS market_cap_country_r,
+       e."Rel. Volume"                      AS rel_volume,
+       e."1-Day %"                          AS one_day_pct,
+       e."Total Return (YTD)"               AS total_return_ytd,
+       e."Total Return (5Y)"                AS total_return_5y,
+       e."Total Return (10Y)"               AS total_return_10y,
+       e."Tot. Return %/CAGR (3Y)"          AS tot_return_pct_cagr_3y,
+       e."Tot. Return %/CAGR (10Y)"         AS tot_return_pct_cagr_10y,
+       e."Total Revenues/CAGR (5Y FY)"      AS total_revenues_cagr_5y_fy,
+       e."Shrs Out (-1FY)"                  AS shrs_out_1fy,
+       e."Analyst Rating"                   AS analyst_rating,
+       e."Price Target - #"                 AS price_target_count,
+
+       -- =========================================================================
+       -- Enhancement 6: Analyst Rating Breakdown
+       -- =========================================================================
+       e."# Strong Buys Ratings"            AS num_strong_buys_ratings,
+       e."# Buys Ratings"                   AS num_buys_ratings,
+       e."# Hold Ratings"                   AS num_hold_ratings,
+       e."# Sell Ratings"                   AS num_sell_ratings,
+       e."# Strong Sell Ratings"            AS num_strong_sell_ratings,
+       e."EPS Norm - Est # (FY1E)"          AS eps_norm_est_num_fy1e,
+
+       -- =========================================================================
+       -- Enhancement 7: GAAP EPS Estimate Columns
+       -- =========================================================================
+       e."EPS GAAP - Est Avg (NTM)"         AS eps_gaap_est_avg_ntm,
+       e."EPS GAAP - Est Avg (FY1E)"        AS eps_gaap_est_avg_fy1e,
+       e."EPS Norm - Est Avg (NTM)"         AS eps_norm_est_avg_ntm,
+       e."EPS Norm - Est Avg (FY1E)"        AS eps_norm_est_avg_fy1e,
+
+       -- =========================================================================
        -- SECTION 1: VALUATION RATIOS (vw_features_valuation_ratios)
        -- Source: calc_valuation_features, calc_valuation_timeseries_features,
        --         calc_extended_valuation_timeseries, calc_tangible_book_features
@@ -6566,6 +6795,115 @@ SELECT id.*,
        uif.earnings_quality_impact,
 
        -- =========================================================================
+       -- SECTION 18: VOLATILITY SURFACE (Enhancement 2 + 3)
+       -- Source: calc_volatility_surface_features
+       -- =========================================================================
+       vsf.vol_1m                    AS volatility_1m,
+       vsf.vol_3m                    AS volatility_3m,
+       vsf.vol_6m                    AS volatility_6m,
+       vsf.vol_1y                    AS volatility_1y,
+       vsf.vol_term_spread_short     AS volatility_trend_short,
+       vsf.vol_term_spread_long      AS volatility_trend_long,
+       vsf.vol_ratio_3m_1y,
+       vsf.vol_hump,
+       vsf.beta_2y,
+       vsf.beta_term_structure,
+       vsf.beta_convexity,
+       vsf.realized_vs_implied_proxy,
+       vsf.beta_1y - vsf.beta_2y    AS beta_short_term_shift,
+
+       -- =========================================================================
+       -- SECTION 19: TAX RATE FEATURES (Enhancement 4)
+       -- Source: calc_tax_rate_features
+       -- =========================================================================
+       txf.effective_tax_rate_ltm,
+       txf.effective_tax_rate_fy,
+       txf.tax_rate_yoy_change,
+       txf.tax_rate_qoq_change,
+       txf.tax_rate_stability,
+       txf.low_tax_flag,
+       txf.tax_rate_trend_4q,
+
+       -- =========================================================================
+       -- SECTION 20: OPEX TEMPORAL (Enhancement 5)
+       -- Source: calc_opex_temporal_features
+       -- =========================================================================
+       otf.opex_fq,
+       otf.opex_ltm,
+       otf.opex_fy,
+       otf.opex_qoq_growth,
+       otf.opex_yoy_growth,
+       otf.opex_vs_revenue_trend,
+       otf.sga_qoq_growth,
+       otf.sga_yoy_growth,
+       otf.operating_leverage_score,
+
+       -- =========================================================================
+       -- SECTION 21: ASSET SALE FEATURES (Enhancement 8)
+       -- Source: calc_asset_sale_features
+       -- =========================================================================
+       asf.gain_loss_on_sale_of_assets_ltm AS asset_sale_gain_loss_ltm,
+       asf.asset_sale_frequency,
+       asf.asset_sale_trend,
+
+       -- =========================================================================
+       -- SECTION 22: FCF ESTIMATE CURVE (Enhancement 9)
+       -- Source: calc_fcf_estimate_features
+       -- =========================================================================
+       fcfe.fcf_est_avg_fy1e,
+       fcfe.fcf_est_avg_fy2e,
+       fcfe.fcf_est_avg_fy3e,
+       fcfe.fcf_est_avg_fy4e,
+       fcfe.fcf_est_avg_fy5e,
+       fcfe.fcf_est_cagr_5y,
+       fcfe.fcf_est_trend,
+
+       -- =========================================================================
+       -- SECTION 23: DIVIDEND HISTORY (Enhancement 10)
+       -- Source: calc_dividend_history_features
+       -- =========================================================================
+       dhf.div_yield_2fy             AS div_yield_2fyind,
+       dhf.div_yield_3fy             AS div_yield_3fyind,
+       dhf.div_yield_4fy             AS div_yield_4fyind,
+       dhf.div_yield_5fy             AS div_yield_5fyind,
+       dhf.div_yield_trend_3y        AS div_yield_5y_trend,
+       dhf.div_yield_volatility      AS div_yield_stability,
+
+       -- =========================================================================
+       -- SECTION 24: INVESTMENT INCOME TEMPORAL (Enhancement 11)
+       -- Source: calc_investment_income_temporal
+       -- =========================================================================
+       iit.inv_income_fq             AS interest_income_fq,
+       iit.inv_income_fy             AS interest_income_fy,
+       iit.inv_income_qoq_growth     AS interest_income_qoq_growth,
+       iit.inv_income_yoy_growth     AS interest_income_yoy_growth,
+       iit.inv_income_to_revenue     AS interest_income_to_revenue_trend,
+
+       -- =========================================================================
+       -- SECTION 25: SHARE DILUTION TRACKING (Enhancement 12)
+       -- Source: calc_share_dilution_tracking
+       -- =========================================================================
+       sdt.shares_yoy_change_pct,
+       sdt.net_buyback_flag,
+
+       -- =========================================================================
+       -- SECTION 26: FORWARD CONSENSUS (Enhancement 7 supplement)
+       -- Source: calc_forward_consensus_features
+       -- =========================================================================
+       fcnf.pe_ntm,
+       fcnf.pe_est_fy1,
+       fcnf.pe_forward_discount,
+       fcnf.eps_gaap_vs_norm_ntm,
+       fcnf.eps_gaap_vs_norm_fy1e,
+       fcnf.forward_adjustment_trend,
+       fcnf.ebitda_est_ntm,
+       fcnf.ebitda_est_fy1e,
+       fcnf.ev_ebitda_est_fy1,
+       fcnf.ebitda_forward_growth,
+       fcnf.earnings_revision_divergence,
+       fcnf.forward_pe_vs_sector_proxy,
+
+       -- =========================================================================
        -- METADATA: Timestamp for refresh tracking
        -- =========================================================================
        CURRENT_TIMESTAMP         AS feature_calculated_at
@@ -6661,7 +6999,34 @@ FROM vw_identifier_columns                               id
          LEFT JOIN calc_net_income_comprehensive()       nic ON id.isin = nic.isin
 
 -- Section 17: Unusual Items
-         LEFT JOIN calc_unusual_items_features()         uif ON id.isin = uif.isin;
+         LEFT JOIN calc_unusual_items_features()         uif ON id.isin = uif.isin
+
+-- Section 18: Volatility Surface (Enhancement 2 + 3)
+         LEFT JOIN calc_volatility_surface_features()    vsf ON id.isin = vsf.isin
+
+-- Section 19: Tax Rate Features (Enhancement 4)
+         LEFT JOIN calc_tax_rate_features()              txf ON id.isin = txf.isin
+
+-- Section 20: OpEx Temporal (Enhancement 5)
+         LEFT JOIN calc_opex_temporal_features()         otf ON id.isin = otf.isin
+
+-- Section 21: Asset Sale Features (Enhancement 8)
+         LEFT JOIN calc_asset_sale_features()            asf ON id.isin = asf.isin
+
+-- Section 22: FCF Estimate Curve (Enhancement 9)
+         LEFT JOIN calc_fcf_estimate_features()          fcfe ON id.isin = fcfe.isin
+
+-- Section 23: Dividend History (Enhancement 10)
+         LEFT JOIN calc_dividend_history_features()      dhf ON id.isin = dhf.isin
+
+-- Section 24: Investment Income Temporal (Enhancement 11)
+         LEFT JOIN calc_investment_income_temporal()     iit ON id.isin = iit.isin
+
+-- Section 25: Share Dilution Tracking (Enhancement 12)
+         LEFT JOIN calc_share_dilution_tracking()        sdt ON id.isin = sdt.isin
+
+-- Section 26: Forward Consensus (Enhancement 7 supplement)
+         LEFT JOIN calc_forward_consensus_features()     fcnf ON id.isin = fcnf.isin;
 
 -- =============================================================================
 -- INDEXES FOR OPTIMIZED QUERYING
@@ -6689,7 +7054,7 @@ CREATE INDEX idx_mv_all_stock_features_market_cap
 -- =============================================================================
 COMMENT ON MATERIALIZED VIEW mv_all_stock_features IS
     'Unified materialized view containing all calculated stock features.
-    Covers 17 feature categories from 54 calc_* functions:
+    Covers 26 feature categories from 63 calc_* functions:
     1. Valuation Ratios (4 functions)
     2. Momentum (2 functions)
     3. Technical Analysis (1 function)
@@ -6707,6 +7072,17 @@ COMMENT ON MATERIALIZED VIEW mv_all_stock_features IS
     15. Cost Structure (3 functions)
     16. Composite Scores (2 functions)
     17. Unusual Items (1 function)
+    18. Volatility Surface (1 function) - Enhancement 2+3
+    19. Tax Rate Features (1 function) - Enhancement 4
+    20. OpEx Temporal (1 function) - Enhancement 5
+    21. Asset Sale Features (1 function) - Enhancement 8
+    22. FCF Estimate Curve (1 function) - Enhancement 9
+    23. Dividend History (1 function) - Enhancement 10
+    24. Investment Income Temporal (1 function) - Enhancement 11
+    25. Share Dilution Tracking (1 function) - Enhancement 12
+    26. Forward Consensus (1 function) - Enhancement 7
+
+    Direct reference columns include: Enhancement 1 (17 cols), Enhancement 6 (6 cols), Enhancement 7 (4 cols)
 
     Refresh with: REFRESH MATERIALIZED VIEW CONCURRENTLY mv_all_stock_features;';
 

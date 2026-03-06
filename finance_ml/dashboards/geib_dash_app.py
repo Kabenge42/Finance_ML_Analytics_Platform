@@ -36,6 +36,18 @@ from finance_ml.analytics.data_utils import (
     reorder_with_identifiers,
     load_identifier_columns,
 )
+from finance_ml.analytics.screening import (
+    create_enhanced_screener,
+    screen_earnings_quality,
+    screen_value_opportunities,
+    screen_growth_momentum,
+    screen_garp_opportunities,
+    screen_dividend_quality,
+    screen_financial_health,
+    screen_valuation_reversion_candidates,
+    screen_integrity_filtered_growth,
+    screen_high_yield_safe_dividends,
+)
 
 # Import probabilistic visualizations
 try:
@@ -70,13 +82,16 @@ try:
         create_quality_risk_quadrant,
         create_distress_early_warning_dashboard,
         create_accounting_anomaly_dashboard,
+        create_anomaly_severity_dashboard,
     )
     from finance_ml.analytics.visualizations.probability_viz import (
         create_bayesian_category_ridge,
         create_ruin_probability_diagnostic as create_ruin_prob_diagnostic_viz,
+        create_anomaly_conditional_probability_chart,
     )
     from finance_ml.analytics.probability_analytics import (
         create_earnings_probability_dashboard,
+        AccountingAnomalyProbabilityModel,
     )
 
     ER_VIZ_AVAILABLE = True
@@ -283,18 +298,18 @@ TABLE_STYLE_DATA_CONDITIONAL = [
     {
         "if": {
             "column_id": "quality_tier",
-            "filter_query": '{quality_tier} = "premium"',
+            "filter_query": '{quality_tier} = "High"',
         },
         "color": "#FFD700",
         "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "high"'},
+        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "Above Average"'},
         "color": COLORS["success"],
         "fontWeight": "bold",
     },
     {
-        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "low"'},
+        "if": {"column_id": "quality_tier", "filter_query": '{quality_tier} = "Low"'},
         "color": COLORS["danger"],
         "fontWeight": "bold",
     },
@@ -1282,6 +1297,7 @@ def load_geib_data():
                     "anomaly_feature_count", "accounting_anomaly_tier",
                     "anomaly_severity_score", "anomaly_risk_rank",
                     "sector_anomaly_percentile", "multi_flag_alert",
+                    "anomaly_conditional_probability",
                     "exceptional_items_frequency_anomaly_flag",
                     "gaap_adj_eps_gap_pct_anomaly_flag",
                     "asset_sale_boost_anomaly_flag",
@@ -2935,6 +2951,103 @@ app.layout = html.Div(
                     ],
                 ),
                 dcc.Tab(
+                    label="🔍 Accounting Anomaly Analytics",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Bayesian Accounting Anomaly Detection & Analytics",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Anomaly severity scoring, conditional probability analysis, "
+                                    "and per-feature Bayesian lift diagnostics from the "
+                                    "AccountingAnomalyProbabilityModel.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                # KPI cards
+                                html.Div(id="anomaly-analytics-kpis", style={"margin": "10px 0"}),
+                                # Anomaly Severity Dashboard (6-panel)
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dcc.Graph(
+                                                    id="anomaly-severity-dashboard",
+                                                    style={"width": "100%", "height": "auto"},
+                                                )
+                                            ],
+                                            width=12,
+                                            style={"padding": "0"},
+                                        ),
+                                    ],
+                                    className="g-0",
+                                ),
+                                # Conditional Probability Chart (4-panel)
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dcc.Graph(
+                                                    id="anomaly-cond-prob-chart",
+                                                    style={"width": "100%", "height": "auto"},
+                                                )
+                                            ],
+                                            width=12,
+                                            style={"padding": "0"},
+                                        ),
+                                    ],
+                                    className="g-0",
+                                ),
+                                # Anomaly detail table
+                                html.Div(
+                                    [
+                                        html.H4(
+                                            "Anomaly Severity Detail",
+                                            style={
+                                                "textAlign": "center",
+                                                "marginTop": "20px",
+                                            },
+                                        ),
+                                        dash_table.DataTable(
+                                            id="anomaly-analytics-table",
+                                            columns=get_formatted_columns(
+                                                [
+                                                    "ticker",
+                                                    "name",
+                                                    "sector",
+                                                    "industry",
+                                                    "accounting_anomaly_tier",
+                                                    "accounting_anomaly_score",
+                                                    "anomaly_severity_score",
+                                                    "anomaly_conditional_probability",
+                                                    "anomaly_risk_rank",
+                                                    "sector_anomaly_percentile",
+                                                    "anomaly_feature_count",
+                                                    "multi_flag_alert",
+                                                ]
+                                            ),
+                                            page_size=500,
+                                            sort_action="native",
+                                            filter_action="native",
+                                            style_table={"overflowX": "auto", "width": "100%"},
+                                            style_header=TABLE_STYLE_HEADER,
+                                            style_cell=TABLE_STYLE_CELL,
+                                            style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
+                                        ),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
+                        )
+                    ],
+                ),
+                dcc.Tab(
                     label="🔬 Uncertainty & Calibration",
                     children=[
                         html.Div(
@@ -4366,7 +4479,7 @@ def update_dashboard(*args):
         _quality = safe_get_column(
             filtered_df, "quality_tier", default=pd.Series(dtype=str)
         )
-        premium_tier = int((_quality == "premium").sum()) if len(_quality) else 0
+        _high_tier = int((_quality == "High").sum()) if len(_quality) else 0
 
         # New metrics from updated schema
         _anomaly_tier = safe_get_column(
@@ -4886,20 +4999,29 @@ def update_dashboard(*args):
     # New v3 Artifact Visualizations
     # ---------------------------------------------------------
 
-    # 10. Screening Summary Chart
+    # 10. Screening Summary Chart (dynamic thresholds from screening module)
     art_screening_summary = empty_artifact
     if ER_VIZ_AVAILABLE and not filtered_df.empty:
         try:
-            # Build lightweight screening dict from filtered data
             screens = {}
-            if "composite_score" in filtered_df.columns:
-                screens["high_composite"] = filtered_df.nlargest(
-                    min(50, len(filtered_df)), "composite_score"
-                )
-            if "quality_tier" in filtered_df.columns:
-                screens["quality_stocks"] = filtered_df[
-                    filtered_df["quality_tier"].isin(["Premium", "High"])
-                ]
+            for label, func in [
+                ("quality", create_enhanced_screener),
+                ("earnings_quality", screen_earnings_quality),
+                ("value", screen_value_opportunities),
+                ("growth", screen_growth_momentum),
+                ("garp", screen_garp_opportunities),
+                ("dividend", screen_dividend_quality),
+                ("healthy", screen_financial_health),
+                ("valuation_reversion", screen_valuation_reversion_candidates),
+                ("integrity_growth", screen_integrity_filtered_growth),
+                ("high_yield_safe", screen_high_yield_safe_dividends),
+            ]:
+                try:
+                    result = func(filtered_df)
+                    if not result.empty:
+                        screens[label] = result
+                except Exception:
+                    pass
             if screens:
                 art_screening_summary = create_screening_summary_chart(screens)
         except Exception as e:
@@ -6263,6 +6385,145 @@ def update_credit_risk_tab(*args):
         flags_heatmap,
         table_data,
     )
+
+
+# =============================================================================
+# Accounting Anomaly Analytics Tab Callback
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("anomaly-analytics-kpis", "children"),
+        Output("anomaly-severity-dashboard", "figure"),
+        Output("anomaly-cond-prob-chart", "figure"),
+        Output("anomaly-analytics-table", "data"),
+    ],
+    [Input(f["id"], "value") for f in FILTER_CONFIG],
+)
+def update_anomaly_analytics_tab(*args):
+    """Update Accounting Anomaly Analytics tab visualizations."""
+    filter_values = collect_filter_values(*args)
+    filtered_summary = apply_global_filters(df, filter_values)
+
+    empty_fig = go.Figure().update_layout(
+        title="No data available", template="plotly_dark"
+    )
+
+    if filtered_summary.empty:
+        return html.Div(), empty_fig, empty_fig, []
+
+    # Prefer dedicated anomaly DataFrame; fall back to summary columns
+    if not df_anomaly.empty and "ticker" in df_anomaly.columns:
+        # Filter anomaly DF to match the globally-filtered tickers
+        filtered_tickers = set(filtered_summary["ticker"]) if "ticker" in filtered_summary.columns else set()
+        if filtered_tickers:
+            anomaly_data = df_anomaly[df_anomaly["ticker"].isin(filtered_tickers)].copy()
+        else:
+            anomaly_data = df_anomaly.copy()
+    else:
+        anomaly_data = filtered_summary.copy()
+
+    if anomaly_data.empty:
+        return html.Div("No anomaly data available"), empty_fig, empty_fig, []
+
+    # --- KPI Cards ---
+    n_total = len(anomaly_data)
+    mean_severity = (
+        anomaly_data["anomaly_severity_score"].mean()
+        if "anomaly_severity_score" in anomaly_data.columns else 0
+    )
+    mean_cond_prob = (
+        anomaly_data["anomaly_conditional_probability"].mean()
+        if "anomaly_conditional_probability" in anomaly_data.columns else 0
+    )
+    n_multi_flag = (
+        int(anomaly_data["multi_flag_alert"].sum())
+        if "multi_flag_alert" in anomaly_data.columns else 0
+    )
+    n_alert = (
+        (anomaly_data["accounting_anomaly_tier"] == "Alert").sum()
+        if "accounting_anomaly_tier" in anomaly_data.columns else 0
+    )
+    n_flag = (
+        (anomaly_data["accounting_anomaly_tier"] == "Flag").sum()
+        if "accounting_anomaly_tier" in anomaly_data.columns else 0
+    )
+
+    kpi_cards = dbc.Row(
+        [
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Universe"), html.H3(f"{n_total:,}")
+            ]), color="primary", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Mean Severity"), html.H3(f"{mean_severity:.1f}")
+            ]), color="warning" if mean_severity > 50 else "info", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Mean P(Anomaly)"), html.H3(f"{mean_cond_prob:.3f}")
+            ]), color="warning" if mean_cond_prob > 0.5 else "info", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Multi-Flag Alerts"), html.H3(f"{n_multi_flag:,}")
+            ]), color="danger" if n_multi_flag > 0 else "success", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Alert Tier"), html.H3(f"{int(n_alert):,}")
+            ]), color="danger" if n_alert > 0 else "success", inverse=True), width=2),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Flag Tier"), html.H3(f"{int(n_flag):,}")
+            ]), color="warning" if n_flag > 0 else "success", inverse=True), width=2),
+        ],
+        style={"marginBottom": "10px"},
+    )
+
+    # --- Anomaly Severity Dashboard (6-panel) ---
+    severity_fig = empty_fig
+    if ER_VIZ_AVAILABLE and "anomaly_severity_score" in anomaly_data.columns:
+        try:
+            group_col = "industry" if "industry" in anomaly_data.columns else "sector"
+            severity_fig = create_anomaly_severity_dashboard(
+                anomaly_data, group_col=group_col, top_n=25,
+            )
+            severity_fig.update_layout(height=900)
+        except Exception as e:
+            print(f"⚠️ Anomaly severity dashboard error: {e}")
+
+    # --- Conditional Probability Chart (4-panel) ---
+    cond_prob_fig = empty_fig
+    if ER_VIZ_AVAILABLE and "anomaly_conditional_probability" in anomaly_data.columns:
+        try:
+            # Compute conditional probabilities for the filtered data
+            cond_probs = None
+            if "anomaly_severity_score" in anomaly_data.columns:
+                model = AccountingAnomalyProbabilityModel()
+                cond_probs = model.calculate_conditional_probabilities(anomaly_data)
+            cond_prob_fig = create_anomaly_conditional_probability_chart(
+                anomaly_data, cond_probs=cond_probs, top_n=20,
+            )
+            cond_prob_fig.update_layout(height=700)
+        except Exception as e:
+            print(f"⚠️ Anomaly conditional probability chart error: {e}")
+
+    # --- Table data ---
+    table_cols = [
+        "ticker", "name", "sector", "industry",
+        "accounting_anomaly_tier", "accounting_anomaly_score",
+        "anomaly_severity_score", "anomaly_conditional_probability",
+        "anomaly_risk_rank", "sector_anomaly_percentile",
+        "anomaly_feature_count", "multi_flag_alert",
+    ]
+    available_cols = [c for c in table_cols if c in anomaly_data.columns]
+    if available_cols:
+        sort_col = (
+            "anomaly_severity_score"
+            if "anomaly_severity_score" in anomaly_data.columns
+            else available_cols[0]
+        )
+        table_data = (
+            anomaly_data.nlargest(500, sort_col)[available_cols].to_dict("records")
+        )
+    else:
+        table_data = []
+
+    return kpi_cards, severity_fig, cond_prob_fig, table_data
 
 
 # =============================================================================

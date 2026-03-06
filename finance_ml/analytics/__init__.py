@@ -119,6 +119,10 @@ from finance_ml.analytics.screening import (
     create_sector_relative_ranking,
     screen_garp_opportunities,
     screen_high_yield_safe_dividends,
+    # Post-Enhancement 1–12 screeners
+    screen_low_volatility_quality,
+    screen_fcf_growth_compounders,
+    screen_total_return_leaders,
     )
 
 # Statistical analysis
@@ -181,6 +185,7 @@ try:
         ResampledBeatEstimate,
         # Accounting anomaly result
         AccountingAnomalyResult,
+        AccountingAnomalyProbabilityModel,
         # Shared utility
         compute_beta_confidence_score,
         )
@@ -261,6 +266,7 @@ __all__ = [
     "DividendSafetyResult",
     "PriceTargetResult",
     "AccountingAnomalyResult",
+    "AccountingAnomalyProbabilityModel",
     "PriorParameters",
     "ReportedEPSHistory",
     "ForwardEstimateSignals",
@@ -289,6 +295,10 @@ __all__ = [
     "create_sector_relative_ranking",
     "screen_garp_opportunities",
     "screen_high_yield_safe_dividends",
+    # Post-Enhancement 1–12 screeners
+    "screen_low_volatility_quality",
+    "screen_fcf_growth_compounders",
+    "screen_total_return_leaders",
     # InferenceData schema
     "ARVIZ_AVAILABLE",
     "EquityCoordinates",

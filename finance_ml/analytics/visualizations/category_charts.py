@@ -1194,7 +1194,6 @@ def create_accounting_quality_breakdown(
     """
     components = [
         "accounting_quality_score",
-        "non_operating_income_share",  # Note: lower is better for quality
         "gaap_adj_eps_gap_pct",  # Note: lower is better for quality
         "asset_sale_boost",  # Note: lower is better for quality
         "exceptional_items_frequency",  # Note: lower is better for quality
@@ -1453,3 +1452,205 @@ VIEW_VISUALIZATION_REGISTRY = {
     ],
     # ... add mappings for other views
 }
+
+
+# ---------------------------------------------------------------------------
+# Post-Enhancement 1–12 visualization functions
+# ---------------------------------------------------------------------------
+
+
+def create_volatility_surface_chart(
+    df: pd.DataFrame,
+    group_by: str = "sector",
+) -> go.Figure:
+    """Create volatility term-structure chart across 1m/3m/6m/1y horizons."""
+    vol_cols = ["volatility_1m", "volatility_3m", "volatility_6m", "volatility_1y"]
+    available = [c for c in vol_cols if c in df.columns]
+
+    if not available or group_by not in df.columns:
+        return _no_data("Volatility Surface — No Data")
+
+    agg = df.groupby(group_by)[available].mean().reset_index()
+    melted = agg.melt(id_vars=group_by, value_vars=available,
+                      var_name="horizon", value_name="volatility")
+
+    fig = px.line(
+        melted, x="horizon", y="volatility", color=group_by,
+        title="Volatility Term Structure by Sector",
+        markers=True,
+    )
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
+
+
+def create_tax_rate_distribution(
+    df: pd.DataFrame,
+    group_by: str = "sector",
+) -> go.Figure:
+    """Create box plot of effective tax rates by sector."""
+    col = resolve_column(df, "effective_tax_rate_ltm")
+    if col is None or group_by not in df.columns:
+        return _no_data("Tax Rate Distribution — No Data")
+
+    fig = px.box(
+        df, x=group_by, y=col,
+        title="Effective Tax Rate Distribution by Sector",
+        color=group_by,
+    )
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
+
+
+def create_fcf_estimate_curve(
+    df: pd.DataFrame,
+    ticker: str,
+) -> go.Figure:
+    """Create forward FCF estimate curve for a specific company."""
+    fcf_cols = [
+        "fcf_est_avg_fy1e", "fcf_est_avg_fy2e", "fcf_est_avg_fy3e",
+        "fcf_est_avg_fy4e", "fcf_est_avg_fy5e",
+    ]
+    available = [c for c in fcf_cols if c in df.columns]
+
+    company = df[df["ticker"] == ticker]
+    if company.empty or not available:
+        return _no_data(f"FCF Estimate Curve — No Data for {ticker}")
+
+    values = [company[c].iloc[0] for c in available]
+    labels = ["FY1E", "FY2E", "FY3E", "FY4E", "FY5E"][: len(available)]
+
+    fig = go.Figure(
+        data=[go.Scatter(x=labels, y=values, mode="lines+markers",
+                         name=ticker, line=dict(width=3))]
+    )
+    fig.update_layout(
+        title=f"{ticker} — Forward FCF Estimate Curve",
+        xaxis_title="Forecast Year",
+        yaxis_title="FCF Estimate",
+    )
+    _apply_default_layout(fig, height=500, width=900)
+    return fig
+
+
+def create_opex_efficiency_scatter(
+    df: pd.DataFrame,
+) -> go.Figure:
+    """Scatter plot of operating leverage score vs revenue growth."""
+    x_col = resolve_column(df, "operating_leverage_score")
+    y_col = resolve_column(df, "revenue_growth_yoy")
+    if x_col is None or y_col is None:
+        return _no_data("OpEx Efficiency — No Data")
+
+    fig = px.scatter(
+        df, x=x_col, y=y_col,
+        color=resolve_column(df, "sector") or None,
+        hover_data=["ticker"] if "ticker" in df.columns else None,
+        title="Operating Leverage vs Revenue Growth",
+    )
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
+
+
+def create_asset_sale_impact_chart(
+    df: pd.DataFrame,
+    group_by: str = "sector",
+) -> go.Figure:
+    """Bar chart showing asset sale frequency and trend by sector."""
+    freq_col = resolve_column(df, "asset_sale_frequency")
+    if freq_col is None or group_by not in df.columns:
+        return _no_data("Asset Sale Impact — No Data")
+
+    agg = df.groupby(group_by)[freq_col].mean().reset_index()
+    fig = px.bar(
+        agg, x=group_by, y=freq_col,
+        title="Average Asset Sale Frequency by Sector",
+        color=group_by,
+    )
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
+
+
+def create_share_dilution_scatter(
+    df: pd.DataFrame,
+) -> go.Figure:
+    """Scatter of shares YoY change vs buyback yield."""
+    x_col = resolve_column(df, "shares_yoy_change_pct")
+    y_col = resolve_column(df, "buyback_yield")
+    if x_col is None or y_col is None:
+        return _no_data("Share Dilution — No Data")
+
+    fig = px.scatter(
+        df, x=x_col, y=y_col,
+        color=resolve_column(df, "sector") or None,
+        hover_data=["ticker"] if "ticker" in df.columns else None,
+        title="Share Dilution vs Buyback Yield",
+    )
+    fig.add_hline(y=0, line_dash="dash", line_color="gray")
+    fig.add_vline(x=0, line_dash="dash", line_color="gray")
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
+
+
+def create_total_return_comparison(
+    df: pd.DataFrame,
+    top_n: int = 30,
+) -> go.Figure:
+    """Horizontal bar chart comparing total return metrics."""
+    col = resolve_column(df, "total_return_ytd")
+    if col is None or "ticker" not in df.columns:
+        return _no_data("Total Return Comparison — No Data")
+
+    sorted_df = df.nlargest(top_n, col)
+    fig = px.bar(
+        sorted_df, x=col, y="ticker", orientation="h",
+        title=f"Top {top_n} — Total Return YTD",
+        color=col, color_continuous_scale="RdYlGn",
+    )
+    _apply_default_layout(fig, height=max(400, top_n * 20), width=1000)
+    return fig
+
+
+def create_dividend_yield_history_chart(
+    df: pd.DataFrame,
+    group_by: str = "sector",
+) -> go.Figure:
+    """Line chart of historical dividend yield across 5 years by sector."""
+    yield_cols = [
+        "div_yield_ind", "div_yield_1fy_ind",
+        "div_yield_2fyind", "div_yield_3fyind",
+        "div_yield_4fyind", "div_yield_5fyind",
+    ]
+    available = [c for c in yield_cols if c in df.columns]
+
+    if not available or group_by not in df.columns:
+        return _no_data("Dividend Yield History — No Data")
+
+    agg = df.groupby(group_by)[available].mean().reset_index()
+    melted = agg.melt(id_vars=group_by, value_vars=available,
+                      var_name="period", value_name="div_yield")
+
+    fig = px.line(
+        melted, x="period", y="div_yield", color=group_by,
+        title="Historical Dividend Yield by Sector",
+        markers=True,
+    )
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
+
+
+def create_interest_income_trend(
+    df: pd.DataFrame,
+    group_by: str = "sector",
+) -> go.Figure:
+    """Box plot of interest income to revenue ratio by sector."""
+    col = resolve_column(df, "interest_income_to_revenue")
+    if col is None or group_by not in df.columns:
+        return _no_data("Interest Income Trend — No Data")
+
+    fig = px.box(
+        df, x=group_by, y=col,
+        title="Interest Income to Revenue by Sector",
+        color=group_by,
+    )
+    _apply_default_layout(fig, height=600, width=1000)
+    return fig
