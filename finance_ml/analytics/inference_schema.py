@@ -22,9 +22,14 @@ from typing import Any, Optional, Sequence
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 logger = logging.getLogger(__name__)
+
+try:
+    import xarray as xr
+except ImportError as _xr_err:
+    logger.warning("xarray import failed in inference_schema: %s", _xr_err)
+    xr = None  # type: ignore[assignment]
 
 # ---------------------------------------------------------------------------
 # Lazy ArviZ import (optional dependency)
@@ -33,7 +38,8 @@ try:
     import arviz as az
 
     ARVIZ_AVAILABLE = hasattr(az, "InferenceData")
-except (ImportError, OSError, PermissionError, Exception):
+except Exception as _az_err:
+    logger.warning("ArviZ import failed in inference_schema: %s", _az_err)
     az = None  # type: ignore[assignment]
     ARVIZ_AVAILABLE = False
 
@@ -42,6 +48,12 @@ except (ImportError, OSError, PermissionError, Exception):
 # Internal helpers
 # ---------------------------------------------------------------------------
 _VALID_SCHEMA_RE = None  # lazy-compiled
+
+# Identifier columns shared across builders and specs
+_IDENTIFIER_COLS: frozenset[str] = frozenset({
+    "ticker", "isin", "name", "sector", "industry",
+    "country", "trading_country", "region", "exchange",
+})
 
 
 def _safe_values(series_or_df: "pd.Series | pd.DataFrame") -> np.ndarray:
@@ -52,6 +64,38 @@ def _safe_values(series_or_df: "pd.Series | pd.DataFrame") -> np.ndarray:
     to libraries (ArviZ, xarray) that may attempt internal writes.
     """
     return np.array(series_or_df.values, copy=True)
+
+
+def _safe_column_values(
+    df: pd.DataFrame,
+    col: str,
+    default_factory: "callable | None" = None,
+    n: int | None = None,
+) -> np.ndarray:
+    """Extract a column as a writable array, falling back to a default.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Source DataFrame.
+    col : str
+        Column name to extract.
+    default_factory : callable, optional
+        Zero-arg callable returning the default array (e.g. ``lambda: np.ones(n)``).
+        If None and the column is missing, raises KeyError.
+    n : int, optional
+        Expected length (used for validation, not for default generation).
+
+    Returns
+    -------
+    np.ndarray
+        Writable array of column values.
+    """
+    if col in df.columns:
+        return _safe_values(df[col])
+    if default_factory is not None:
+        return default_factory()
+    raise KeyError(f"Column '{col}' not found and no default provided")
 
 
 def _validate_schema_name(schema: str) -> str:
@@ -217,9 +261,199 @@ class FeatureCoordinates:
         )
 
 
+# ---------------------------------------------------------------------------
+# Shared InferenceData construction helpers
+# ---------------------------------------------------------------------------
+
+
+def _build_posterior_samples_beta(
+    rng: np.random.Generator,
+    alpha: np.ndarray,
+    beta: np.ndarray,
+    n_chains: int,
+    n_draws: int,
+    n_vars: int,
+) -> np.ndarray:
+    """Sample Beta(α, β) posteriors across chains.
+
+    Returns shape ``(n_chains, n_draws, n_vars)``.
+    """
+    return np.stack(
+        [
+            rng.beta(alpha, beta, size=(n_draws, n_vars))
+            for _ in range(n_chains)
+        ]
+    )
+
+
+def _build_posterior_samples_normal(
+    rng: np.random.Generator,
+    means: np.ndarray,
+    stds: np.ndarray,
+    n_chains: int,
+    n_draws: int,
+    n_vars: int,
+) -> np.ndarray:
+    """Sample Normal(μ, σ) posteriors across chains.
+
+    Returns shape ``(n_chains, n_draws, n_vars)``.
+    """
+    return np.stack(
+        [
+            rng.normal(means, stds, size=(n_draws, n_vars))
+            for _ in range(n_chains)
+        ]
+    )
+
+
+def _build_xarray_coords(
+    equity_coords: "EquityCoordinates | IdentifierCoordinates",
+    n_chains: int,
+    n_draws: int,
+    extra_coords: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Assemble the xarray coordinate dict for chain × draw × equity dimensions.
+
+    Parameters
+    ----------
+    equity_coords
+        Coordinate object with a ``to_xarray_coords()`` method.
+    n_chains : int
+        Number of MCMC chains.
+    n_draws : int
+        Number of posterior draws per chain.
+    extra_coords : dict, optional
+        Additional coordinate entries (e.g. ``{"feature": [...]}``) merged last.
+    """
+    coords = {
+        "chain": np.arange(n_chains),
+        "draw": np.arange(n_draws),
+        **equity_coords.to_xarray_coords(),
+    }
+    if extra_coords:
+        coords.update(extra_coords)
+    return coords
+
+
+def _moment_matched_beta_params(
+    probabilities: np.ndarray,
+    concentration: float = 50.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Moment-match a probability vector to Beta(α, β) parameters.
+
+    Parameters
+    ----------
+    probabilities : np.ndarray
+        Point estimates in (0, 1).
+    concentration : float
+        Concentration parameter κ — higher means tighter posterior.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        (alpha, beta) arrays suitable for ``rng.beta(alpha, beta, ...)``.
+    """
+    p = np.clip(probabilities, 0.001, 0.999)
+    return p * concentration, (1 - p) * concentration
+
+
+def _build_arviz_or_xarray(
+    *,
+    posterior: dict[str, np.ndarray] | None = None,
+    posterior_predictive: dict[str, np.ndarray] | None = None,
+    observed_data: dict[str, np.ndarray] | None = None,
+    log_likelihood: dict[str, np.ndarray] | None = None,
+    constant_data: dict[str, np.ndarray] | None = None,
+    coords: dict[str, Any],
+    dims: dict[str, list[str]],
+    fallback_var_name: str | None = None,
+    fallback_data: np.ndarray | None = None,
+    fallback_dims: list[str] | None = None,
+) -> "az.InferenceData | xr.Dataset":
+    """Dispatch to ``az.from_dict`` when ArviZ is available, else build ``xr.Dataset``.
+
+    The fallback Dataset contains a single variable from the posterior group.
+
+    Parameters
+    ----------
+    posterior, posterior_predictive, observed_data, log_likelihood, constant_data
+        Dicts passed directly to ``az.from_dict``.
+    coords, dims
+        Coordinate and dimension specifications.
+    fallback_var_name : str, optional
+        Variable name for the xr.Dataset fallback. If None, uses the first
+        key from ``posterior``.
+    fallback_data : np.ndarray, optional
+        Data array for the fallback. If None, uses the first value from ``posterior``.
+    fallback_dims : list[str], optional
+        Dimension names for the fallback variable.
+    """
+    if ARVIZ_AVAILABLE:
+        return az.from_dict(
+            posterior=posterior,
+            posterior_predictive=posterior_predictive,
+            observed_data=observed_data,
+            log_likelihood=log_likelihood,
+            constant_data=constant_data,
+            coords=coords,
+            dims=dims,
+        )
+
+    # xr.Dataset fallback — single posterior variable
+    var_name = fallback_var_name
+    data = fallback_data
+    dim_names = fallback_dims
+
+    if var_name is None and posterior:
+        var_name = next(iter(posterior))
+        data = posterior[var_name]
+    if var_name is None and posterior_predictive:
+        var_name = next(iter(posterior_predictive))
+        data = posterior_predictive[var_name]
+    if dim_names is None and dims:
+        dim_names = dims.get(var_name, list(dims.values())[0])
+
+    if var_name is None or data is None:
+        raise ValueError("Cannot build xr.Dataset fallback — no posterior data provided")
+
+    ds = xr.Dataset({var_name: (dim_names, data)}, coords=coords)
+    logger.warning("ArviZ not available; returning xr.Dataset (%s only)", var_name)
+    return ds
+
+
 # =============================================================================
 # 2. InferenceData Factory — Bayesian Beat Probability
 # =============================================================================
+
+
+def _build_observed_beat(
+    beat_results_df: pd.DataFrame,
+    n_equities: int,
+) -> np.ndarray:
+    """Derive binary observed beat indicator from historical beat rate, or default to 0.5."""
+    if "historical_beat_rate" in beat_results_df.columns:
+        return (_safe_values(beat_results_df["historical_beat_rate"]) > 0.5).astype(float)
+    return np.full(n_equities, 0.5)
+
+
+def _build_beat_constant_data(
+    beat_results_df: pd.DataFrame,
+    n_equities: int,
+) -> dict[str, np.ndarray]:
+    """Extract prior parameters and optional metadata into a constant_data dict."""
+    constant_data = {
+        "prior_alpha": _safe_column_values(
+            beat_results_df, "prior_alpha",
+            default_factory=lambda: np.ones(n_equities),
+        ),
+        "prior_beta": _safe_column_values(
+            beat_results_df, "prior_beta",
+            default_factory=lambda: np.ones(n_equities),
+        ),
+    }
+    if "confidence_score" in beat_results_df.columns:
+        constant_data["confidence_score"] = _safe_values(beat_results_df["confidence_score"])
+    return constant_data
 
 
 def build_beat_probability_inference_data(
@@ -268,29 +502,18 @@ def build_beat_probability_inference_data(
     equity_coords = EquityCoordinates.from_dataframe(beat_results_df)
     n_equities = len(equity_coords.tickers)
 
-    # --- Posterior samples from Beta(posterior_alpha, posterior_beta) ---
     post_alpha = _safe_values(beat_results_df["posterior_alpha"])
     post_beta = _safe_values(beat_results_df["posterior_beta"])
 
-    # Shape: (n_chains, n_posterior_samples, n_equities)
-    posterior_samples = np.stack(
-        [
-            rng.beta(post_alpha, post_beta, size=(n_posterior_samples, n_equities))
-            for _ in range(n_chains)
-        ]
+    posterior_samples = _build_posterior_samples_beta(
+        rng, post_alpha, post_beta, n_chains, n_posterior_samples, n_equities
     )
 
-    # --- Posterior predictive: Bernoulli draws ---
-    posterior_predictive = (
+    beat_outcome_samples = (
         rng.random((n_chains, n_posterior_samples, n_equities)) < posterior_samples
     ).astype(int)
 
-    # --- Log-likelihood ---
-    # Use historical beat rate as the observed outcome proxy
-    if "historical_beat_rate" in beat_results_df.columns:
-        observed_beat = (_safe_values(beat_results_df["historical_beat_rate"]) > 0.5).astype(float)
-    else:
-        observed_beat = np.ones(n_equities) * 0.5
+    observed_beat = _build_observed_beat(beat_results_df, n_equities)
 
     log_lik = np.where(
         observed_beat[np.newaxis, np.newaxis, :] == 1,
@@ -298,66 +521,71 @@ def build_beat_probability_inference_data(
         np.log(1 - posterior_samples + 1e-12),
     )
 
-    # --- Build coordinate dicts ---
-    equity_xr_coords = equity_coords.to_xarray_coords()
-    dims = {
-        "beat_probability": ["chain", "draw", "equity"],
-    }
-    coords = {
-        "chain": np.arange(n_chains),
-        "draw": np.arange(n_posterior_samples),
-        **equity_xr_coords,
-    }
+    coords = _build_xarray_coords(equity_coords, n_chains, n_posterior_samples)
+    dims = {"beat_probability": ["chain", "draw", "equity"]}
+    constant_data = _build_beat_constant_data(beat_results_df, n_equities)
 
-    # --- Constant data (priors + metadata) ---
-    prior_alpha = (
-        _safe_values(beat_results_df["prior_alpha"])
-        if "prior_alpha" in beat_results_df.columns
-        else np.ones(n_equities)
+    idata = _build_arviz_or_xarray(
+        posterior={"beat_probability": posterior_samples},
+        posterior_predictive={"beat_outcome": beat_outcome_samples},
+        observed_data={"observed_beat": observed_beat},
+        log_likelihood={"beat_probability": log_lik},
+        constant_data=constant_data,
+        coords=coords,
+        dims=dims,
     )
-    prior_beta = (
-        _safe_values(beat_results_df["prior_beta"])
-        if "prior_beta" in beat_results_df.columns
-        else np.ones(n_equities)
-    )
-
-    constant_data = {
-        "prior_alpha": prior_alpha,
-        "prior_beta": prior_beta,
-    }
-    if "confidence_score" in beat_results_df.columns:
-        constant_data["confidence_score"] = _safe_values(beat_results_df["confidence_score"])
-
     if ARVIZ_AVAILABLE:
-        idata = az.from_dict(
-            posterior={"beat_probability": posterior_samples},
-            posterior_predictive={"beat_outcome": posterior_predictive},
-            observed_data={"observed_beat": observed_beat},
-            log_likelihood={"beat_probability": log_lik},
-            constant_data=constant_data,
-            coords=coords,
-            dims=dims,
-        )
         logger.info(
             "Built InferenceData: %d chains × %d draws × %d equities",
-            n_chains,
-            n_posterior_samples,
-            n_equities,
+            n_chains, n_posterior_samples, n_equities,
         )
-        return idata
-    else:
-        # Fallback: return xr.Dataset with posterior group only
-        ds = xr.Dataset(
-            {"beat_probability": (["chain", "draw", "equity"], posterior_samples)},
-            coords=coords,
-        )
-        logger.warning("ArviZ not available; returning xr.Dataset (posterior only)")
-        return ds
+    return idata
 
 
 # =============================================================================
 # 3. InferenceData Factory — Credit Risk / Ruin Probability
 # =============================================================================
+
+
+def _build_credit_observed_data(
+    observed_df: pd.DataFrame,
+    tickers: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Extract observed financial health indicators aligned to equity tickers."""
+    observed: dict[str, np.ndarray] = {}
+    obs_cols = (
+        "combined_distress_risk_score", "altman_z_score", "cash_runway_months",
+        # NEW: v3.4 leverage/liquidity and quality/risk observed variables
+        "debt_3y_cagr", "balance_sheet_strength", "debt_maturity_risk",
+        "wc_efficiency_score", "distress_risk_score",
+    )
+    available_obs = [c for c in obs_cols if c in observed_df.columns]
+    if not available_obs:
+        return observed
+
+    if "ticker" in observed_df.columns:
+        obs_indexed = observed_df.set_index("ticker")
+    elif observed_df.index.name is not None:
+        obs_indexed = observed_df
+    else:
+        return observed
+
+    for col in available_obs:
+        observed[col] = _safe_values(obs_indexed[col].reindex(tickers))
+    return observed
+
+
+def _build_credit_constant_data(
+    ruin_results_df: pd.DataFrame,
+) -> dict[str, np.ndarray]:
+    """Extract capital, cash_burn, volatility, and risk_level into constant_data."""
+    constant_data: dict[str, np.ndarray] = {}
+    for col in ("capital", "cash_burn", "volatility"):
+        if col in ruin_results_df.columns:
+            constant_data[col] = _safe_values(ruin_results_df[col])
+    if "risk_level" in ruin_results_df.columns:
+        constant_data["risk_level"] = _safe_values(ruin_results_df["risk_level"].astype(str))
+    return constant_data
 
 
 def build_credit_risk_inference_data(
@@ -397,68 +625,52 @@ def build_credit_risk_inference_data(
     equity_coords = EquityCoordinates.from_dataframe(ruin_results_df)
     n_equities = len(equity_coords.tickers)
 
-    # Ruin probability → Beta posterior (moment-match from point estimate)
     ruin_p = np.clip(_safe_values(ruin_results_df["ruin_probability"]), 0.001, 0.999)
-    # Moment-matched Beta: concentration κ = 50 (moderate certainty)
-    kappa = 50.0
-    alpha_ruin = ruin_p * kappa
-    beta_ruin = (1 - ruin_p) * kappa
+    alpha_ruin, beta_ruin = _moment_matched_beta_params(ruin_p, concentration=50.0)
 
-    posterior_samples = np.stack(
-        [
-            rng.beta(alpha_ruin, beta_ruin, size=(n_posterior_samples, n_equities))
-            for _ in range(n_chains)
-        ]
+    posterior_samples = _build_posterior_samples_beta(
+        rng, alpha_ruin, beta_ruin, n_chains, n_posterior_samples, n_equities
     )
 
-    coords = {
-        "chain": np.arange(n_chains),
-        "draw": np.arange(n_posterior_samples),
-        **equity_coords.to_xarray_coords(),
-    }
+    coords = _build_xarray_coords(equity_coords, n_chains, n_posterior_samples)
     dims = {"ruin_probability": ["chain", "draw", "equity"]}
 
-    # Observed financial health indicators — set index ONCE before the loop
-    observed = {}
-    obs_cols = ("combined_distress_risk_score", "altman_z_score", "cash_runway_months")
-    available_obs = [c for c in obs_cols if c in observed_df.columns]
-    if available_obs:
-        if "ticker" in observed_df.columns:
-            obs_indexed = observed_df.set_index("ticker")
-        elif observed_df.index.name is not None:
-            obs_indexed = observed_df  # already has a named index
-        else:
-            obs_indexed = None  # can't align — skip observed data
+    observed = _build_credit_observed_data(observed_df, equity_coords.tickers)
+    constant_data = _build_credit_constant_data(ruin_results_df)
 
-        if obs_indexed is not None:
-            for col in available_obs:
-                observed[col] = _safe_values(obs_indexed[col].reindex(equity_coords.tickers))
-
-    constant_data = {}
-    for col in ("capital", "cash_burn", "volatility"):
-        if col in ruin_results_df.columns:
-            constant_data[col] = _safe_values(ruin_results_df[col])
-
-    if "risk_level" in ruin_results_df.columns:
-        constant_data["risk_level"] = _safe_values(ruin_results_df["risk_level"].astype(str))
-
-    if ARVIZ_AVAILABLE:
-        return az.from_dict(
-            posterior={"ruin_probability": posterior_samples},
-            observed_data=observed if observed else None,
-            constant_data=constant_data if constant_data else None,
-            coords=coords,
-            dims=dims,
-        )
-    else:
-        return xr.Dataset(
-            {"ruin_probability": (["chain", "draw", "equity"], posterior_samples)},
-            coords=coords,
-        )
+    return _build_arviz_or_xarray(
+        posterior={"ruin_probability": posterior_samples},
+        observed_data=observed if observed else None,
+        constant_data=constant_data if constant_data else None,
+        coords=coords,
+        dims=dims,
+    )
 
 # =============================================================================
 # 3b. InferenceData Factory — Accounting Anomaly Detection
 # =============================================================================
+
+
+def _build_anomaly_observed_data(
+    anomaly_df: pd.DataFrame,
+) -> dict[str, np.ndarray]:
+    """Extract raw anomaly score and optional feature count into observed_data."""
+    observed = {"raw_anomaly_score": _safe_values(anomaly_df["accounting_anomaly_score"])}
+    if "anomaly_feature_count" in anomaly_df.columns:
+        observed["anomaly_feature_count"] = _safe_values(anomaly_df["anomaly_feature_count"])
+    return observed
+
+
+def _build_anomaly_constant_data(
+    anomaly_df: pd.DataFrame,
+) -> dict[str, np.ndarray]:
+    """Extract Benford's Law p-value into constant_data if available."""
+    constant_data: dict[str, np.ndarray] = {}
+    if "benford_chi2_pvalue" in anomaly_df.columns:
+        bp = anomaly_df["benford_chi2_pvalue"].dropna()
+        if len(bp) > 0:
+            constant_data["benford_chi2_pvalue"] = np.array([float(bp.iloc[0])])
+    return constant_data
 
 
 def build_accounting_anomaly_inference_data(
@@ -502,60 +714,73 @@ def build_accounting_anomaly_inference_data(
     equity_coords = EquityCoordinates.from_dataframe(anomaly_df)
     n_equities = len(equity_coords.tickers)
 
-    # Normalise score to (0, 1) for Beta distribution
     score_01 = np.clip(
         _safe_values(anomaly_df["accounting_anomaly_score"]) / 100.0, 0.001, 0.999
     )
+    alpha, beta_shape = _moment_matched_beta_params(score_01, concentration=30.0)
 
-    # Moment-matched Beta: concentration κ = 30 (moderate certainty)
-    kappa = 30.0
-    alpha = score_01 * kappa
-    beta_param = (1 - score_01) * kappa
-
-    posterior_samples = np.stack(
-        [
-            rng.beta(alpha, beta_param, size=(n_posterior_samples, n_equities))
-            for _ in range(n_chains)
-        ]
+    posterior_samples = _build_posterior_samples_beta(
+        rng, alpha, beta_shape, n_chains, n_posterior_samples, n_equities
     )
 
-    coords = {
-        "chain": np.arange(n_chains),
-        "draw": np.arange(n_posterior_samples),
-        **equity_coords.to_xarray_coords(),
-    }
+    coords = _build_xarray_coords(equity_coords, n_chains, n_posterior_samples)
     dims = {"anomaly_score": ["chain", "draw", "equity"]}
 
-    observed = {"raw_anomaly_score": _safe_values(anomaly_df["accounting_anomaly_score"])}
-    if "anomaly_feature_count" in anomaly_df.columns:
-        observed["anomaly_feature_count"] = _safe_values(
-            anomaly_df["anomaly_feature_count"]
-        )
+    observed = _build_anomaly_observed_data(anomaly_df)
+    constant_data = _build_anomaly_constant_data(anomaly_df)
 
-    constant_data = {}
-    if "benford_chi2_pvalue" in anomaly_df.columns:
-        bp = anomaly_df["benford_chi2_pvalue"].dropna()
-        if len(bp) > 0:
-            constant_data["benford_chi2_pvalue"] = np.array([float(bp.iloc[0])])
-
-    if ARVIZ_AVAILABLE:
-        return az.from_dict(
-            posterior={"anomaly_score": posterior_samples},
-            observed_data=observed,
-            constant_data=constant_data if constant_data else None,
-            coords=coords,
-            dims=dims,
-        )
-    else:
-        return xr.Dataset(
-            {"anomaly_score": (["chain", "draw", "equity"], posterior_samples)},
-            coords=coords,
-        )
+    return _build_arviz_or_xarray(
+        posterior={"anomaly_score": posterior_samples},
+        observed_data=observed,
+        constant_data=constant_data if constant_data else None,
+        coords=coords,
+        dims=dims,
+    )
 
 
 # =============================================================================
 # 4. InferenceData Factory — Monte Carlo Price Target
 # =============================================================================
+
+
+def _resolve_price_target_inputs(
+    mc_results_df: pd.DataFrame,
+    observed_df: pd.DataFrame,
+    tickers: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Resolve pt_low, pt_median, pt_high, and last_price for MC simulation.
+
+    Falls back to heuristic defaults from last_price when exact columns
+    are missing from mc_results_df, then refines from observed_df row-by-row.
+
+    Returns
+    -------
+    tuple
+        (last_prices, pt_low, pt_median, pt_high)
+    """
+    last_prices = _safe_values(mc_results_df["last_price"])
+    pt_low = last_prices * 0.8
+    pt_high = last_prices * 1.5
+    pt_median = _safe_column_values(
+        mc_results_df, "pt_median",
+        default_factory=lambda: (pt_low + pt_high) / 2,
+    )
+
+    if "price_target_low" in observed_df.columns:
+        for i, t in enumerate(tickers):
+            row = observed_df[observed_df["ticker"] == t]
+            if not row.empty:
+                val_low = row["price_target_low"].iloc[0]
+                val_high = row["price_target_high"].iloc[0]
+                val_median = row["price_target_median"].iloc[0]
+                if pd.notna(val_low) and val_low > 0:
+                    pt_low[i] = val_low
+                if pd.notna(val_high) and val_high > 0:
+                    pt_high[i] = val_high
+                if pd.notna(val_median) and val_median > 0:
+                    pt_median[i] = val_median
+
+    return last_prices, pt_low, pt_median, pt_high
 
 
 def build_monte_carlo_inference_data(
@@ -594,30 +819,9 @@ def build_monte_carlo_inference_data(
     equity_coords = EquityCoordinates.from_dataframe(mc_results_df)
     n_equities = len(equity_coords.tickers)
 
-    # Reconstruct triangular simulations — always writable copies
-    last_prices = _safe_values(mc_results_df["last_price"])
-    pt_low = last_prices * 0.8
-    pt_high = last_prices * 1.5
-    pt_median = (
-        _safe_values(mc_results_df["pt_median"])
-        if "pt_median" in mc_results_df.columns
-        else (pt_low + pt_high) / 2
+    last_prices, pt_low, pt_median, pt_high = _resolve_price_target_inputs(
+        mc_results_df, observed_df, equity_coords.tickers
     )
-
-    # Retrieve exact columns from observed_df if available
-    if "price_target_low" in observed_df.columns:
-        for i, t in enumerate(equity_coords.tickers):
-            row = observed_df[observed_df["ticker"] == t]
-            if not row.empty:
-                val_low = row["price_target_low"].iloc[0]
-                val_high = row["price_target_high"].iloc[0]
-                val_median = row["price_target_median"].iloc[0]
-                if pd.notna(val_low) and val_low > 0:
-                    pt_low[i] = val_low
-                if pd.notna(val_high) and val_high > 0:
-                    pt_high[i] = val_high
-                if pd.notna(val_median) and val_median > 0:
-                    pt_median[i] = val_median
 
     # Triangular distribution simulation
     scale = np.maximum(pt_high - pt_low, 0.01)
@@ -629,40 +833,53 @@ def build_monte_carlo_inference_data(
             c[i], loc=pt_low[i], scale=scale[i], size=n_simulations, random_state=rng
         )
 
-    coords = {
-        "chain": np.array([0]),
-        "draw": np.arange(n_simulations),
-        **equity_coords.to_xarray_coords(),
-    }
+    coords = _build_xarray_coords(equity_coords, n_chains=1, n_draws=n_simulations)
     dims = {"simulated_price": ["chain", "draw", "equity"]}
 
-    observed = {
-        "last_price": last_prices,
-    }
-    constant = {
-        "pt_low": pt_low,
-        "pt_median": pt_median,
-        "pt_high": pt_high,
-    }
-
-    if ARVIZ_AVAILABLE:
-        return az.from_dict(
-            posterior_predictive={"simulated_price": simulated_prices},
-            observed_data=observed,
-            constant_data=constant,
-            coords=coords,
-            dims=dims,
-        )
-    else:
-        return xr.Dataset(
-            {"simulated_price": (["chain", "draw", "equity"], simulated_prices)},
-            coords=coords,
-        )
+    return _build_arviz_or_xarray(
+        posterior_predictive={"simulated_price": simulated_prices},
+        observed_data={"last_price": last_prices},
+        constant_data={"pt_low": pt_low, "pt_median": pt_median, "pt_high": pt_high},
+        coords=coords,
+        dims=dims,
+        fallback_var_name="simulated_price",
+        fallback_data=simulated_prices,
+        fallback_dims=["chain", "draw", "equity"],
+    )
 
 
 # =============================================================================
 # 5. InferenceData Factory — Bayesian Category Analysis
 # =============================================================================
+
+
+def _extract_category_posterior_params(
+    analysis_results: dict[str, dict],
+    analysed_features: list[str],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Extract posterior means and stds from category analysis results.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        (posterior_means, posterior_stds) of shape ``(n_features,)``.
+    """
+    means = np.array([analysis_results[f]["posterior_mean"] for f in analysed_features])
+    stds = np.array([analysis_results[f]["posterior_std"] for f in analysed_features])
+    return means, stds
+
+
+def _build_category_constant_data(
+    analysis_results: dict[str, dict],
+    analysed_features: list[str],
+    category_name: str,
+) -> dict[str, np.ndarray]:
+    """Build constant_data dict for category analysis InferenceData."""
+    return {
+        "category_name": np.array([category_name]),
+        "n_observations": np.array([analysis_results[f]["n_obs"] for f in analysed_features]),
+        "sample_mean": np.array([analysis_results[f]["sample_mean"] for f in analysed_features]),
+    }
 
 
 def build_category_analysis_inference_data(
@@ -714,57 +931,39 @@ def build_category_analysis_inference_data(
     if n_features == 0:
         raise ValueError(f"No analysed features found for category '{category_name}'")
 
-    # Posterior samples: Normal(posterior_mean, posterior_std)
-    posterior_means = np.array([analysis_results[f]["posterior_mean"] for f in analysed_features])
-    posterior_stds = np.array([analysis_results[f]["posterior_std"] for f in analysed_features])
+    posterior_means, posterior_stds = _extract_category_posterior_params(
+        analysis_results, analysed_features
+    )
 
-    posterior_samples = np.stack(
-        [
-            rng.normal(posterior_means, posterior_stds, size=(n_posterior_samples, n_features))
-            for _ in range(n_chains)
-        ]
-    )  # (n_chains, n_posterior_samples, n_features)
+    posterior_samples = _build_posterior_samples_normal(
+        rng, posterior_means, posterior_stds, n_chains, n_posterior_samples, n_features
+    )
 
-    coords: dict[str, Any] = {
-        "chain": np.arange(n_chains),
-        "draw": np.arange(n_posterior_samples),
-        "feature": np.array(analysed_features),
-    }
+    extra_coords: dict[str, Any] = {"feature": np.array(analysed_features)}
     if feature_coords is not None:
-        # Add registry metadata as feature-level coordinates
         mask = np.isin(feature_coords.feature_keys, analysed_features)
         if mask.sum() > 0 and len(feature_coords.categories) > 0:
-            coords["category"] = ("feature", feature_coords.categories[mask])
+            extra_coords["category"] = ("feature", feature_coords.categories[mask])
 
+    coords = _build_xarray_coords(
+        EquityCoordinates.from_dataframe(observed_df),
+        n_chains, n_posterior_samples,
+        extra_coords=extra_coords,
+    )
     dims = {"feature_mean": ["chain", "draw", "feature"]}
 
-    # Observed data: raw feature values per equity
-    equity_coords = EquityCoordinates.from_dataframe(observed_df)
-    # Writable copy; NaN values are preserved but won't crash ArviZ
     observed_matrix = _safe_values(observed_df[analysed_features])
+    constant_data = _build_category_constant_data(
+        analysis_results, analysed_features, category_name
+    )
 
-    observed_ds = {
-        "observed_values": observed_matrix,
-    }
-    constant = {
-        "category_name": np.array([category_name]),
-        "n_observations": np.array([analysis_results[f]["n_obs"] for f in analysed_features]),
-        "sample_mean": np.array([analysis_results[f]["sample_mean"] for f in analysed_features]),
-    }
-
-    if ARVIZ_AVAILABLE:
-        return az.from_dict(
-            posterior={"feature_mean": posterior_samples},
-            observed_data=observed_ds,
-            constant_data=constant,
-            coords=coords,
-            dims=dims,
-        )
-    else:
-        return xr.Dataset(
-            {"feature_mean": (["chain", "draw", "feature"], posterior_samples)},
-            coords=coords,
-        )
+    return _build_arviz_or_xarray(
+        posterior={"feature_mean": posterior_samples},
+        observed_data={"observed_values": observed_matrix},
+        constant_data=constant_data,
+        coords=coords,
+        dims=dims,
+    )
 
 
 # =============================================================================
@@ -968,13 +1167,9 @@ def build_resampled_technical_inference_data(
     """
     from finance_ml.analytics.statistical_analysis import BayesianTechnicalResampler
 
-    resampler = BayesianTechnicalResampler(
-        prior_return_mean=prior_return_mean,
-        prior_return_std=prior_return_std,
-        n_posterior_samples=n_posterior_samples,
-        n_chains=n_chains,
-        random_seed=random_seed,
-    )
+    resampler = BayesianTechnicalResampler(prior_return_mean=prior_return_mean, prior_return_std=prior_return_std,
+                                           n_posterior_samples=n_posterior_samples, n_chains=n_chains,
+                                           random_seed=random_seed)
     result_df = resampler.resample_returns(equities_df, freq=freq)
     return resampler.build_inference_data(equities_df, freq=freq, result_df=result_df)
 
@@ -1014,7 +1209,7 @@ class IdentifierCoordinates:
     categorical, and date columns inherited by every vw_features_* view.
     """
 
-    tickers: np.ndarray
+    tickers: np.ndarray = field(default_factory=lambda: np.array([]))
     isins: np.ndarray = field(default_factory=lambda: np.array([]))
     names: np.ndarray = field(default_factory=lambda: np.array([]))
     sectors: np.ndarray = field(default_factory=lambda: np.array([]))
@@ -1032,7 +1227,7 @@ class IdentifierCoordinates:
         """Build xarray-compatible coordinate dict for the equity dimension."""
         coords: dict[str, Any] = {"equity": self.tickers}
         _optional = [
-            ("isin", self.isins), ("name", self.names),
+            ("ticker", self.tickers), ("isin", self.isins), ("name", self.names),
             ("sector", self.sectors), ("industry", self.industries),
             ("country", self.countries), ("trading_country", self.trading_countries),
             ("region", self.regions), ("exchange", self.exchanges),
@@ -1202,11 +1397,7 @@ class EquitiesMaterializedViewSpec:
     def from_dataframe(cls, df: pd.DataFrame) -> "EquitiesMaterializedViewSpec":
         """Construct from an mv_equities query result (or LIMIT 0 schema probe)."""
         id_coords = IdentifierCoordinates.from_dataframe(df)
-        id_col_set = {
-            "ticker", "isin", "name", "sector", "industry", "country",
-            "trading_country", "region", "exchange", "style_class", "size_class",
-        }
-        all_cols = [c for c in df.columns if c not in id_col_set]
+        all_cols = [c for c in df.columns if c not in _IDENTIFIER_COLS]
         price_cols = [
             c for c in all_cols
             if c.startswith("last_price") or c.startswith("price_") or c.startswith("ema_")
@@ -1362,11 +1553,7 @@ def build_feature_view_inference_data(
     spec = FeatureViewSpec(
         view_name=view_name,
         category=FEATURE_VIEW_REGISTRY.get(view_name, "Unknown"),
-        feature_columns=[
-            c for c in df.columns
-            if c not in {"ticker", "isin", "name", "sector", "industry",
-                         "country", "trading_country", "region", "exchange"}
-        ],
+        feature_columns=[c for c in df.columns if c not in _IDENTIFIER_COLS],
     )
 
     rng = np.random.default_rng(random_seed)
@@ -1379,21 +1566,16 @@ def build_feature_view_inference_data(
     if not feature_cols:
         return observed_ds
 
-    coords = {
-        "chain": np.arange(n_chains),
-        "draw": np.arange(n_posterior_samples),
-        **equity_coords.to_xarray_coords(),
-    }
+    coords = _build_xarray_coords(equity_coords, n_chains, n_posterior_samples)
 
     posterior_vars = {}
     for col in feature_cols:
         vals = df[col].fillna(0).values.astype(float)
         mu = vals
         sigma = np.abs(vals) * 0.1 + 1e-6
-        samples = np.stack([
-            rng.normal(mu, sigma, size=(n_posterior_samples, n_equities))
-            for _ in range(n_chains)
-        ])
+        samples = _build_posterior_samples_normal(
+            rng, mu, sigma, n_chains, n_posterior_samples, n_equities
+        )
         posterior_vars[col] = (["chain", "draw", "equity"], samples)
 
     posterior_ds = xr.Dataset(posterior_vars, coords=coords)

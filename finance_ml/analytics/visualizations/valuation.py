@@ -224,11 +224,11 @@ def create_valuation_distribution_dashboard(
 
     n_metrics = len(available_metrics)
     n_rows = n_metrics
-    n_cols = 1
+    n_cols = 2
 
     fig = make_subplots(
         rows=n_rows,
-        cols=1,
+        cols=n_cols,
         subplot_titles=[METRIC_LABELS.get(m, m) for m in available_metrics],
         vertical_spacing=0.06,
     )

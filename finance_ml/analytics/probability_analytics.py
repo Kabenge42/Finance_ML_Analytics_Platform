@@ -6,14 +6,26 @@ for earnings beat predictions, EPS streak analysis, and posterior probability
 estimation using Bayesian inference methods.
 
 Features:
-- Bayesian Earnings Beat Probability Model with posterior updates
-- EPS Streak Analysis with predictive analytics
-- Model Confidence Estimation with calibration metrics
-- Interactive dashboards for probability visualization
+- Bayesian Earnings Beat Probability Model with posterior updates and three-layer evidence fusion
+- EPS Streak Analysis with predictive analytics and mean reversion modeling
+- Model Confidence Estimation with Brier score, calibration error, and reliability diagrams
+- Credit Risk Probability Model with Altman Z-score and distress indicators
+- Dividend Cut Probability Model with FCF coverage and payout sustainability analysis
+- Price Target Achievement Model with analyst consensus and revision momentum
+- Accounting Anomaly Detection with Bayesian-informed multi-layered statistical analysis
+- Resampled Beat Probability Model with technical signal conditioning and ArviZ integration
+- Interactive dashboards for probability visualization and category-level analytics
+- Enhanced MCMC posterior estimation (Metropolis-Hastings, Student-t, hierarchical by sector)
+- Multi-component confidence scoring (volume, concentration, decisiveness)
+- Forward estimate signal integration (GAAP vs Normalized divergence, revision momentum)
+- Reported EPS history analysis with dynamic sample size derivation
+- Comprehensive data export pipeline with standardized identifier column propagation
 
 References:
 - Bayesian methods for financial forecasting
 - Posterior probability estimation techniques
+- Beta-Binomial conjugate prior framework
+- ArviZ probabilistic programming diagnostics
 """
 
 from __future__ import annotations
@@ -245,7 +257,7 @@ class AccountingAnomalyProbabilityModel:
     severity_feature_weight : float
         Weight for feature_count in severity computation (default 0.3).
     multi_flag_threshold : int
-        Minimum flagged features to trigger multi_flag_alert (default 3).
+        Minimum flagged features to trigger multi_flag_alert (default 10).
     """
 
     anomaly_z_threshold: float | None = None
@@ -253,7 +265,13 @@ class AccountingAnomalyProbabilityModel:
     tier_labels: list[str] | None = None
     severity_anomaly_weight: float = 0.7
     severity_feature_weight: float = 0.3
-    multi_flag_threshold: int = 3
+    multi_flag_threshold: int = 10
+    n_mcmc_samples: int = 5000
+    burn_in: int = 1000
+    use_mcmc: bool = True
+    # NEW: Comprehensive quality signals (v3.4)
+    use_quality_frequency: bool = True
+    use_balance_sheet_quality: bool = True
 
     def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -325,6 +343,31 @@ class AccountingAnomalyProbabilityModel:
         # Multi-flag alert
         result["multi_flag_alert"] = feature_count >= self.multi_flag_threshold
 
+        # Phase 2b: Enrich severity with comprehensive quality frequency signals
+        if self.use_quality_frequency:
+            freq_cols = ["goodwill_impairment_frequency", "asset_writedown_frequency", "restructuring_frequency"]
+            available_freq = [c for c in freq_cols if c in result.columns]
+            if available_freq:
+                freq_sum = result[available_freq].fillna(0).sum(axis=1)
+                result["anomaly_severity_score"] += freq_sum * 3.0
+
+            if "quality_issues_count_5y" in result.columns:
+                result["anomaly_severity_score"] += result["quality_issues_count_5y"].fillna(0) * 2.0
+
+        # Phase 2c: Balance sheet quality cross-check
+        if self.use_balance_sheet_quality:
+            if "retained_earnings_vs_5y" in result.columns:
+                re_declining = result["retained_earnings_vs_5y"].fillna(1.0) < 0.7
+                result.loc[re_declining, "anomaly_severity_score"] += 5.0
+
+            if "intangibles_growth_flag" in result.columns:
+                intang_growing = result["intangibles_growth_flag"].fillna(0) == 1
+                result.loc[intang_growing, "anomaly_severity_score"] += 4.0
+
+            if "asset_quality_score" in result.columns:
+                low_quality = result["asset_quality_score"].fillna(50) < 25
+                result.loc[low_quality, "anomaly_severity_score"] += 5.0
+
         # Phase 3: Conditional probability of anomaly per row
         # Compute per-feature conditional probabilities
         cond_probs = self.calculate_conditional_probabilities(result)
@@ -376,6 +419,10 @@ class AccountingAnomalyProbabilityModel:
             else:
                 result["anomaly_conditional_probability"] = 0.0
 
+        # Phase 4: MCMC posterior estimation (optional)
+        if self.use_mcmc:
+            result = self._apply_mcmc_posteriors(result)
+
         logger.info(
             "AccountingAnomalyProbabilityModel: severity computed for %d stocks, "
             "%d multi-flag alerts, mean conditional P(anomaly)=%.3f",
@@ -383,6 +430,114 @@ class AccountingAnomalyProbabilityModel:
             result["multi_flag_alert"].sum(),
             result["anomaly_conditional_probability"].mean(),
         )
+
+        return result
+
+    def _apply_mcmc_posteriors(self, result: pd.DataFrame) -> pd.DataFrame:
+        """Apply MCMC posterior estimation to anomaly scores."""
+        from finance_ml.analytics.statistical_analysis import (
+            mcmc_student_t,
+            hierarchical_mcmc_by_sector,
+            metropolis_hastings_sampler,
+        )
+
+        if "accounting_anomaly_score" not in result.columns:
+            return result
+
+        anomaly_scores = result["accounting_anomaly_score"].dropna().values
+        if len(anomaly_scores) < 10:
+            return result
+
+        # Derive effective threshold: use configured value or median as fallback
+        anomaly_threshold = (
+            self.anomaly_z_threshold
+            if self.anomaly_z_threshold is not None
+            else float(np.median(anomaly_scores))
+        )
+
+        # Task 1.0: MH sampler on anomaly scores
+        # Prior centered at the anomaly threshold; std derived from the
+        # severity weight so heavier severity weighting → tighter prior.
+        # v3.5: Adaptive proposal_std based on data spread for better mixing.
+        try:
+            prior_std = max(0.5, 1.0 / self.severity_anomaly_weight)
+            proposal_std = max(0.1, float(np.std(anomaly_scores)) * 0.5)
+            samples, acc_rate = metropolis_hastings_sampler(
+                anomaly_scores,
+                n_samples=self.n_mcmc_samples,
+                burn_in=self.burn_in,
+                proposal_std=proposal_std,
+                prior_mean=anomaly_threshold,
+                prior_std=prior_std,
+            )
+            # Per-stock: P(anomalous) ≈ P(posterior mean > stock's anomaly score)
+            stock_scores = result["accounting_anomaly_score"].values
+            mh_anomaly_prob = np.mean(
+                samples[:, None] < stock_scores[None, :], axis=0
+            )
+            result["mh_anomaly_probability"] = np.clip(mh_anomaly_prob, 0, 1)
+            result["mh_acceptance_rate"] = acc_rate
+            logger.info(
+                "MH sampler for anomaly scores: acceptance_rate=%.3f, "
+                "threshold=%.2f, mean_posterior=%.3f",
+                acc_rate, anomaly_threshold, float(samples.mean()),
+            )
+        except Exception as e:
+            logger.warning("MH sampler for anomaly scores failed: %s", e)
+            result["mh_anomaly_probability"] = np.nan
+            result["mh_acceptance_rate"] = np.nan
+
+        # Task 1.1: Student-t posterior for anomaly scores
+        try:
+            mu_samples, df_samples = mcmc_student_t(
+                anomaly_scores,
+                n_samples=self.n_mcmc_samples,
+                burn_in=self.burn_in,
+            )
+            result["anomaly_posterior_mean"] = mu_samples.mean()
+            result["anomaly_posterior_std"] = mu_samples.std()
+            result["anomaly_ci_lower"] = np.percentile(mu_samples, 2.5)
+            result["anomaly_ci_upper"] = np.percentile(mu_samples, 97.5)
+        except Exception as e:
+            logger.warning("MCMC Student-t for anomaly scores failed: %s", e)
+
+        # Task 1.2: Hierarchical MCMC by sector
+        sector_col = "industry" if "industry" in result.columns else "sector"
+        if sector_col in result.columns:
+            try:
+                sector_posteriors = hierarchical_mcmc_by_sector(
+                    result,
+                    feature="accounting_anomaly_score",
+                    sector_col=sector_col,
+                    n_samples=self.n_mcmc_samples,
+                )
+                sector_mean_map = {
+                    s: v.get("posterior_mean", np.nan)
+                    for s, v in sector_posteriors.items()
+                    if isinstance(v, dict)
+                }
+                result["sector_posterior_mean"] = result[sector_col].map(sector_mean_map)
+            except Exception as e:
+                logger.warning("Hierarchical MCMC for anomaly sectors failed: %s", e)
+
+        # Task 1.4: Gelman-Rubin convergence check via parallel MCMC chains
+        try:
+            from finance_ml.analytics.statistical_analysis import parallel_mcmc_chains
+
+            mcmc_convergence = parallel_mcmc_chains(
+                anomaly_scores, n_chains=4, n_samples=self.n_mcmc_samples
+            )
+            r_hat = mcmc_convergence.get("r_hat", 2.0)
+            result["anomaly_mcmc_r_hat"] = r_hat
+            if r_hat > 1.1:
+                logger.warning(
+                    "Anomaly MCMC did not converge (R̂=%.3f) — posteriors may be unreliable",
+                    r_hat,
+                )
+            else:
+                logger.info("Anomaly MCMC converged: R̂=%.4f", r_hat)
+        except Exception as e:
+            logger.warning("Anomaly MCMC convergence check failed: %s", e)
 
         return result
 
@@ -611,8 +766,8 @@ class EPSStreakResult:
     expected_next_outcome: str
     confidence_level: float
     # Dynamic data derived from reported history
-    dynamic_total_reports: int = 0
-    historical_beat_rate: float = 0.0
+    dynamic_total_reports: int = 3
+    historical_beat_rate: float = 0.33
     # Forward signal passthrough
     gaap_revision_momentum: Optional[float] = None
     next_earnings_status: Optional[str] = None
@@ -1000,9 +1155,11 @@ class EarningsBeatProbabilityModel:
 
     def __init__(
         self,
-        prior_alpha: float = 2.0,
+        prior_alpha: float = 1.5,
         prior_beta: float = 2.0,
         sector_priors: Optional[dict[str, PriorParameters]] = None,
+        # NEW: Quality-adjusted beat probability (v3.4)
+        use_quality_adjustment: bool = True,
     ):
         """
         Initialize the earnings beat probability model.
@@ -1012,9 +1169,13 @@ class EarningsBeatProbabilityModel:
             prior_beta: Beta parameter for Beta prior (default: 2.0 for symmetry)
             sector_priors: Optional dict mapping sectors to PriorParameters
                           for sector-specific priors based on historical patterns
+            use_quality_adjustment: Whether to adjust confidence scores based on
+                accounting quality signals (accounting_quality_score,
+                quality_issues_count_5y, balance_sheet_strength).
         """
         self.default_prior = PriorParameters(prior_alpha, prior_beta)
         self.sector_priors = sector_priors or self._create_default_sector_priors()
+        self.use_quality_adjustment = use_quality_adjustment
 
     @property
     def prior_alpha(self) -> float:
@@ -1184,7 +1345,7 @@ class EarningsBeatProbabilityModel:
         n_beats: int,
         n_total: int,
         sector: Optional[str] = None,
-        threshold: float = 0.5,
+        threshold: float = 0.67,
     ) -> BeatProbabilityEstimate:
         """
         Compute the probability of future earnings beat.
@@ -1198,7 +1359,7 @@ class EarningsBeatProbabilityModel:
         Returns:
             Dictionary with probability estimates and confidence metrics
         """
-        post_alpha, post_beta = self.compute_posterior(n_beats, n_total, sector)
+        post_alpha, post_beta = self.compute_posterior(n_beats, n_total, sector, threshold)
 
         posterior_mean, posterior_std = self._compute_posterior_statistics(post_alpha, post_beta)
 
@@ -1322,6 +1483,23 @@ class EarningsBeatProbabilityModel:
             "confidence_score": np.asarray(confidence_score),
             "beat_classification": beat_classification,
         }, index=df_valid.index)
+
+        # NEW: Quality-adjusted beat probability (v3.4)
+        if self.use_quality_adjustment:
+            if "accounting_quality_score" in df_valid.columns:
+                aq_score = df_valid["accounting_quality_score"].fillna(50).values
+                quality_penalty = np.where(aq_score < 30, 0.85, np.where(aq_score < 50, 0.95, 1.0))
+                result_df["confidence_score"] = result_df["confidence_score"] * quality_penalty
+
+            if "quality_issues_count_5y" in df_valid.columns:
+                qi_count = df_valid["quality_issues_count_5y"].fillna(0).values
+                qi_penalty = np.where(qi_count >= 3, 0.80, np.where(qi_count >= 1, 0.90, 1.0))
+                result_df["confidence_score"] = result_df["confidence_score"] * qi_penalty
+
+            if "balance_sheet_strength" in df_valid.columns:
+                bs = df_valid["balance_sheet_strength"].fillna(50).values
+                bs_penalty = np.where(bs < 25, 0.90, 1.0)
+                result_df["confidence_score"] = result_df["confidence_score"] * bs_penalty
 
         # Attach identifier columns
         for id_col in _get_identifier_cols():
@@ -2283,6 +2461,14 @@ class CreditRiskProbabilityModel:
     cash_runway_months, accumulated_deficit_flag, combined_distress_score,
     wc_deteriorating_flag, debt_deleveraging, interest_coverage, quick_ratio,
     beta_stability_score
+
+    Leverage & Liquidity enrichment (v3.4):
+    debt_3y_cagr, debt_4q_trend, debt_yoy_change, adequate_cash_buffer,
+    cash_vs_5y_avg, balance_sheet_strength, debt_maturity_risk, equity_ratio,
+    wc_volatility, wc_efficiency_score, retained_earnings_vs_5y
+
+    Quality & Risk enrichment (v3.4):
+    distress_risk_score, retained_earnings_growth, beta_trend
     """
 
     def __init__(
@@ -2290,10 +2476,28 @@ class CreditRiskProbabilityModel:
         distress_threshold: float = 1.81,
         prior_alpha: float = 2.0,
         prior_beta: float = 3.0,  # Slightly pessimistic prior
+        n_mcmc_samples: int = 10000,
+        burn_in: int = 2000,
+        use_mcmc: bool = True,
+        # NEW: Leverage & Liquidity enrichment
+        use_debt_trajectory: bool = True,
+        use_cash_buffer_signals: bool = True,
+        use_balance_sheet_quality: bool = True,
+        use_wc_deep_signals: bool = True,
+        # NEW: Quality & Risk enrichment
+        use_quality_risk_flags: bool = True,
     ):
         self.distress_threshold = distress_threshold
         self.prior_alpha = prior_alpha
         self.prior_beta = prior_beta
+        self.n_mcmc_samples = n_mcmc_samples
+        self.burn_in = burn_in
+        self.use_mcmc = use_mcmc
+        self.use_debt_trajectory = use_debt_trajectory
+        self.use_cash_buffer_signals = use_cash_buffer_signals
+        self.use_balance_sheet_quality = use_balance_sheet_quality
+        self.use_wc_deep_signals = use_wc_deep_signals
+        self.use_quality_risk_flags = use_quality_risk_flags
 
     def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """Analyze dataframe for credit risk with enhanced features."""
@@ -2314,6 +2518,30 @@ class CreditRiskProbabilityModel:
             interest_coverage = row.get("interest_coverage", 5.0)
             quick_ratio = row.get("quick_ratio", 1.5)
             beta_stability = row.get("beta_stability_score", 50)
+
+            # NEW: Debt trajectory signals (calc_total_debt_temporal)
+            debt_3y_cagr = row.get("debt_3y_cagr", 0)
+            debt_4q_trend = row.get("debt_4q_trend", 0)
+            debt_yoy_change = row.get("debt_yoy_change", 0)
+
+            # NEW: Cash buffer signals (calc_financial_distress_features + calc_balance_sheet_dynamics)
+            adequate_cash_buffer = row.get("adequate_cash_buffer", 1)
+            cash_vs_5y_avg = row.get("cash_vs_5y_avg", 1.0)
+
+            # NEW: Balance sheet quality (calc_balance_sheet_dynamics)
+            balance_sheet_strength = row.get("balance_sheet_strength", 50)
+            debt_maturity_risk = row.get("debt_maturity_risk", 0)
+            equity_ratio = row.get("equity_ratio", 0.5)
+
+            # NEW: Working capital deep (calc_working_capital_deep_features + temporal)
+            wc_volatility = row.get("wc_volatility", 0)
+            wc_efficiency_score = row.get("wc_efficiency_score", 50)
+            retained_earnings_vs_5y = row.get("retained_earnings_vs_5y", 1.0)
+
+            # NEW: Quality & Risk flags
+            distress_risk_score = row.get("distress_risk_score", 50)
+            retained_earnings_growth = row.get("retained_earnings_growth", 0)
+            beta_trend = row.get("beta_trend", 0)
 
             # Bayesian-style probability estimation with enhanced inputs
             # Prior based on Z-Score zones
@@ -2370,23 +2598,72 @@ class CreditRiskProbabilityModel:
             if accumulated_deficit == 1:
                 adjustments += 0.08
 
+            # NEW: Debt trajectory — rising debt over 3 years
+            if self.use_debt_trajectory:
+                if debt_3y_cagr is not None and debt_3y_cagr > 10:
+                    adjustments += 0.10
+                if debt_4q_trend is not None and debt_4q_trend > 0.05:
+                    adjustments += 0.06
+                if debt_yoy_change is not None and debt_yoy_change > 20:
+                    adjustments += 0.08
+
+            # NEW: Cash buffer adequacy
+            if self.use_cash_buffer_signals:
+                if adequate_cash_buffer == 0:
+                    adjustments += 0.12
+                if cash_vs_5y_avg is not None and cash_vs_5y_avg < 0.5:
+                    adjustments += 0.08
+
+            # NEW: Balance sheet quality composite
+            if self.use_balance_sheet_quality:
+                if balance_sheet_strength is not None and balance_sheet_strength < 25:
+                    adjustments += 0.12
+                elif balance_sheet_strength is not None and balance_sheet_strength > 75:
+                    adjustments -= 0.05
+                if debt_maturity_risk is not None and debt_maturity_risk > 70:
+                    adjustments += 0.10
+                if equity_ratio is not None and equity_ratio < 0.15:
+                    adjustments += 0.10
+
+            # NEW: Working capital deep signals
+            if self.use_wc_deep_signals:
+                if wc_volatility is not None and wc_volatility > 0.5:
+                    adjustments += 0.06
+                if wc_efficiency_score is not None and wc_efficiency_score < 25:
+                    adjustments += 0.08
+                if retained_earnings_vs_5y is not None and retained_earnings_vs_5y < 0.5:
+                    adjustments += 0.07
+
+            # NEW: Quality & Risk flags
+            if self.use_quality_risk_flags:
+                if distress_risk_score is not None and distress_risk_score > 70:
+                    adjustments += 0.10
+                if retained_earnings_growth is not None and retained_earnings_growth < -20:
+                    adjustments += 0.08
+                if beta_trend is not None and beta_trend > 0.3:
+                    adjustments += 0.05
+
             prob = min(0.99, max(0.01, base_prob + adjustments))
 
             # Compute confidence interval width based on data completeness
             data_points = sum(
-                [
-                    1
-                    for v in [
-                        z_score,
-                        liquidity_stress,
-                        cash_runway,
-                        interest_coverage,
-                        quick_ratio,
-                    ]
-                    if v is not None and not pd.isna(v)
+                1
+                for v in [
+                    z_score,
+                    liquidity_stress,
+                    cash_runway,
+                    interest_coverage,
+                    quick_ratio,
+                    debt_3y_cagr,
+                    balance_sheet_strength,
+                    debt_maturity_risk,
+                    wc_efficiency_score,
+                    equity_ratio,
+                    distress_risk_score,
                 ]
+                if v is not None and not pd.isna(v)
             )
-            ci_width = 0.15 - (data_points * 0.02)  # Narrower CI with more data
+            ci_width = max(0.03, 0.18 - (data_points * 0.015))
 
             risk_level = "Low"
             if prob > 0.7:
@@ -2411,12 +2688,106 @@ class CreditRiskProbabilityModel:
                     "risk_level": risk_level,
                     "ci_lower": max(0, prob - ci_width),
                     "ci_upper": min(1, prob + ci_width),
-                    "data_quality_score": data_points / 5.0,
+                    "debt_3y_cagr": debt_3y_cagr,
+                    "debt_maturity_risk": debt_maturity_risk,
+                    "balance_sheet_strength": balance_sheet_strength,
+                    "wc_efficiency_score": wc_efficiency_score,
+                    "distress_risk_score": distress_risk_score,
+                    "data_quality_score": data_points / 11.0,
                 }
             )
             results.append(record)
 
-        return pd.DataFrame(results)
+        result_df = pd.DataFrame(results)
+
+        # MCMC enrichment path
+        if self.use_mcmc and not result_df.empty:
+            result_df = self._apply_mcmc_posteriors(result_df, df)
+
+        return result_df
+
+    def _apply_mcmc_posteriors(
+        self, result_df: pd.DataFrame, source_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Apply MCMC posterior estimation for distress probability."""
+        from finance_ml.analytics.statistical_analysis import (
+            metropolis_hastings_sampler,
+            mcmc_student_t,
+            hierarchical_mcmc_by_sector,
+        )
+
+        z_scores = source_df["altman_z_score"].dropna().values if "altman_z_score" in source_df.columns else np.array([])
+        if len(z_scores) < 10:
+            return result_df
+
+        try:
+            # Task 2.1: MH sampler on z-scores
+            samples, acc_rate = metropolis_hastings_sampler(
+                z_scores,
+                n_samples=self.n_mcmc_samples,
+                burn_in=self.burn_in,
+                prior_mean=self.distress_threshold,
+                prior_std=1.0,
+            )
+            # Per-stock: P(distress) = P(posterior_mean < stock_z)
+            stock_z = result_df["altman_z_score"].values if "altman_z_score" in result_df.columns else np.full(len(result_df), 3.0)
+            distress_prob_per_stock = np.mean(
+                samples[:, None] > stock_z[None, :], axis=0
+            )
+            result_df["mcmc_distress_probability"] = np.clip(distress_prob_per_stock, 0, 1)
+
+            # Task 2.2: Student-t for robust estimation
+            mu_samples, df_samples = mcmc_student_t(
+                z_scores, n_samples=self.n_mcmc_samples, burn_in=self.burn_in
+            )
+            result_df["mcmc_ci_lower"] = np.percentile(mu_samples, 2.5)
+            result_df["mcmc_ci_upper"] = np.percentile(mu_samples, 97.5)
+        except Exception as e:
+            logger.warning("MCMC credit risk posterior failed: %s", e)
+            result_df["mcmc_distress_probability"] = np.nan
+            result_df["mcmc_ci_lower"] = np.nan
+            result_df["mcmc_ci_upper"] = np.nan
+
+        # Task 2.3: Hierarchical MCMC by sector
+        # v3.5: Use sector posterior means as sector-specific distress thresholds
+        try:
+            sector_col = "industry" if "industry" in source_df.columns else "sector"
+            if sector_col in source_df.columns and "altman_z_score" in source_df.columns:
+                sector_results = hierarchical_mcmc_by_sector(
+                    source_df, feature="altman_z_score",
+                    sector_col=sector_col, n_samples=self.n_mcmc_samples,
+                )
+                sector_mean_map = {
+                    s: v.get("posterior_mean", np.nan)
+                    for s, v in sector_results.items()
+                    if isinstance(v, dict)
+                }
+                if sector_col in result_df.columns:
+                    result_df["sector_z_posterior_mean"] = result_df[sector_col].map(sector_mean_map)
+
+                    # Sector-adjusted distress: compare each stock's Z-score
+                    # against its sector's posterior mean rather than the global
+                    # Altman threshold (1.81), which is calibrated for US
+                    # manufacturing and too aggressive for a global universe.
+                    if "altman_z_score" in result_df.columns:
+                        sector_threshold = result_df["sector_z_posterior_mean"].fillna(
+                            self.distress_threshold
+                        )
+                        result_df["sector_adjusted_distress"] = (
+                            result_df["altman_z_score"] < sector_threshold
+                        )
+                        logger.info(
+                            "Sector-adjusted distress: %d / %d stocks flagged (vs %d with global threshold)",
+                            result_df["sector_adjusted_distress"].sum(),
+                            len(result_df),
+                            (result_df["altman_z_score"] < self.distress_threshold).sum()
+                            if "altman_z_score" in result_df.columns
+                            else 0,
+                        )
+        except Exception as e:
+            logger.warning("Hierarchical MCMC for credit risk failed: %s", e)
+
+        return result_df
 
 
 class DividendCutProbabilityModel:
@@ -2426,11 +2797,30 @@ class DividendCutProbabilityModel:
     Enhanced features: fcf_dividend_coverage, dividend_payout_ratio, dividend_streak,
     dividend_growth_expectation, sustainable_dividend_flag, dividend_consistency,
     dividend_yield_vs_5y_avg, recent_dividend_change
+
+    Leverage & Liquidity enrichment (v3.4):
+    interest_coverage, debt_to_equity, cash_ratio, working_capital_ratio,
+    balance_sheet_strength, cash_runway_months, retained_earnings_growth, debt_3y_cagr
     """
 
-    def __init__(self, high_payout_threshold: float = 0.9, min_coverage: float = 1.2):
+    def __init__(
+        self,
+        high_payout_threshold: float = 0.9,
+        min_coverage: float = 1.2,
+        n_mcmc_samples: int = 8000,
+        burn_in: int = 2000,
+        use_mcmc: bool = True,
+        # NEW: Leverage & Liquidity signals for dividend sustainability
+        use_leverage_signals: bool = True,
+        use_balance_sheet: bool = True,
+    ):
         self.high_payout_threshold = high_payout_threshold
         self.min_coverage = min_coverage
+        self.n_mcmc_samples = n_mcmc_samples
+        self.burn_in = burn_in
+        self.use_mcmc = use_mcmc
+        self.use_leverage_signals = use_leverage_signals
+        self.use_balance_sheet = use_balance_sheet
 
     def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         results = []
@@ -2447,6 +2837,18 @@ class DividendCutProbabilityModel:
             yield_vs_5y = row.get("dividend_yield_vs_5y_avg", 1.0)
             recent_change = row.get("recent_dividend_change", 0)
             high_yield_flag = row.get("high_yield_flag", 0)
+
+            # NEW: Leverage signals (calc_leverage_features)
+            interest_coverage = row.get("interest_coverage", 5.0)
+            debt_to_equity = row.get("debt_to_equity", 0.5)
+            cash_ratio_val = row.get("cash_ratio", 0.5)
+            working_capital_ratio = row.get("working_capital_ratio", 1.0)
+
+            # NEW: Balance sheet health (calc_balance_sheet_dynamics + distress)
+            balance_sheet_strength = row.get("balance_sheet_strength", 50)
+            cash_runway = row.get("cash_runway_months", 24)
+            retained_earnings_growth = row.get("retained_earnings_growth", 0)
+            debt_3y_cagr = row.get("debt_3y_cagr", 0)
 
             # Base probability with more granular assessment
             prob = 0.05  # Low base rate for established dividend payers
@@ -2500,6 +2902,28 @@ class DividendCutProbabilityModel:
             if growth_exp is not None and growth_exp < -5:
                 prob += 0.12
 
+            # NEW: Leverage stress signals
+            if self.use_leverage_signals:
+                if interest_coverage is not None and interest_coverage < 2.0:
+                    prob += 0.12
+                if debt_to_equity is not None and debt_to_equity > 3.0:
+                    prob += 0.10
+                if cash_ratio_val is not None and cash_ratio_val < 0.1:
+                    prob += 0.08
+                if working_capital_ratio is not None and working_capital_ratio < 0.5:
+                    prob += 0.06
+
+            # NEW: Balance sheet deterioration
+            if self.use_balance_sheet:
+                if balance_sheet_strength is not None and balance_sheet_strength < 25:
+                    prob += 0.10
+                if cash_runway is not None and cash_runway < 12:
+                    prob += 0.08
+                if retained_earnings_growth is not None and retained_earnings_growth < -15:
+                    prob += 0.07
+                if debt_3y_cagr is not None and debt_3y_cagr > 15:
+                    prob += 0.06
+
             prob = min(0.95, max(0.03, prob))
 
             risk_cat = "Safe"
@@ -2526,7 +2950,108 @@ class DividendCutProbabilityModel:
                 }
             )
             results.append(record)
-        return pd.DataFrame(results)
+
+        result_df = pd.DataFrame(results)
+
+        # MCMC enrichment path
+        if self.use_mcmc and not result_df.empty:
+            result_df = self._apply_mcmc_posteriors(result_df, df)
+
+        return result_df
+
+    def _apply_mcmc_posteriors(
+        self, result_df: pd.DataFrame, source_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Apply MCMC posterior estimation for dividend cut probability."""
+        from finance_ml.analytics.statistical_analysis import (
+            metropolis_hastings_sampler,
+            mcmc_student_t,
+        )
+
+        probs = []
+
+        # Task 3.1: FCF coverage posterior
+        fcf_prob = 0.5
+        try:
+            fcf_data = source_df["fcf_dividend_coverage"].dropna().values if "fcf_dividend_coverage" in source_df.columns else np.array([])
+            if len(fcf_data) >= 10:
+                samples, _ = metropolis_hastings_sampler(
+                    fcf_data,
+                    n_samples=self.n_mcmc_samples,
+                    burn_in=self.burn_in,
+                    prior_mean=self.min_coverage,
+                    prior_std=1.0,
+                )
+                fcf_prob = float(np.mean(samples < self.min_coverage))
+                probs.append(fcf_prob)
+        except Exception as e:
+            logger.warning("MCMC FCF coverage posterior failed: %s", e)
+
+        # Task 3.2: Payout ratio posterior (Student-t)
+        payout_prob = 0.5
+        try:
+            payout_data = source_df["dividend_payout_ratio"].dropna().values if "dividend_payout_ratio" in source_df.columns else np.array([])
+            if len(payout_data) >= 10:
+                mu_samples, _ = mcmc_student_t(
+                    payout_data, n_samples=self.n_mcmc_samples, burn_in=self.burn_in
+                )
+                payout_prob = float(np.mean(mu_samples > self.high_payout_threshold * 100))
+                probs.append(payout_prob)
+        except Exception as e:
+            logger.warning("MCMC payout ratio posterior failed: %s", e)
+
+        # Task 3.3: Hierarchical sector MCMC for dividend safety
+        try:
+            from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_by_sector
+
+            sector_col = "industry" if "industry" in source_df.columns else "sector"
+            if sector_col in source_df.columns and "fcf_dividend_coverage" in source_df.columns:
+                sector_posteriors = hierarchical_mcmc_by_sector(
+                    source_df,
+                    feature="fcf_dividend_coverage",
+                    sector_col=sector_col,
+                    n_samples=self.n_mcmc_samples,
+                )
+                sector_mean_map = {
+                    s: v.get("posterior_mean", np.nan)
+                    for s, v in sector_posteriors.items()
+                    if isinstance(v, dict)
+                }
+                if sector_col in result_df.columns:
+                    result_df["sector_fcf_posterior_mean"] = result_df[sector_col].map(
+                        sector_mean_map
+                    )
+                    logger.info(
+                        "Hierarchical sector MCMC for dividend FCF coverage: %d sectors",
+                        len(sector_mean_map),
+                    )
+        except Exception as e:
+            logger.warning("Hierarchical MCMC for dividend sectors failed: %s", e)
+
+        # Task 3.4: Composite posterior (log-space for numerical stability)
+        if probs:
+            log_composite = sum(np.log(max(p, 0.01)) for p in probs)
+            # Normalize via sigmoid to keep in [0, 1]
+            composite = 1.0 / (1.0 + np.exp(-log_composite))
+            composite = min(0.95, max(0.03, composite))
+            result_df["mcmc_cut_probability"] = composite
+            # CI from FCF samples if available
+            try:
+                if len(fcf_data) >= 10:
+                    result_df["mcmc_ci_lower"] = np.percentile(samples, 2.5)
+                    result_df["mcmc_ci_upper"] = np.percentile(samples, 97.5)
+                else:
+                    result_df["mcmc_ci_lower"] = np.nan
+                    result_df["mcmc_ci_upper"] = np.nan
+            except Exception:
+                result_df["mcmc_ci_lower"] = np.nan
+                result_df["mcmc_ci_upper"] = np.nan
+        else:
+            result_df["mcmc_cut_probability"] = np.nan
+            result_df["mcmc_ci_lower"] = np.nan
+            result_df["mcmc_ci_upper"] = np.nan
+
+        return result_df
 
 
 class PriceTargetAchievementModel:
@@ -2536,10 +3061,28 @@ class PriceTargetAchievementModel:
     Enhanced features: upside_potential, price_target_spread_pct, pt_momentum_1m,
     analyst_rating_normalized, pt_consensus_convergence, analyst_conviction,
     pt_acceleration_short, eps_revision_momentum, analyst_coverage_trend
+
+    Risk-adjusted enrichment (v3.4):
+    beta_1y, beta_stability_score, distress_risk_score,
+    balance_sheet_strength, debt_maturity_risk
     """
 
-    def __init__(self, time_horizon_months: int = 12):
+    def __init__(
+        self,
+        time_horizon_months: int = 12,
+        n_mcmc_samples: int = 10000,
+        burn_in: int = 2000,
+        use_mcmc: bool = True,
+        # NEW: Risk-adjusted achievement
+        use_risk_adjustment: bool = True,
+        use_financial_health: bool = True,
+    ):
         self.time_horizon_months = time_horizon_months
+        self.n_mcmc_samples = n_mcmc_samples
+        self.burn_in = burn_in
+        self.use_mcmc = use_mcmc
+        self.use_risk_adjustment = use_risk_adjustment
+        self.use_financial_health = use_financial_health
 
     def analyze_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         results = []
@@ -2557,6 +3100,15 @@ class PriceTargetAchievementModel:
             eps_revision = row.get("eps_revision_momentum", 0)
             coverage_trend = row.get("analyst_coverage_trend", 0)
             bullish_pct = row.get("analyst_bullish_pct", 50)
+
+            # NEW: Risk adjustment (calc_beta_risk_features)
+            beta_1y = row.get("beta_1y", 1.0)
+            beta_stability = row.get("beta_stability_score", 50)
+            distress_risk = row.get("distress_risk_score", 50)
+
+            # NEW: Financial health (calc_balance_sheet_dynamics)
+            bs_strength = row.get("balance_sheet_strength", 50)
+            debt_mat_risk = row.get("debt_maturity_risk", 0)
 
             # Base probability - inversely related to upside magnitude
             if upside is None or pd.isna(upside):
@@ -2612,6 +3164,26 @@ class PriceTargetAchievementModel:
             if coverage_trend is not None and coverage_trend > 0:
                 adjustments += 0.03
 
+            # NEW: Risk-adjusted achievement probability
+            if self.use_risk_adjustment:
+                if beta_1y is not None and beta_1y > 1.5:
+                    adjustments -= 0.08
+                elif beta_1y is not None and beta_1y < 0.7:
+                    adjustments += 0.04
+                if beta_stability is not None and beta_stability < 25:
+                    adjustments -= 0.05
+                if distress_risk is not None and distress_risk > 70:
+                    adjustments -= 0.12
+
+            # NEW: Financial health supports target achievement
+            if self.use_financial_health:
+                if bs_strength is not None and bs_strength > 75:
+                    adjustments += 0.05
+                elif bs_strength is not None and bs_strength < 25:
+                    adjustments -= 0.08
+                if debt_mat_risk is not None and debt_mat_risk > 70:
+                    adjustments -= 0.06
+
             # Rating strength
             if rating is not None and rating > 75:
                 adjustments += 0.05
@@ -2637,7 +3209,99 @@ class PriceTargetAchievementModel:
                 }
             )
             results.append(record)
-        return pd.DataFrame(results)
+
+        result_df = pd.DataFrame(results)
+
+        # MCMC enrichment path
+        if self.use_mcmc and not result_df.empty:
+            result_df = self._apply_mcmc_posteriors(result_df, df)
+
+        return result_df
+
+    def _apply_mcmc_posteriors(
+            self, result_df: pd.DataFrame, source_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Apply MCMC posterior estimation for price target achievement."""
+        from finance_ml.analytics.statistical_analysis import (
+            metropolis_hastings_sampler,
+            mcmc_student_t,
+            parallel_mcmc_chains,
+        )
+
+        returns_data = source_df["upside_potential"].dropna().values if "upside_potential" in source_df.columns else np.array([])
+        if len(returns_data) < 10:
+            return result_df
+
+        try:
+            # Task 4.1: MH sampler on upside potential
+            # Prior centered at 0 (no upside) with std scaled by time horizon;
+            # longer horizons → wider prior to reflect greater uncertainty.
+            # v3.5: Incorporate stock-specific volatility when available.
+            prior_std = 10.0 * (self.time_horizon_months / 12.0)
+            if "volatility_regime" in source_df.columns:
+                vol_scale = source_df["volatility_regime"].median()
+                if pd.notna(vol_scale) and vol_scale > 0:
+                    prior_std = prior_std * max(0.5, float(vol_scale))
+            samples, acc_rate = metropolis_hastings_sampler(
+                returns_data,
+                n_samples=self.n_mcmc_samples,
+                burn_in=self.burn_in,
+                prior_mean=0.0,
+                prior_std=prior_std,
+            )
+            # Per-stock: P(achieving target) ≈ P(posterior mean > stock's required upside)
+            stock_upside = (
+                result_df["upside_potential"].values
+                if "upside_potential" in result_df.columns
+                else np.full(len(result_df), 10.0)
+            )
+            mh_achievement_prob = np.mean(
+                samples[:, None] > stock_upside[None, :], axis=0
+            )
+            result_df["mh_achievement_probability"] = np.clip(mh_achievement_prob, 0, 1)
+            result_df["mh_acceptance_rate"] = acc_rate
+            logger.info(
+                "MH sampler for price target: acceptance_rate=%.3f, mean_posterior=%.3f",
+                acc_rate, float(samples.mean()),
+            )
+        except Exception as e:
+            logger.warning("MH sampler for price target failed: %s", e)
+            result_df["mh_achievement_probability"] = np.nan
+            result_df["mh_acceptance_rate"] = np.nan
+
+        try:
+            # Task 4.2: Student-t for heavy-tailed returns
+            mu_samples, df_samples = mcmc_student_t(
+                returns_data, n_samples=self.n_mcmc_samples, burn_in=self.burn_in
+            )
+            achievement_prob = float(np.mean(mu_samples > 0))
+            result_df["mcmc_achievement_probability"] = achievement_prob
+            result_df["mcmc_ci_lower"] = np.percentile(mu_samples, 2.5)
+            result_df["mcmc_ci_upper"] = np.percentile(mu_samples, 97.5)
+
+            # Task 4.4: Posterior mean weighted return
+            posterior_mean_return = float(mu_samples.mean())
+            result_df["mcmc_expected_return_prob_weighted"] = (
+                posterior_mean_return * achievement_prob
+            )
+        except Exception as e:
+            logger.warning("MCMC price target posterior failed: %s", e)
+            result_df["mcmc_achievement_probability"] = np.nan
+            result_df["mcmc_ci_lower"] = np.nan
+            result_df["mcmc_ci_upper"] = np.nan
+            result_df["mcmc_expected_return_prob_weighted"] = np.nan
+
+        # Task 4.3: Parallel MCMC with Gelman-Rubin
+        try:
+            mcmc_result = parallel_mcmc_chains(
+                returns_data, n_chains=4, n_samples=self.n_mcmc_samples
+            )
+            result_df["mcmc_gelman_rubin"] = mcmc_result.get("r_hat", np.nan)
+        except Exception as e:
+            logger.warning("Parallel MCMC for price target failed: %s", e)
+            result_df["mcmc_gelman_rubin"] = np.nan
+
+        return result_df
 
 
 # =============================================================================
@@ -3107,10 +3771,23 @@ class CategoryProbabilityAnalyzer:
     probability distributions for all features in a category.
     """
 
-    def __init__(self, category_name: str, prior_alpha: float = 2.0, prior_beta: float = 2.0):
+    def __init__(
+        self,
+        category_name: str,
+        prior_alpha: float = 2.0,
+        prior_beta: float = 2.0,
+        n_mcmc_samples: int = 5000,
+        burn_in: int = 1000,
+        use_mcmc: bool = True,
+        use_student_t: bool = False,
+    ):
         self.category_name = category_name
         self.prior_alpha = prior_alpha
         self.prior_beta = prior_beta
+        self.n_mcmc_samples = n_mcmc_samples
+        self.burn_in = burn_in
+        self.use_mcmc = use_mcmc
+        self.use_student_t = use_student_t
 
     def analyze_view(
         self,
@@ -3125,6 +3802,11 @@ class CategoryProbabilityAnalyzer:
         results = []
         identifier_cols = load_identifier_columns()
         id_data = df[[c for c in identifier_cols if c in df.columns]].copy()
+
+        # MCMC posterior stats per feature (computed once)
+        mcmc_stats = {}
+        if self.use_mcmc:
+            mcmc_stats = self._compute_mcmc_posteriors(df, feature_cols)
 
         for feat in feature_cols:
             if feat not in df.columns:
@@ -3148,12 +3830,61 @@ class CategoryProbabilityAnalyzer:
             feat_results["z_score"] = (data - mean_val) / std_val if std_val > 0 else 0
             feat_results["prob_above_median"] = (percentile > 0.5).astype(float)
 
+            # Add MCMC posterior columns if available
+            if feat in mcmc_stats:
+                stats = mcmc_stats[feat]
+                feat_results["posterior_mean"] = stats["posterior_mean"]
+                feat_results["posterior_std"] = stats["posterior_std"]
+                feat_results["ci_lower_95"] = stats["ci_lower_95"]
+                feat_results["ci_upper_95"] = stats["ci_upper_95"]
+
             results.append(feat_results)
 
         if not results:
             return pd.DataFrame()
 
         return pd.concat(results, ignore_index=True)
+
+    def _compute_mcmc_posteriors(
+        self, df: pd.DataFrame, feature_cols: list[str]
+    ) -> dict:
+        """Compute MCMC posteriors per feature."""
+        from finance_ml.analytics.statistical_analysis import (
+            metropolis_hastings_sampler,
+            mcmc_student_t,
+        )
+
+        stats = {}
+        for feat in feature_cols:
+            if feat not in df.columns:
+                continue
+            data = pd.to_numeric(df[feat], errors="coerce").dropna().values
+            if len(data) < 10:
+                continue
+
+            try:
+                if self.use_student_t:
+                    mu_samples, _ = mcmc_student_t(
+                        data, n_samples=self.n_mcmc_samples, burn_in=self.burn_in
+                    )
+                else:
+                    mu_samples, _ = metropolis_hastings_sampler(
+                        data,
+                        n_samples=self.n_mcmc_samples,
+                        burn_in=self.burn_in,
+                        prior_mean=self.prior_alpha,
+                        prior_std=self.prior_beta,
+                    )
+                stats[feat] = {
+                    "posterior_mean": float(mu_samples.mean()),
+                    "posterior_std": float(mu_samples.std()),
+                    "ci_lower_95": float(np.percentile(mu_samples, 2.5)),
+                    "ci_upper_95": float(np.percentile(mu_samples, 97.5)),
+                }
+            except Exception as e:
+                logger.warning("MCMC posterior for feature %s failed: %s", feat, e)
+
+        return stats
 
 
 # =============================================================================

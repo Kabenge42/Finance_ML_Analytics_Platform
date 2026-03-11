@@ -1,45 +1,47 @@
-# Market Analytics Refactoring Guide
+# Finance ML Analytics Guide
 
 ## Overview
 
-The original `market_analytics.py` notebook code (5208 lines) has been refactored into a modular, maintainable
-structure. This guide explains the new architecture, how to use the refactored modules, and how to migrate from the
-original code.
-
-## Refactored Structure
+This guide provides an overview of the finance machine-learning analytics module and its key features.
 
 ### Module Organization
 
 ```
 finance_ml/analytics/
-├── __init__.py                 # Package exports (128 lines)
-├── data_utils.py               # Data loading and preprocessing (300 lines)
-├── statistical_analysis.py     # Advanced statistical methods (1282 lines)
-├── screening.py                # Stock screening functions (691 lines)
-├── feature_analytics.py        # Visualization dashboards (1644 lines)
-├── probability_analytics.py    # Probability models (1827 lines)
-├── optimized_ops.py            # Performance optimizations (622 lines)
+├── __init__.py                 # Package exports (335 lines)
+├── data_utils.py               # Data loading, preprocessing, export framework
+├── statistical_analysis.py     # Advanced statistical methods (Bayesian, MCMC, Kalman, Copula)
+├── screening.py                # Stock screening functions (15 screeners)
+├── feature_analytics.py        # Visualization dashboards
+├── probability_analytics.py    # Probability models (earnings beat, credit risk, dividend, anomaly)
+├── inference_schema.py         # ArviZ / xarray InferenceData bridge (1588 lines) [REFACTORED]
+├── optimized_ops.py            # Performance optimizations
 └── visualizations/
-    ├── __init__.py             # Visualization package exports (257 lines)
-    ├── profitability.py        # Margin and profitability charts (647 lines)
-    ├── technical.py            # Technical analysis charts (565 lines)
-    ├── temporal_analysis.py    # Time series analysis (769 lines)
-    ├── category_charts.py      # Category-specific charts
-    ├── valuation.py            # Valuation analysis charts (669 lines) [NEW]
-    ├── earnings_quality.py     # Earnings quality charts (658 lines) [NEW]
-    ├── quality_risk.py         # Quality & risk charts (852 lines) [NEW]
-    └── growth_analysis.py      # Growth metrics charts (631 lines) [NEW]
+    ├── __init__.py             # Visualization package exports (280 lines)
+    ├── _shared.py              # Shared constants and utilities
+    ├── profitability.py        # Margin and profitability charts
+    ├── technical.py            # Technical analysis charts
+    ├── temporal_analysis.py    # Time series analysis
+    ├── category_charts.py      # Category-specific charts (49,777 bytes)
+    ├── valuation.py            # Valuation analysis charts
+    ├── earnings_quality.py     # Earnings quality charts
+    ├── quality_risk.py         # Quality & risk charts
+    ├── growth_analysis.py      # Growth metrics charts
+    ├── probability_viz.py      # Probabilistic ArviZ-backed visualizations (1389 lines) [NEW]
+    ├── expected_returns_viz.py # Expected returns pipeline charts (796 lines) [NEW]
+    └── arviz_diagnostics.py    # ArviZ diagnostic visualizations (898 lines) [NEW]
 
-market_analytics.py             # Main demonstration script (935 lines)
+expected_returns_v3.py          # Automated expected returns pipeline v3.1 (4528 lines) [EXPANDED]
 ```
 
 ### Total Lines of Code
 
-- **Original**: 5208 lines (monolithic)
-- **Refactored**: ~10,500+ lines (modular, reusable, with enhanced features)
-- **Enhancement**: +100% additional functionality through new visualization, statistical, and optimization modules
-- **New Visualization Modules**: 4 modules with 21 new visualization functions covering valuation, earnings quality,
-  quality/risk, and growth analysis
+- **Original**: 5,208 lines (monolithic)
+- **Refactored**: ~17,000+ lines (modular, reusable, with enhanced features)
+- **Expected Returns Pipeline**: 4,528 lines (expected_returns_v3.py)
+- **Visualization Modules**: 13 modules with 100+ visualization functions
+- **New in v3.1**: probability_viz (1,389 lines), expected_returns_viz (796 lines),
+  arviz_diagnostics (898 lines), inference_schema (1,588 lines)
 
 ---
 
@@ -47,7 +49,7 @@ market_analytics.py             # Main demonstration script (935 lines)
 
 ### 1. `data_utils.py`
 
-**Purpose**: Data loading, preprocessing, and validation
+**Purpose**: Data loading, preprocessing, validation, and export framework
 
 **Key Functions**:
 
@@ -57,13 +59,28 @@ market_analytics.py             # Main demonstration script (935 lines)
 - `validate_feature_alignment()` - Check feature coverage by category
 - `safe_get_column()` - Safely retrieve columns with fallback options
 
+**Export Framework** (New):
+
+- `ExportConfig` — Centralized export configuration dataclass (database, CSV, JSON settings)
+- `export_to_db()` — Export DataFrame to PostgreSQL analytics schema
+- `export_to_csv()` — Export to CSV in `outputs/analytics/views/`
+- `export_to_json()` — Export to JSON with configurable orientation/indentation
+- `reorder_with_identifiers()` — Reorder DataFrame columns with identifiers first
+- `load_identifier_columns()` — Load identifier column names from DB
+- `get_identifier_cols_set()` — Get identifier columns as a set
+- `load_feature_categories_from_db()` — Load feature categories from `calculated_features_registry`
+- `compare_registry_with_local()` — Compare DB registry with local fallback categories
+
 **Example Usage**:
 
 ```python
 from finance_ml.analytics.data_utils import (
     load_feature_data_from_db,
     backfill_feature_columns,
-    compute_metric_statistics
+    compute_metric_statistics,
+    ExportConfig,
+    export_to_db,
+    export_to_csv,
 )
 
 # Load data
@@ -75,13 +92,18 @@ df = backfill_feature_columns(df)
 # Get statistics
 stats = compute_metric_statistics(df['p_e_ratio'])
 print(f"Mean P/E: {stats['mean']:.2f}")
+
+# Export framework
+config = ExportConfig(db_url="postgresql+psycopg2://...", schema="analytics")
+export_to_db(df, table_name="expected_returns_summary", config=config)
+export_to_csv(df, filename="expected_returns_summary", config=config)
 ```
 
 ---
 
 ### 2. `statistical_analysis.py`
 
-**Purpose**: Advanced statistical analysis including Bayesian methods, MCMC, and Monte Carlo simulations
+**Purpose**: Advanced statistical analysis including Bayesian methods, MCMC, Monte Carlo simulations, and resampled posteriors
 
 **Key Functions**:
 
@@ -92,6 +114,17 @@ print(f"Mean P/E: {stats['mean']:.2f}")
 - `fit_distributions_by_category()` - Fit and select best distribution using AIC
 - `calculate_ruin_probability()` - Investor's ruin probability (Gambler's Ruin)
 - `calculate_conditional_probabilities()` - P(Distress | Feature) analysis
+- `monte_carlo_price_target_simulation()` — Monte Carlo price target simulation
+- `bayesian_earnings_beat_model()` — Bayesian earnings beat model
+- `analyze_distress_distribution()` — Financial distress distribution analysis
+- `analyze_employee_productivity_frontier()` — Employee productivity frontier analysis
+- `detect_accounting_anomalies()` / `analyze_accounting_anomalies()` — Accounting anomaly detection
+- `analyze_reporting_lag_sentiment()` — Reporting lag sentiment analysis
+- `run_category_probability_analytics()` / `run_all_views_probability_analytics()` — Per-category/view analytics
+- `export_probability_view_results()` — Export probability view results
+- `BayesianTechnicalResampler` — Resampled Bayesian technical returns class
+- `ResampledReturnDistribution` — Resampled return distribution dataclass
+- `resampled_posterior_returns()` — Compute resampled posterior returns
 
 **Example Usage**:
 
@@ -136,6 +169,13 @@ top_predictors = cond_probs.nlargest(10, 'separation')
 - `screen_financial_health()` - Filter financially healthy companies
 - `rank_stocks_by_composite_score()` - Composite quality ranking
 - `create_sector_relative_ranking()` - Sector-relative performance ranking
+- `screen_valuation_reversion_candidates()` — Valuation reversion candidate screening
+- `screen_integrity_filtered_growth()` — Growth stocks filtered by accounting integrity
+- `screen_garp_opportunities()` — Growth at a Reasonable Price (GARP) screening
+- `screen_high_yield_safe_dividends()` — High yield with dividend safety screening
+- `screen_low_volatility_quality()` — Low volatility + quality factor screening
+- `screen_fcf_growth_compounders()` — FCF growth compounders screening
+- `screen_total_return_leaders()` — Total return leaders screening
 
 **Example Usage**:
 
@@ -453,7 +493,352 @@ accel_fig = create_growth_acceleration_chart(df, top_n=25)
 
 ---
 
-### 12. Enhanced Statistical Methods (New in `statistical_analysis.py`)
+### 12. `visualizations/category_charts.py`
+
+**Purpose**: Category-specific charts covering 50+ functions across financial analysis domains
+
+**Key Functions by Category**:
+
+- **Analyst Sentiment**: `create_analyst_sentiment_histogram()`, `create_analyst_upside_scatter()`
+- **Earnings Quality**: `create_eps_surprise_histogram()`, `create_eps_trajectory_scatter()`
+- **Growth Metrics**: `create_growth_correlation_heatmap()`, `create_revenue_vs_eps_growth_scatter()`
+- **Cash Flow**: `create_fcf_margin_yield_scatter()`, `create_cash_flow_quality_boxplot()`
+- **Dividend Features**: `create_dividend_yield_payout_scatter()`, `create_shareholder_yield_histogram()`
+- **R&D Investment**: `create_rnd_intensity_boxplot()`, `create_rnd_intensity_growth_scatter()`, `create_rnd_per_employee_histogram()`
+- **Inventory**: `create_inventory_days_turnover_scatter()`
+- **Goodwill & M&A**: `create_goodwill_concentration_boxplot()`, `create_goodwill_impairment_scatter()`, `create_acquisition_activity_histogram()`
+- **CapEx & Investment**: `create_capex_growth_scatter()`, `create_investment_efficiency_boxplot()`, `create_ma_intensity_histogram()`
+- **Advanced/Multi-Category**: `create_valuation_violin_plot()`, `create_quality_risk_radar_chart()`, `create_leverage_liquidity_bubble_chart()`
+- **Post-v2.2.0**: `create_productivity_quadrant()`, `create_accounting_quality_breakdown()`, `create_valuation_range_visual()`, `create_balance_sheet_composition_chart()`, `create_cost_structure_breakdown()`, `create_unusual_items_heatmap()`
+- **Post-Enhancement 1–12**: `create_volatility_surface_chart()`, `create_tax_rate_distribution()`, `create_fcf_estimate_curve()`, `create_opex_efficiency_scatter()`, `create_asset_sale_impact_chart()`, `create_share_dilution_scatter()`, `create_total_return_comparison()`, `create_dividend_yield_history_chart()`, `create_interest_income_trend()`
+
+---
+
+### 13. `probability_analytics.py`
+
+**Purpose**: Probabilistic models for earnings beat, credit risk, dividend safety, price target achievement, and accounting anomaly detection.
+
+**Key Classes**:
+
+- `EarningsBeatProbabilityModel` — Bayesian earnings beat probability with Beta-Binomial conjugate prior
+- `CreditRiskProbabilityModel` — Credit risk probability using Altman Z-Score and financial health metrics
+- `DividendCutProbabilityModel` — Dividend cut/safety probability estimation
+- `PriceTargetAchievementModel` — Price target achievement probability
+- `EPSStreakAnalyzer` — EPS streak and trajectory analysis
+- `ModelConfidenceEstimator` — Model confidence calibration
+- `CategoryProbabilityAnalyzer` — Per-category Bayesian probability analytics
+- `ResampledBeatProbabilityModel` — Resampled beat probability with bootstrap posteriors
+- `AccountingAnomalyProbabilityModel` — Accounting anomaly detection probability
+
+**Key Result Dataclasses**:
+
+- `BeatProbabilityResult`, `BeatProbabilityEstimate`, `ResampledBeatEstimate`
+- `CreditRiskResult`, `DividendSafetyResult`, `PriceTargetResult`
+- `EPSStreakResult`, `ModelConfidenceResult`, `AccountingAnomalyResult`
+- `PriorParameters`, `ReportedEPSHistory`, `ForwardEstimateSignals`
+
+**Key Functions**:
+
+- `create_earnings_probability_dashboard()` — Interactive dashboard for earnings probability
+- `create_confidence_calibration_chart()` — Confidence calibration visualization
+- `create_eps_streak_analysis_chart()` — EPS streak analysis chart
+- `create_view_probability_dashboard()` — Per-view probability dashboard
+- `export_probability_analytics_results()` — Export results to DB/CSV/JSON
+- `compute_beta_confidence_score()` — Shared Beta confidence utility
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.probability_analytics import (
+    EarningsBeatProbabilityModel,
+    CreditRiskProbabilityModel,
+    CategoryProbabilityAnalyzer,
+    create_earnings_probability_dashboard,
+)
+
+# Earnings beat probability
+beat_model = EarningsBeatProbabilityModel()
+beat_results = beat_model.predict(df)
+high_beat = beat_results[beat_results['beat_probability'] > 0.7]
+
+# Credit risk
+credit_model = CreditRiskProbabilityModel()
+credit_results = credit_model.predict(df)
+
+# Category-level Bayesian analysis
+analyzer = CategoryProbabilityAnalyzer()
+category_results = analyzer.analyze(df, categories=FEATURE_CATEGORIES)
+
+# Dashboard
+fig = create_earnings_probability_dashboard(beat_results)
+fig.write_html("outputs/analytics/earnings_probability.html")
+```
+
+---
+
+### 14. `inference_schema.py`
+
+**Purpose**: ArviZ / xarray InferenceData bridge for structured Bayesian posterior storage and diagnostics.
+
+**Key Coordinate Classes**:
+
+- `EquityCoordinates` — Ticker, name, sector, industry coordinates
+- `FeatureCoordinates` — Feature name, category, function coordinates
+- `IdentifierCoordinates` — Full identifier column coordinates (31 columns)
+
+**Key Metadata Classes**:
+
+- `EquitiesSchemaMetadata` — Column metadata from equities schema (id, categorical, date, numeric)
+- `FeatureRegistryMetadata` — Feature registry metadata (function names, categories)
+- `FeatureViewSpec` — Feature view specification for xarray Dataset construction
+- `EquitiesMaterializedViewSpec` — MV equities specification
+
+**Shared Constants & Internal Helpers** (reduce duplication across builders):
+
+- `_IDENTIFIER_COLS` — Frozen set of 9 identifier column names shared by `build_feature_view_inference_data()` and `EquitiesMaterializedViewSpec.from_dataframe()`
+- `_safe_column_values()` — Column extraction with default factory fallback
+- `_build_posterior_samples_beta()` / `_build_posterior_samples_normal()` — Generalized posterior sampling (Beta or Normal) across chains
+- `_build_xarray_coords()` — Shared coordinate dict assembly (chain × draw × equity)
+- `_moment_matched_beta_params()` — Score → (α, β) via moment matching with configurable concentration
+- `_build_arviz_or_xarray()` — ArviZ-vs-xarray dispatch with automatic fallback to `xr.Dataset`
+- `_build_observed_beat()`, `_build_beat_constant_data()` — Beat-specific observed/constant data extraction
+- `_build_credit_observed_data()`, `_build_credit_constant_data()` — Credit risk observed/constant data extraction
+- `_build_anomaly_observed_data()`, `_build_anomaly_constant_data()` — Anomaly observed/constant data extraction
+- `_resolve_price_target_inputs()` — Monte Carlo price target input resolution with observed_df refinement
+- `_extract_category_posterior_params()`, `_build_category_constant_data()` — Category analysis helpers
+
+**Key Builder Functions**:
+
+- `build_beat_probability_inference_data()` — InferenceData for earnings beat posteriors
+- `build_credit_risk_inference_data()` — InferenceData for credit risk posteriors
+- `build_accounting_anomaly_inference_data()` — InferenceData for anomaly posteriors
+- `build_monte_carlo_inference_data()` — InferenceData for Monte Carlo simulations
+- `build_category_analysis_inference_data()` — InferenceData for per-category Bayesian analysis
+- `build_feature_view_inference_data()` — InferenceData for any feature view
+- `build_resampled_technical_inference_data()` — InferenceData for resampled technical returns
+
+**Key Loader Functions**:
+
+- `load_equity_coordinates_from_db()`, `load_feature_coordinates_from_db()`
+- `load_identifier_coordinates_from_db()`
+- `load_equities_schema_metadata_from_db()`, `load_feature_registry_metadata_from_db()`
+- `load_feature_view_spec_from_db()`, `load_mv_equities_spec_from_db()`
+- `summarize_inference_data()` — Human-readable summary of InferenceData contents
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.inference_schema import (
+    build_beat_probability_inference_data,
+    build_monte_carlo_inference_data,
+    load_identifier_coordinates_from_db,
+    summarize_inference_data,
+)
+
+# Build InferenceData for beat probability posteriors
+idata = build_beat_probability_inference_data(
+    beat_results_df=beat, observed_df=df, n_posterior_samples=4000
+)
+print(summarize_inference_data(idata))
+
+# Load identifier coordinates
+id_coords = load_identifier_coordinates_from_db()
+```
+
+---
+
+### 15. `visualizations/probability_viz.py`
+
+**Purpose**: Probabilistic ArviZ-backed visualizations (1389 lines, 8 public functions).
+
+**Key Functions**:
+
+- `create_posterior_return_forest()` — Forest plot of posterior return distributions (top N stocks)
+- `create_beat_probability_posterior()` — Beat probability density/bar chart
+- `create_ruin_probability_diagnostic()` — Ruin probability diagnostic with risk tiers
+- `create_mcse_convergence_panel()` — MCSE convergence diagnostics panel
+- `create_bayesian_category_ridge()` — Ridge plot for Bayesian category analysis
+- `create_tri_model_posterior_comparison()` — Tri-model posterior comparison (MC, Kalman, PT)
+- `create_feature_view_posterior_panel()` — Feature view posterior panel (features + equities)
+- `create_anomaly_conditional_probability_chart()` — Anomaly conditional probability visualization
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.probability_viz import (
+    create_posterior_return_forest,
+    create_beat_probability_posterior,
+    create_ruin_probability_diagnostic,
+)
+
+# Forest plot from InferenceData or DataFrame
+fig = create_posterior_return_forest(idata, top_n=30, credible_interval=0.94)
+fig.write_html("outputs/analytics/posterior_forest.html")
+
+# Beat probability posterior
+fig = create_beat_probability_posterior(beat_df, top_n=12)
+fig.write_html("outputs/analytics/beat_posterior.html")
+```
+
+---
+
+### 16. `visualizations/expected_returns_viz.py`
+
+**Purpose**: Expected returns pipeline-specific visualizations (796 lines, 14 public functions).
+
+**Key Functions**:
+
+- `create_mc_return_distribution()` — Monte Carlo return distribution histogram
+- `create_sector_risk_reward_scatter()` — Sector risk-reward scatter plot
+- `create_kalman_vs_raw_scatter()` — Kalman-filtered vs raw price target scatter
+- `create_tri_model_agreement_histogram()` — Tri-model agreement distribution
+- `create_strong_consensus_bar()` — Strong consensus stocks bar chart
+- `create_sector_heatmap()` — Sector expected returns heatmap
+- `create_var_analysis()` — Value-at-Risk analysis visualization
+- `create_beat_vs_achievement_scatter()` — Beat probability vs price target achievement
+- `create_model_dispersion_dashboard()` — Multi-panel model dispersion dashboard
+- `create_return_distribution_fit_chart()` — Return distribution fit (normal, t, skewnorm)
+- `create_sector_return_analytics_heatmap()` — Sector return analytics heatmap
+- `create_screening_summary_chart()` — Screening results summary
+- `create_price_target_drift_dashboard()` — Historical price target drift analysis
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.expected_returns_viz import (
+    create_mc_return_distribution,
+    create_sector_risk_reward_scatter,
+    create_model_dispersion_dashboard,
+)
+
+fig = create_mc_return_distribution(mc_results)
+fig.write_html("outputs/analytics/er_mc_distribution.html")
+
+fig = create_sector_risk_reward_scatter(mc_results)
+fig.write_html("outputs/analytics/er_sector_risk_reward.html")
+
+fig = create_model_dispersion_dashboard(summary)
+fig.write_html("outputs/analytics/er_model_dispersion.html")
+```
+
+---
+
+### 17. `visualizations/arviz_diagnostics.py`
+
+**Purpose**: ArviZ-backed diagnostic visualizations for the expected returns pipeline (898 lines, 15 public functions).
+
+**Key Functions**:
+
+- `build_screening_inference_data()` — Build InferenceData from screening results
+- `create_screening_posterior_ridge()` — Ridge plot of screening posterior distributions
+- `create_productivity_frontier_posterior()` — Productivity frontier posterior by quantile
+- `build_resampled_posterior_idata()` — Build InferenceData from resampled posteriors
+- `create_resampled_posterior_diagnostics()` — Resampled posterior diagnostic panel
+- `create_resampled_sector_forest()` — Sector-level resampled forest plot
+- `build_alignment_inference_data()` — Build InferenceData from tri-model alignment
+- `create_model_alignment_arviz_panel()` — Model alignment ArviZ diagnostic panel
+- `create_agreement_posterior_by_sector()` — Agreement posterior by sector
+- `create_hierarchical_shrinkage_diagnostic()` — Hierarchical shrinkage diagnostic
+- `create_multi_level_mcmc_comparison()` — Multi-level MCMC comparison
+- `create_mcmc_convergence_panel_arviz()` — MCMC convergence panel (trace, R-hat, ESS)
+- `build_category_analytics_idata()` — Build InferenceData from category analytics
+- `create_category_posterior_diagnostics()` — Category posterior diagnostic panel
+- `create_cross_category_summary()` — Cross-category summary visualization
+
+**Example Usage**:
+
+```python
+from finance_ml.analytics.visualizations.arviz_diagnostics import (
+    create_screening_posterior_ridge,
+    create_mcmc_convergence_panel_arviz,
+    create_resampled_posterior_diagnostics,
+)
+
+fig = create_screening_posterior_ridge(screens)
+fig.write_html("outputs/analytics/screening_posterior.html")
+
+create_mcmc_convergence_panel_arviz(mcmc_result, output_dir=Path("outputs/analytics"))
+```
+
+---
+
+### 18. `expected_returns_v3.py` — Expected Returns Analytics Pipeline v3.1
+
+**Purpose**: Automated end-to-end expected returns analysis pipeline integrating all analytics modules.
+
+**Pipeline Configuration** (`PipelineConfig` dataclass):
+
+- `mc_simulations` (default: 50,000) — Monte Carlo simulations per stock
+- `mc_max_stocks` (default: 10,000) — Maximum stocks to simulate
+- `mcmc_chains` (default: 6) — Parallel MCMC chains
+- `mcmc_samples` (default: 50,000) — MCMC posterior samples per chain
+- `beat_threshold` (default: 0.6) — Quad-model beat classification threshold
+- `output_dir` (default: "outputs/analytics") — Output directory
+- `log_file` / `log_level` — Logging configuration
+- `PipelineConfig.from_env()` — Build config from environment variables
+
+**10-Step Pipeline** (`main()` function):
+
+| Step | Description | Key Functions |
+|------|-------------|---------------|
+| 1 | Data loading (equities MV + feature views + all stock features MV) | `load_expected_returns_data()`, `load_all_stock_features()`, `load_analytics_table()` |
+| 1b | Historical target drift enrichment | `_enrich_with_historical_target_drift()` |
+| 2 | Monte Carlo simulation | `run_monte_carlo_analysis()` |
+| 3 | Price Target Achievement model | `run_price_target_achievement()` |
+| 4 | Kalman filter | `run_kalman_filter()` |
+| 5 | Earnings Beat analysis | `run_earnings_beat_analysis()` |
+| 5b | Accounting Anomaly Detection | `run_accounting_anomaly_analysis()` |
+| 5c | Credit Risk & Dividend Safety | `run_credit_risk_analysis()`, `run_dividend_safety_analysis()` |
+| 5d | Stock Screening (15 screeners) | `run_stock_screening()` |
+| 5e | Resampled Bayesian posterior returns | `run_resampled_posterior_analysis()` |
+| 6 | Tri-model & quad-model alignment | `build_tri_model_alignment()`, `build_quad_model_alignment()` |
+| 7 | Expected returns summary + MCMC | `build_expected_returns_summary()`, `run_parallel_mcmc_return_analysis()` |
+| 7b | Per-category Bayesian probability analytics | `run_category_probability_analysis()` |
+| 8 | Build InferenceData (ArviZ) | `build_*_inference_data()` functions |
+| 9 | Generate visualizations | 30+ visualization functions |
+| 10 | Export results (deduplicated) | `export_expected_returns_results()` |
+
+**Key Analytical Functions**:
+
+- `compute_model_detailed_statistics()` — Per-model statistics with sector breakdown
+- `compute_sector_expected_returns()` — Sector-level expected return aggregation
+- `compute_sector_return_analytics()` — Comprehensive sector analytics (mean, median, std, Sharpe, skew, kurtosis)
+- `compute_return_zscore_ranks()` — Z-score ranking across models
+- `compute_cross_model_correlation()` — MC vs Kalman correlation analysis
+- `compute_cross_model_diagnostics()` — Multi-model diagnostic metrics
+- `compute_return_distribution_analytics()` — Distribution fitting (normal, t, skewnorm)
+- `compute_derived_price_target()` — Derived price targets from expected upside
+- `extract_strong_consensus()` — Filter strong consensus stocks
+- `filter_quality_stocks()` — Quality filtering of summary results
+- `reconcile_feature_categories()` — Reconcile categories with available DataFrame columns
+
+**Example Usage**:
+
+```python
+from expected_returns_v3 import main, PipelineConfig
+
+# Run with defaults
+main()
+
+# Run with custom config
+config = PipelineConfig(
+    mc_simulations=25_000,
+    mcmc_chains=4,
+    mcmc_samples=10_000,
+    output_dir="outputs/custom_run",
+)
+main(config)
+
+# From environment variables
+import os
+os.environ["ER_MC_SIMULATIONS"] = "100000"
+config = PipelineConfig.from_env()
+main(config)
+```
+
+---
+
+### 19. Enhanced Statistical Methods (in `statistical_analysis.py`)
 
 **Purpose**: Advanced time series filtering, dependency modeling, and parallel MCMC
 
@@ -493,7 +878,7 @@ print(f"Converged: {mcmc_result['converged']}")
 
 ---
 
-### 9. `optimized_ops.py` (New)
+### 20. `optimized_ops.py`
 
 **Purpose**: Performance-optimized operations with caching and vectorization
 
@@ -848,10 +1233,12 @@ df = backfill_feature_columns(df)
 
 ### Core Refactored Modules
 
-- `finance_ml/analytics/data_utils.py` - Data loading and preprocessing
-- `finance_ml/analytics/statistical_analysis.py` - Bayesian, MCMC, Kalman, Copula
-- `finance_ml/analytics/screening.py` - Stock screening functions
+- `finance_ml/analytics/data_utils.py` - Data loading, preprocessing, and export framework
+- `finance_ml/analytics/statistical_analysis.py` - Bayesian, MCMC, Kalman, Copula, resampled posteriors
+- `finance_ml/analytics/screening.py` - Stock screening functions (15 screeners)
 - `finance_ml/analytics/feature_analytics.py` - Interactive visualizations
+- `finance_ml/analytics/probability_analytics.py` - Probabilistic models (earnings beat, credit risk, anomaly)
+- `finance_ml/analytics/inference_schema.py` - ArviZ / xarray InferenceData bridge
 - `finance_ml/analytics/optimized_ops.py` - Performance optimizations
 
 ### Visualization Modules (New in v2.0)
@@ -862,10 +1249,20 @@ df = backfill_feature_columns(df)
 
 ### Visualization Modules (New in v2.1)
 
-- `finance_ml/analytics/visualizations/valuation.py` - Valuation ratio analysis (669 lines)
-- `finance_ml/analytics/visualizations/earnings_quality.py` - Earnings quality charts (658 lines)
-- `finance_ml/analytics/visualizations/quality_risk.py` - Quality & risk assessment (852 lines)
-- `finance_ml/analytics/visualizations/growth_analysis.py` - Growth metrics analysis (631 lines)
+- `finance_ml/analytics/visualizations/valuation.py` - Valuation ratio analysis
+- `finance_ml/analytics/visualizations/earnings_quality.py` - Earnings quality charts
+- `finance_ml/analytics/visualizations/quality_risk.py` - Quality & risk assessment
+- `finance_ml/analytics/visualizations/growth_analysis.py` - Growth metrics analysis
+
+### Visualization Modules (New in v3.1)
+
+- `finance_ml/analytics/visualizations/probability_viz.py` - Probabilistic ArviZ-backed visualizations (1,389 lines)
+- `finance_ml/analytics/visualizations/expected_returns_viz.py` - Expected returns pipeline charts (796 lines)
+- `finance_ml/analytics/visualizations/arviz_diagnostics.py` - ArviZ diagnostic visualizations (898 lines)
+
+### Expected Returns Pipeline
+
+- `expected_returns_v3.py` - Automated expected returns pipeline v3.1 (4,528 lines)
 
 ### Test Files
 
@@ -964,9 +1361,29 @@ For questions or issues with the refactored code:
 
 ---
 
-**Last Updated**: 2026-02-11
-**Version**: 2.3.0
-**Status**: Production Ready (DRY Identifier Columns Refactoring)
+**Last Updated**: 2026-03-07
+**Version**: 3.1.0
+**Status**: Production Ready (Expected Returns Pipeline v3.1 + ArviZ Diagnostics)
+
+---
+
+## Changelog (v3.1.0)
+
+### New Modules
+
+- Addition of `inference_schema.py` — ArviZ/xarray InferenceData bridge (1,588 lines, refactored with Extract Function strategy)
+- Addition of `visualizations/probability_viz.py` — 8 probabilistic visualization functions (1,389 lines)
+- Addition of `visualizations/expected_returns_viz.py` — 14 pipeline visualization functions (796 lines)
+- Addition of `visualizations/arviz_diagnostics.py` — 15 ArviZ diagnostic functions (898 lines)
+
+### Expanded Modules
+
+- Expansion of `expected_returns_v3.py` to 4,528 lines with 10-step pipeline
+- Addition of `PipelineConfig` dataclass with environment variable support (`PipelineConfig.from_env()`)
+- Addition of 6 new screeners: GARP, high yield, low volatility, FCF compounders, total return, integrity-filtered growth
+- Addition of `ExportConfig` and unified export framework in `data_utils.py`
+- Addition of `BayesianTechnicalResampler` and `ResampledReturnDistribution` in `statistical_analysis.py`
+- Addition of `AccountingAnomalyProbabilityModel` and `ResampledBeatProbabilityModel` in `probability_analytics.py`
 
 ---
 

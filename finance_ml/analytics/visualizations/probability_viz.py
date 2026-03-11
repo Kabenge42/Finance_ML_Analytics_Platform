@@ -12,6 +12,11 @@ Functions:
 - create_mcse_convergence_panel: Monte Carlo Standard Error convergence
 - create_bayesian_category_ridge: Ridge plot of posterior feature means
 - create_tri_model_posterior_comparison: Overlaid posteriors from MC / Kalman / Achievement
+- create_mcmc_anomaly_posterior_chart: MCMC anomaly score posterior with sector shrinkage
+- create_mcmc_credit_risk_chart: MCMC credit risk posterior (heuristic vs MCMC)
+- create_mcmc_dividend_cut_chart: MCMC dividend cut probability posterior
+- create_mcmc_price_target_chart: MCMC price target achievement posterior with R-hat
+- create_mcmc_category_posterior_chart: MCMC category feature posterior forest plot
 
 Data sources (postgres.analytics):
     - monte_carlo_simulation
@@ -98,7 +103,7 @@ def _ci_bounds(credible_interval: float) -> tuple[float, float]:
 
 def create_posterior_return_forest(
         idata_or_df: "az.InferenceData | pd.DataFrame",
-        var_name: str = "expected_return",
+        var_name: str = "expected_return_prob_weighted",
         top_n: int = 30,
         credible_interval: float = 0.94,
         sort_by: str = "median",
@@ -1198,7 +1203,7 @@ def create_anomaly_conditional_probability_chart(
     """
     Four-panel dashboard for Bayesian conditional anomaly probabilities.
 
-    Visualises output from
+    Visualizes output from
     :meth:`AccountingAnomalyProbabilityModel.calculate_conditional_probabilities`
     and the per-row ``anomaly_conditional_probability`` column.
 
@@ -1385,4 +1390,698 @@ def create_anomaly_conditional_probability_chart(
         margin=dict(l=180, r=40, t=80, b=60),
     )
 
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 9. MCMC Anomaly Posterior Dashboard
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_mcmc_anomaly_posterior_chart(
+    df: pd.DataFrame,
+    top_n: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """Dashboard for MCMC-enhanced anomaly posterior estimates.
+
+    Visualizes the Student-t posterior and sector-level hierarchical
+    shrinkage columns produced by
+    ``AccountingAnomalyProbabilityModel._apply_mcmc_posteriors()``.
+
+    Panels
+    ------
+    1. Top-N stocks by anomaly score with MCMC credible intervals
+    2. Sector posterior means (hierarchical shrinkage) vs raw means
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output of ``AccountingAnomalyProbabilityModel.analyze_dataframe()``
+        with ``use_mcmc=True``.  Expected columns include
+        ``accounting_anomaly_score``, ``anomaly_posterior_mean``,
+        ``anomaly_ci_lower``, ``anomaly_ci_upper``, and optionally
+        ``sector_posterior_mean``.
+    top_n : int
+        Number of stocks to display.
+    title : str | None
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "MCMC Anomaly Score Posterior"
+
+    mcmc_cols = {"anomaly_posterior_mean", "anomaly_ci_lower", "anomaly_ci_upper"}
+    if not isinstance(df, pd.DataFrame) or df.empty or not mcmc_cols.issubset(df.columns):
+        return create_no_data_figure(f"{title} — missing MCMC posterior columns")
+
+    has_sector = "sector_posterior_mean" in df.columns
+    n_panels = 2 if has_sector else 1
+    subplot_titles = ["Top Anomaly Scores with MCMC CI"]
+    if has_sector:
+        subplot_titles.append("Sector Posterior vs Raw Mean")
+
+    fig = make_subplots(
+        rows=1,
+        cols=n_panels,
+        subplot_titles=subplot_titles,
+    )
+
+    # Panel 1: top-N stocks by anomaly score with CI
+    score_col = "accounting_anomaly_score"
+    if score_col not in df.columns:
+        return create_no_data_figure(f"{title} — missing {score_col}")
+
+    plot_df = df.dropna(subset=[score_col]).nlargest(top_n, score_col)
+    if plot_df.empty:
+        return create_no_data_figure(f"{title} — no data after filtering")
+
+    tickers = plot_df["ticker"].values if "ticker" in plot_df.columns else plot_df.index.astype(str).values
+    scores = plot_df[score_col].values
+    ci_lo = plot_df["anomaly_ci_lower"].values
+    ci_hi = plot_df["anomaly_ci_upper"].values
+
+    # CI error bars (symmetric around posterior mean)
+    post_mean = plot_df["anomaly_posterior_mean"].values
+    fig.add_trace(
+        go.Bar(
+            y=tickers,
+            x=scores,
+            orientation="h",
+            name="Anomaly Score",
+            marker_color=COLORS[0],
+            opacity=0.7,
+        ),
+        row=1,
+        col=1,
+    )
+    # Overlay posterior mean with CI
+    fig.add_trace(
+        go.Scatter(
+            y=tickers,
+            x=post_mean,
+            mode="markers",
+            name="Posterior Mean",
+            marker=dict(color=COLORS[1], size=8, symbol="diamond"),
+            error_x=dict(
+                type="data",
+                symmetric=False,
+                array=ci_hi - post_mean,
+                arrayminus=post_mean - ci_lo,
+                color=COLORS[1],
+                thickness=1.5,
+            ),
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Panel 2: sector posterior vs raw
+    if has_sector:
+        sector_col = None
+        for c in ("industry", "sector"):
+            if c in df.columns:
+                sector_col = c
+                break
+        if sector_col:
+            sector_df = (
+                df.dropna(subset=[score_col, "sector_posterior_mean"])
+                .groupby(sector_col)
+                .agg(
+                    raw_mean=(score_col, "mean"),
+                    posterior_mean=("sector_posterior_mean", "first"),
+                )
+                .reset_index()
+                .sort_values("raw_mean", ascending=True)
+            )
+            fig.add_trace(
+                go.Bar(
+                    y=sector_df[sector_col],
+                    x=sector_df["raw_mean"],
+                    orientation="h",
+                    name="Raw Mean",
+                    marker_color=COLORS[2],
+                    opacity=0.7,
+                ),
+                row=1,
+                col=2,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    y=sector_df[sector_col],
+                    x=sector_df["posterior_mean"],
+                    mode="markers",
+                    name="Shrunk Posterior",
+                    marker=dict(color=COLORS[3], size=10, symbol="diamond"),
+                ),
+                row=1,
+                col=2,
+            )
+
+    fig.update_layout(
+        title=title,
+        template=PLOTLY_TEMPLATE,
+        height=max(_MIN_FOREST_HEIGHT, top_n * _ROW_HEIGHT_PX + 120),
+        showlegend=True,
+        margin=dict(l=160, r=40, t=80, b=60),
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. MCMC Credit Risk Posterior Dashboard
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_mcmc_credit_risk_chart(
+    df: pd.DataFrame,
+    top_n: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """Dashboard for MCMC-enhanced credit risk posterior estimates.
+
+    Visualizes the Metropolis-Hastings and Student-t posterior columns
+    produced by ``CreditRiskProbabilityModel._apply_mcmc_posteriors()``.
+
+    Panels
+    ------
+    1. Heuristic vs MCMC distress probability (scatter)
+    2. Sector Z-score posterior means (hierarchical shrinkage)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output of ``CreditRiskProbabilityModel.analyze_dataframe()``
+        with ``use_mcmc=True``.
+    top_n : int
+        Number of stocks to display.
+    title : str | None
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "MCMC Credit Risk Posterior"
+
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return create_no_data_figure(f"{title} — no data")
+
+    has_mcmc = "mcmc_distress_probability" in df.columns
+    has_heuristic = "distress_probability" in df.columns
+    has_sector = "sector_z_posterior_mean" in df.columns
+    # NEW: v3.4 enrichment columns
+    has_bs_distress = (
+        "balance_sheet_strength" in df.columns
+        and "distress_risk_score" in df.columns
+    )
+
+    if not has_mcmc:
+        return create_no_data_figure(f"{title} — missing mcmc_distress_probability")
+
+    n_panels = 1 + int(has_sector) + int(has_bs_distress)
+    subplot_titles = ["Heuristic vs MCMC Distress Probability"]
+    if has_sector:
+        subplot_titles.append("Sector Z-Score Posterior (Hierarchical)")
+    if has_bs_distress:
+        subplot_titles.append("Balance Sheet Strength vs Distress Risk")
+
+    fig = make_subplots(rows=1, cols=n_panels, subplot_titles=subplot_titles)
+
+    # Panel 1: scatter heuristic vs MCMC
+    plot_df = df.dropna(subset=["mcmc_distress_probability"]).head(top_n * 5)
+    x_col = "distress_probability" if has_heuristic else "mcmc_distress_probability"
+    tickers = plot_df["ticker"].values if "ticker" in plot_df.columns else plot_df.index.astype(str).values
+
+    fig.add_trace(
+        go.Scatter(
+            x=plot_df[x_col],
+            y=plot_df["mcmc_distress_probability"],
+            mode="markers",
+            text=tickers,
+            marker=dict(
+                color=plot_df["mcmc_distress_probability"],
+                colorscale="RdYlGn_r",
+                size=8,
+                showscale=True,
+                colorbar=dict(title="MCMC P(distress)"),
+            ),
+            hovertemplate="<b>%{text}</b><br>Heuristic: %{x:.2%}<br>MCMC: %{y:.2%}<extra></extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=1,
+    )
+    # 45-degree reference line
+    fig.add_shape(
+        type="line",
+        x0=0, y0=0, x1=1, y1=1,
+        line=dict(dash="dash", color="grey", width=1),
+        row=1, col=1,
+    )
+    fig.update_xaxes(title_text="Heuristic P(distress)", row=1, col=1)
+    fig.update_yaxes(title_text="MCMC P(distress)", row=1, col=1)
+
+    # Panel 2: sector posterior
+    if has_sector:
+        sector_col = None
+        for c in ("industry", "sector"):
+            if c in df.columns:
+                sector_col = c
+                break
+        if sector_col:
+            sector_df = (
+                df.dropna(subset=["sector_z_posterior_mean"])
+                .groupby(sector_col)
+                .agg(posterior_mean=("sector_z_posterior_mean", "first"))
+                .reset_index()
+                .sort_values("posterior_mean", ascending=True)
+            )
+            fig.add_trace(
+                go.Bar(
+                    y=sector_df[sector_col],
+                    x=sector_df["posterior_mean"],
+                    orientation="h",
+                    marker_color=COLORS[0],
+                    showlegend=False,
+                ),
+                row=1,
+                col=2,
+            )
+            fig.update_xaxes(title_text="Posterior Z-Score Mean", row=1, col=2)
+
+    # Panel 3 (optional): Balance Sheet Strength vs Distress Risk Score
+    if has_bs_distress:
+        bs_col_idx = n_panels  # last panel
+        bs_df = df.dropna(subset=["balance_sheet_strength", "distress_risk_score"]).head(top_n * 5)
+        if not bs_df.empty:
+            bs_tickers = bs_df["ticker"].values if "ticker" in bs_df.columns else bs_df.index.astype(str).values
+            fig.add_trace(
+                go.Scatter(
+                    x=bs_df["balance_sheet_strength"],
+                    y=bs_df["distress_risk_score"],
+                    mode="markers",
+                    text=bs_tickers,
+                    marker=dict(
+                        color=bs_df.get("mcmc_distress_probability", bs_df["distress_risk_score"]),
+                        colorscale="RdYlGn_r",
+                        size=7,
+                        showscale=False,
+                    ),
+                    hovertemplate=(
+                        "<b>%{text}</b><br>"
+                        "BS Strength: %{x:.0f}<br>"
+                        "Distress Risk: %{y:.0f}<extra></extra>"
+                    ),
+                    showlegend=False,
+                ),
+                row=1,
+                col=bs_col_idx,
+            )
+            fig.update_xaxes(title_text="Balance Sheet Strength", row=1, col=bs_col_idx)
+            fig.update_yaxes(title_text="Distress Risk Score", row=1, col=bs_col_idx)
+
+    fig.update_layout(
+        title=title,
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        showlegend=True,
+        margin=dict(l=120, r=40, t=80, b=60),
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 11. MCMC Dividend Cut Posterior Dashboard
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_mcmc_dividend_cut_chart(
+    df: pd.DataFrame,
+    top_n: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """Dashboard for MCMC-enhanced dividend cut probability estimates.
+
+    Visualizes the composite posterior from FCF coverage and payout ratio
+    produced by ``DividendCutProbabilityModel._apply_mcmc_posteriors()``.
+
+    Panels
+    ------
+    1. Top-N riskiest stocks: heuristic vs MCMC cut probability
+    2. FCF coverage posterior CI
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output of ``DividendCutProbabilityModel.analyze_dataframe()``
+        with ``use_mcmc=True``.
+    top_n : int
+        Number of stocks to display.
+    title : str | None
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "MCMC Dividend Cut Probability"
+
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return create_no_data_figure(f"{title} — no data")
+
+    has_mcmc = "mcmc_cut_probability" in df.columns
+    if not has_mcmc:
+        return create_no_data_figure(f"{title} — missing mcmc_cut_probability")
+
+    has_heuristic = "dividend_cut_probability" in df.columns
+    has_ci = {"mcmc_ci_lower", "mcmc_ci_upper"}.issubset(df.columns)
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=[
+            "Heuristic vs MCMC Cut Probability",
+            "FCF Coverage Posterior CI",
+        ],
+    )
+
+    # Panel 1: grouped bar — heuristic vs MCMC
+    sort_col = "mcmc_cut_probability"
+    plot_df = df.dropna(subset=[sort_col]).nlargest(top_n, sort_col)
+    tickers = plot_df["ticker"].values if "ticker" in plot_df.columns else plot_df.index.astype(str).values
+
+    if has_heuristic:
+        fig.add_trace(
+            go.Bar(
+                y=tickers,
+                x=plot_df["dividend_cut_probability"],
+                orientation="h",
+                name="Heuristic",
+                marker_color=COLORS[2],
+                opacity=0.7,
+            ),
+            row=1,
+            col=1,
+        )
+    fig.add_trace(
+        go.Bar(
+            y=tickers,
+            x=plot_df["mcmc_cut_probability"],
+            orientation="h",
+            name="MCMC Composite",
+            marker_color=COLORS[1],
+            opacity=0.7,
+        ),
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(title_text="P(Dividend Cut)", row=1, col=1)
+
+    # Panel 2: CI from FCF posterior
+    if has_ci:
+        ci_df = plot_df.dropna(subset=["mcmc_ci_lower", "mcmc_ci_upper"])
+        if not ci_df.empty:
+            ci_tickers = ci_df["ticker"].values if "ticker" in ci_df.columns else ci_df.index.astype(str).values
+            ci_lo = ci_df["mcmc_ci_lower"].values
+            ci_hi = ci_df["mcmc_ci_upper"].values
+            mid = (ci_lo + ci_hi) / 2
+            fig.add_trace(
+                go.Scatter(
+                    y=ci_tickers,
+                    x=mid,
+                    mode="markers",
+                    name="FCF Posterior Midpoint",
+                    marker=dict(color=COLORS[0], size=8),
+                    error_x=dict(
+                        type="data",
+                        symmetric=False,
+                        array=ci_hi - mid,
+                        arrayminus=mid - ci_lo,
+                        color=COLORS[0],
+                        thickness=1.5,
+                    ),
+                ),
+                row=1,
+                col=2,
+            )
+            fig.update_xaxes(title_text="FCF Coverage (95% CI)", row=1, col=2)
+
+    fig.update_layout(
+        title=title,
+        template=PLOTLY_TEMPLATE,
+        height=max(_MIN_FOREST_HEIGHT, top_n * _ROW_HEIGHT_PX + 120),
+        showlegend=True,
+        barmode="group",
+        margin=dict(l=160, r=40, t=80, b=60),
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 12. MCMC Price Target Achievement Posterior Dashboard
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_mcmc_price_target_chart(
+    df: pd.DataFrame,
+    top_n: int = 20,
+    title: Optional[str] = None,
+) -> go.Figure:
+    """Dashboard for MCMC-enhanced price target achievement estimates.
+
+    Visualizes the Student-t posterior and parallel MCMC convergence
+    diagnostics produced by
+    ``PriceTargetAchievementModel._apply_mcmc_posteriors()``.
+
+    Panels
+    ------
+    1. Heuristic vs MCMC achievement probability (scatter)
+    2. MCMC posterior expected return (prob-weighted) with CI
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output of ``PriceTargetAchievementModel.analyze_dataframe()``
+        with ``use_mcmc=True``.
+    top_n : int
+        Number of stocks to display.
+    title : str | None
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or "MCMC Price Target Achievement Posterior"
+
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return create_no_data_figure(f"{title} — no data")
+
+    has_mcmc = "mcmc_achievement_probability" in df.columns
+    if not has_mcmc:
+        return create_no_data_figure(f"{title} — missing mcmc_achievement_probability")
+
+    has_heuristic = "achievement_probability" in df.columns
+    has_weighted = "mcmc_expected_return_prob_weighted" in df.columns
+    has_ci = {"mcmc_ci_lower", "mcmc_ci_upper"}.issubset(df.columns)
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=[
+            "Heuristic vs MCMC Achievement Probability",
+            "MCMC Posterior Expected Return (Prob-Weighted)",
+        ],
+    )
+
+    # Panel 1: scatter
+    plot_df = df.dropna(subset=["mcmc_achievement_probability"])
+    x_col = "achievement_probability" if has_heuristic else "mcmc_achievement_probability"
+    tickers = plot_df["ticker"].values if "ticker" in plot_df.columns else plot_df.index.astype(str).values
+
+    fig.add_trace(
+        go.Scatter(
+            x=plot_df[x_col],
+            y=plot_df["mcmc_achievement_probability"],
+            mode="markers",
+            text=tickers,
+            marker=dict(
+                color=plot_df["mcmc_achievement_probability"],
+                colorscale="Viridis",
+                size=8,
+                showscale=True,
+                colorbar=dict(title="MCMC P(achieve)"),
+            ),
+            hovertemplate="<b>%{text}</b><br>Heuristic: %{x:.2%}<br>MCMC: %{y:.2%}<extra></extra>",
+            showlegend=False,
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_shape(
+        type="line",
+        x0=0, y0=0, x1=1, y1=1,
+        line=dict(dash="dash", color="grey", width=1),
+        row=1, col=1,
+    )
+    fig.update_xaxes(title_text="Heuristic P(achieve)", row=1, col=1)
+    fig.update_yaxes(title_text="MCMC P(achieve)", row=1, col=1)
+
+    # Panel 2: prob-weighted return with CI
+    if has_weighted:
+        top_df = plot_df.nlargest(top_n, "mcmc_expected_return_prob_weighted")
+        t_tickers = top_df["ticker"].values if "ticker" in top_df.columns else top_df.index.astype(str).values
+        weighted = top_df["mcmc_expected_return_prob_weighted"].values
+
+        error_kwargs = {}
+        if has_ci:
+            ci_lo = top_df["mcmc_ci_lower"].values
+            ci_hi = top_df["mcmc_ci_upper"].values
+            error_kwargs = dict(
+                error_x=dict(
+                    type="data",
+                    symmetric=False,
+                    array=ci_hi - weighted,
+                    arrayminus=weighted - ci_lo,
+                    color=COLORS[1],
+                    thickness=1.5,
+                ),
+            )
+
+        fig.add_trace(
+            go.Scatter(
+                y=t_tickers,
+                x=weighted,
+                mode="markers",
+                name="MCMC E[R] × P(achieve)",
+                marker=dict(color=COLORS[0], size=8),
+                **error_kwargs,
+            ),
+            row=1,
+            col=2,
+        )
+        fig.update_xaxes(title_text="Prob-Weighted Return (%)", row=1, col=2)
+
+    # Annotate Gelman-Rubin if available
+    if "mcmc_gelman_rubin" in df.columns:
+        rhat = df["mcmc_gelman_rubin"].dropna()
+        if len(rhat) > 0:
+            rhat_val = rhat.iloc[0]
+            fig.add_annotation(
+                text=f"R̂ = {rhat_val:.4f}",
+                xref="paper",
+                yref="paper",
+                x=0.98,
+                y=0.02,
+                showarrow=False,
+                font=dict(size=11, color="green" if rhat_val < 1.1 else "red"),
+            )
+
+    fig.update_layout(
+        title=title,
+        template=PLOTLY_TEMPLATE,
+        height=600,
+        showlegend=True,
+        margin=dict(l=120, r=40, t=80, b=60),
+    )
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 13. MCMC Category Probability Posterior Dashboard
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def create_mcmc_category_posterior_chart(
+    analytics: dict,
+    category_name: str = "Category",
+    title: Optional[str] = None,
+) -> go.Figure:
+    """Dashboard for MCMC-enhanced category probability posteriors.
+
+    Visualizes the output of ``run_category_probability_analytics()``
+    or ``CategoryProbabilityAnalyzer.analyze_view()`` with MCMC enabled.
+
+    Each feature's posterior mean and 95% CI are shown as a forest plot.
+
+    Parameters
+    ----------
+    analytics : dict
+        Mapping of ``feature_name → {posterior_mean, posterior_std,
+        ci_95_low / ci_lower_95, ci_95_high / ci_upper_95, ...}``.
+    category_name : str
+        Category label for the title.
+    title : str | None
+        Custom title.
+
+    Returns
+    -------
+    go.Figure
+    """
+    title = title or f"MCMC Category Posterior — {category_name}"
+
+    if not isinstance(analytics, dict) or not analytics:
+        return create_no_data_figure(f"{title} — no analytics data")
+
+    features = []
+    means = []
+    ci_lo = []
+    ci_hi = []
+
+    for feat, info in analytics.items():
+        if not isinstance(info, dict):
+            continue
+        pm = info.get("posterior_mean")
+        if pm is None:
+            continue
+        ps = info.get("posterior_std", 0)
+        lo = info.get("ci_95_low", info.get("ci_lower_95", pm - 1.96 * ps))
+        hi = info.get("ci_95_high", info.get("ci_upper_95", pm + 1.96 * ps))
+        features.append(feat)
+        means.append(pm)
+        ci_lo.append(lo)
+        ci_hi.append(hi)
+
+    if not features:
+        return create_no_data_figure(f"{title} — no valid posterior data")
+
+    means_arr = np.array(means)
+    ci_lo_arr = np.array(ci_lo)
+    ci_hi_arr = np.array(ci_hi)
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            y=features,
+            x=means_arr,
+            mode="markers",
+            name="Posterior Mean",
+            marker=dict(color=COLORS[0], size=10, symbol="diamond"),
+            error_x=dict(
+                type="data",
+                symmetric=False,
+                array=ci_hi_arr - means_arr,
+                arrayminus=means_arr - ci_lo_arr,
+                color=COLORS[0],
+                thickness=2,
+            ),
+            hovertemplate="<b>%{y}</b><br>Mean: %{x:.3f}<br>CI: [%{error_x.arrayminus:.3f}, +%{error_x.array:.3f}]<extra></extra>",
+        )
+    )
+
+    # Zero reference line
+    fig.add_vline(x=0, line_dash="dash", line_color="grey", opacity=0.5)
+
+    fig.update_layout(
+        title=title,
+        template=PLOTLY_TEMPLATE,
+        height=max(_MIN_FOREST_HEIGHT, len(features) * _ROW_HEIGHT_PX + 120),
+        xaxis_title="Posterior Mean",
+        showlegend=True,
+        margin=dict(l=200, r=40, t=80, b=60),
+    )
     return fig

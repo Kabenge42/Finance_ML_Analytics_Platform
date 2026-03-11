@@ -1,9 +1,7 @@
 """
 Analytics module for feature engineering analysis.
-
 This module provides interactive visualizations, probabilistic models,
 and statistical analytics for financial feature analysis.
-
 Modules:
 - feature_analytics: Core visualization dashboards
 - data_utils: Data loading, preprocessing, and standardized exports
@@ -14,7 +12,6 @@ Modules:
   - profitability: Margin and profitability charts
   - technical: Technical analysis charts
   - temporal_analysis: Time series analysis
-
 Export Framework:
 The new ExportConfig class centralizes all export settings (database, CSV, JSON)
 for consistent handling across the analytics pipeline. All export functions
@@ -24,297 +21,127 @@ accept ExportConfig for unified configuration:
   - export_to_json(): JSON format with configurable orientation/indentation
 """
 
-# Feature category management (canonical source: data_utils)
-from finance_ml.analytics.data_utils import (
-    load_feature_data_from_db,
-    backfill_feature_columns,
-    compute_metric_statistics,
-    validate_feature_alignment,
-    load_all_feature_views,
-    get_view_category_mapping,
-    get_view_category_labels,
-    get_view_feature_cols,
-    export_view_analytics_results,
-    VW_FEATURES_VIEWS,
+from finance_ml.analytics.data_utils import (  # noqa: F401
     ANALYTICS_EXPORT_TABLES,
-    safe_get_column,
-    load_feature_categories_from_db,
-    _get_fallback_feature_categories,
-    compare_registry_with_local,
-    load_identifier_columns,
-    get_identifier_cols_set,
-    # NEW: Export configuration and functions
+    VW_FEATURES_VIEWS,
     ExportConfig,
-    export_to_db,
+    _get_fallback_feature_categories,
+    aggregate_probability_results,
+    backfill_feature_columns,
+    compare_registry_with_local,
+    compute_metric_statistics,
     export_to_csv,
+    export_to_db,
     export_to_json,
+    export_view_analytics_results,
+    get_identifier_cols_set,
+    get_view_category_labels,
+    get_view_category_mapping,
+    get_view_feature_cols,
+    load_all_feature_views,
+    load_feature_categories_from_db,
+    load_feature_data_from_db,
+    load_identifier_columns,
     reorder_with_identifiers,
-    )
+    safe_get_column,
+    validate_feature_alignment,
+)
 
-from finance_ml.analytics.feature_analytics import (
-    PLOTLY_TEMPLATE,
+from finance_ml.analytics.feature_analytics import (  # noqa: F401
     FEATURE_CATEGORIES,
+    PLOTLY_TEMPLATE,
     create_composite_quality_score,
     create_interactive_momentum_dashboard,
     create_interactive_valuation_heatmap,
     create_leverage_liquidity_quadrant,
     create_summary_dashboard,
     ensure_subplot_data,
-    )
+)
 
-# Performance optimizations
-from finance_ml.analytics.optimized_ops import (
+from finance_ml.analytics.optimized_ops import (  # noqa: F401
     dataframe_hash,
-    load_feature_data_from_db_cached,
     fast_monte_carlo_simulation,
     fast_ruin_probability,
-    vectorized_zscore,
-    vectorized_percentile_rank,
     get_optimization_status,
-    )
+    load_feature_data_from_db_cached,
+    vectorized_percentile_rank,
+    vectorized_zscore,
+)
 
-# InferenceData schema (ArviZ / xarray bridge)
-try:
-    from finance_ml.analytics.inference_schema import (
-        ARVIZ_AVAILABLE,
-        EquityCoordinates,
-        FeatureCoordinates,
-        IdentifierCoordinates,
-        EquitiesSchemaMetadata,
-        FeatureRegistryMetadata,
-        FeatureViewSpec,
-        EquitiesMaterializedViewSpec,
-        FEATURE_VIEW_REGISTRY,
-        build_beat_probability_inference_data,
-        build_credit_risk_inference_data,
-        build_accounting_anomaly_inference_data,
-        build_monte_carlo_inference_data,
-        build_category_analysis_inference_data,
-        build_feature_view_inference_data,
-        load_equity_coordinates_from_db,
-        load_feature_coordinates_from_db,
-        load_identifier_coordinates_from_db,
-        load_equities_schema_metadata_from_db,
-        load_feature_registry_metadata_from_db,
-        load_feature_view_spec_from_db,
-        load_mv_equities_spec_from_db,
-        summarize_inference_data,
-        # Resampled technical returns
-        build_resampled_technical_inference_data,
-        )
-except ImportError:
-    ARVIZ_AVAILABLE = False
-
-# Screening functions
-from finance_ml.analytics.screening import (
+from finance_ml.analytics.screening import (  # noqa: F401
     create_enhanced_screener,
-    screen_earnings_quality,
-    screen_value_opportunities,
-    screen_growth_momentum,
-    screen_valuation_reversion_candidates,
-    screen_integrity_filtered_growth,
-    screen_dividend_quality,
-    screen_financial_health,
-    rank_stocks_by_composite_score,
     create_sector_relative_ranking,
-    screen_garp_opportunities,
-    screen_high_yield_safe_dividends,
-    # Post-Enhancement 1–12 screeners
-    screen_low_volatility_quality,
+    rank_stocks_by_composite_score,
+    screen_dividend_quality,
+    screen_earnings_quality,
     screen_fcf_growth_compounders,
+    screen_financial_health,
+    screen_garp_opportunities,
+    screen_growth_momentum,
+    screen_high_yield_safe_dividends,
+    screen_integrity_filtered_growth,
+    screen_low_volatility_quality,
     screen_total_return_leaders,
-    )
+    screen_valuation_reversion_candidates,
+    screen_value_opportunities,
+)
 
-# Statistical analysis
-from finance_ml.analytics.statistical_analysis import (
-    bayesian_category_analysis,
-    metropolis_hastings_sampler,
-    mcmc_student_t,
-    hierarchical_mcmc_by_sector,
-    fit_distributions_by_category,
-    calculate_ruin_probability,
-    calculate_conditional_probabilities,
-    # Enhanced methods
-    monte_carlo_price_target_simulation,
-    bayesian_earnings_beat_model,
-    analyze_distress_distribution,
-    kalman_filter_price_target,
-    kalman_momentum_filter,
-    fit_gaussian_copula,
-    parallel_mcmc_chains,
-    analyze_employee_productivity_frontier,
-    detect_accounting_anomalies,
-    analyze_accounting_anomalies,
-    analyze_reporting_lag_sentiment,
-    run_category_probability_analytics,
-    run_all_views_probability_analytics,
-    export_probability_view_results,
-    # NEW: Resampled Bayesian returns
+from finance_ml.analytics.statistical_analysis import (  # noqa: F401
     BayesianTechnicalResampler,
     ResampledReturnDistribution,
+    analyze_accounting_anomalies,
+    analyze_distress_distribution,
+    analyze_employee_productivity_frontier,
+    analyze_reporting_lag_sentiment,
+    bayesian_category_analysis,
+    bayesian_earnings_beat_model,
+    calculate_conditional_probabilities,
+    calculate_ruin_probability,
+    detect_accounting_anomalies,
+    export_probability_view_results,
+    fit_distributions_by_category,
+    fit_gaussian_copula,
+    hierarchical_mcmc_by_sector,
+    hierarchical_mcmc_multi_level,
+    kalman_filter_price_target,
+    kalman_momentum_filter,
+    mcmc_student_t,
+    metropolis_hastings_sampler,
+    monte_carlo_price_target_simulation,
+    parallel_mcmc_chains,
     resampled_posterior_returns,
-    )
+    run_all_views_probability_analytics,
+    run_category_probability_analytics,
+)
 
-# Probability Analytics (NEW)
-try:
-    from finance_ml.analytics.probability_analytics import (
-        EarningsBeatProbabilityModel,
-        CreditRiskProbabilityModel,
-        DividendCutProbabilityModel,
-        PriceTargetAchievementModel,
-        EPSStreakAnalyzer,
-        ModelConfidenceEstimator,
-        CategoryProbabilityAnalyzer,
-        BeatProbabilityResult,
-        BeatProbabilityEstimate,
-        EPSStreakResult,
-        ModelConfidenceResult,
-        CreditRiskResult,
-        DividendSafetyResult,
-        PriceTargetResult,
-        PriorParameters,
-        ReportedEPSHistory,
-        ForwardEstimateSignals,
-        create_earnings_probability_dashboard,
-        create_confidence_calibration_chart,
-        create_eps_streak_analysis_chart,
-        create_view_probability_dashboard,
-        export_probability_analytics_results,
-        # NEW: Resampled beat probability
-        ResampledBeatProbabilityModel,
-        ResampledBeatEstimate,
-        # Accounting anomaly result
-        AccountingAnomalyResult,
-        AccountingAnomalyProbabilityModel,
-        # Shared utility
-        compute_beta_confidence_score,
-        )
+# ---------------------------------------------------------------------------
+# Stub helper for optional-dependency fallbacks
+# ---------------------------------------------------------------------------
 
-    _PROBABILITY_ANALYTICS_AVAILABLE = True
-except ImportError:
-    _PROBABILITY_ANALYTICS_AVAILABLE = False
 
-__all__ = [
-    # Feature analytics
-    "PLOTLY_TEMPLATE",
-    "FEATURE_CATEGORIES",
-    "load_feature_categories_from_db",
-    "compare_registry_with_local",
-    "_get_fallback_feature_categories",
-    "create_interactive_momentum_dashboard",
-    "create_interactive_valuation_heatmap",
-    "create_leverage_liquidity_quadrant",
-    "monte_carlo_price_target_simulation",
-    "bayesian_earnings_beat_model",
-    "analyze_distress_distribution",
-    "create_composite_quality_score",
-    "create_summary_dashboard",
-    "safe_get_column",
-    "ensure_subplot_data",
-    # Data utilities + NEW: Export config and functions
-    "load_identifier_columns",
-    "get_identifier_cols_set",
-    "load_feature_data_from_db",
-    "backfill_feature_columns",
-    "compute_metric_statistics",
-    "validate_feature_alignment",
-    "load_all_feature_views",
-    "get_view_category_mapping",
-    "get_view_category_labels",
-    "get_view_feature_cols",
-    "export_view_analytics_results",
-    "VW_FEATURES_VIEWS",
-    "ANALYTICS_EXPORT_TABLES",
-    "ExportConfig",
-    "export_to_db",
-    "export_to_csv",
-    "export_to_json",
-    "reorder_with_identifiers",
-    # Statistical analysis
-    "bayesian_category_analysis",
-    "metropolis_hastings_sampler",
-    "mcmc_student_t",
-    "analyze_employee_productivity_frontier",
-    "analyze_reporting_lag_sentiment",
-    "detect_accounting_anomalies",
-    "analyze_accounting_anomalies",
-    "hierarchical_mcmc_by_sector",
-    "compute_beta_confidence_score",
-    "fit_distributions_by_category",
-    "calculate_ruin_probability",
-    "calculate_conditional_probabilities",
-    "kalman_filter_price_target",
-    "kalman_momentum_filter",
-    "fit_gaussian_copula",
-    "parallel_mcmc_chains",
-    "run_category_probability_analytics",
-    "run_all_views_probability_analytics",
-    "export_probability_view_results",
-    # Probability Analytics
-    "EarningsBeatProbabilityModel",
-    "CreditRiskProbabilityModel",
-    "DividendCutProbabilityModel",
-    "PriceTargetAchievementModel",
-    "EPSStreakAnalyzer",
-    "ModelConfidenceEstimator",
-    "CategoryProbabilityAnalyzer",
-    "BeatProbabilityResult",
-    "BeatProbabilityEstimate",
-    "EPSStreakResult",
-    "ModelConfidenceResult",
-    "CreditRiskResult",
-    "DividendSafetyResult",
-    "PriceTargetResult",
-    "AccountingAnomalyResult",
-    "AccountingAnomalyProbabilityModel",
-    "PriorParameters",
-    "ReportedEPSHistory",
-    "ForwardEstimateSignals",
-    "create_earnings_probability_dashboard",
-    "create_confidence_calibration_chart",
-    "create_eps_streak_analysis_chart",
-    "create_view_probability_dashboard",
-    "export_probability_analytics_results",
-    # Resampled Bayesian enhancements
-    "BayesianTechnicalResampler",
-    "ResampledReturnDistribution",
-    "resampled_posterior_returns",
-    "ResampledBeatProbabilityModel",
-    "ResampledBeatEstimate",
-    "build_resampled_technical_inference_data",
-    # Screening
-    "create_enhanced_screener",
-    "screen_earnings_quality",
-    "screen_value_opportunities",
-    "screen_growth_momentum",
-    "screen_valuation_reversion_candidates",
-    "screen_integrity_filtered_growth",
-    "screen_dividend_quality",
-    "screen_financial_health",
-    "rank_stocks_by_composite_score",
-    "create_sector_relative_ranking",
-    "screen_garp_opportunities",
-    "screen_high_yield_safe_dividends",
-    # Post-Enhancement 1–12 screeners
-    "screen_low_volatility_quality",
-    "screen_fcf_growth_compounders",
-    "screen_total_return_leaders",
-    # InferenceData schema
-    "ARVIZ_AVAILABLE",
-    "EquityCoordinates",
-    "FeatureCoordinates",
-    "IdentifierCoordinates",
-    "EquitiesSchemaMetadata",
-    "FeatureRegistryMetadata",
-    "FeatureViewSpec",
-    "EquitiesMaterializedViewSpec",
-    "FEATURE_VIEW_REGISTRY",
+def _unavailable_stub(module_label: str):
+    """Return a function that raises ImportError with a clear message."""
+    def _stub(*args, **kwargs):
+        raise ImportError(f"{module_label} is not available")
+    return _stub
+
+
+# ---------------------------------------------------------------------------
+# InferenceData schema (ArviZ / xarray bridge) — optional dependency
+# ---------------------------------------------------------------------------
+_INFERENCE_LABEL = "inference_schema module (ArviZ)"
+
+_INFERENCE_BUILDER_NAMES = [
     "build_beat_probability_inference_data",
     "build_credit_risk_inference_data",
     "build_accounting_anomaly_inference_data",
     "build_monte_carlo_inference_data",
     "build_category_analysis_inference_data",
     "build_feature_view_inference_data",
+    "build_resampled_technical_inference_data",
+]
+
+_INFERENCE_LOADER_NAMES = [
     "load_equity_coordinates_from_db",
     "load_feature_coordinates_from_db",
     "load_identifier_coordinates_from_db",
@@ -323,12 +150,65 @@ __all__ = [
     "load_feature_view_spec_from_db",
     "load_mv_equities_spec_from_db",
     "summarize_inference_data",
-    # Optimizations
-    "dataframe_hash",
-    "load_feature_data_from_db_cached",
-    "fast_monte_carlo_simulation",
-    "fast_ruin_probability",
-    "vectorized_zscore",
-    "vectorized_percentile_rank",
-    "get_optimization_status",
-    ]
+]
+
+try:
+    from finance_ml.analytics.inference_schema import (  # noqa: F401
+        ARVIZ_AVAILABLE,
+        FEATURE_VIEW_REGISTRY,
+        EquitiesMaterializedViewSpec,
+        EquitiesSchemaMetadata,
+        EquityCoordinates,
+        FeatureCoordinates,
+        FeatureRegistryMetadata,
+        FeatureViewSpec,
+        IdentifierCoordinates,
+        build_accounting_anomaly_inference_data,
+        build_beat_probability_inference_data,
+        build_category_analysis_inference_data,
+        build_credit_risk_inference_data,
+        build_feature_view_inference_data,
+        build_monte_carlo_inference_data,
+        build_resampled_technical_inference_data,
+        load_equities_schema_metadata_from_db,
+        load_equity_coordinates_from_db,
+        load_feature_coordinates_from_db,
+        load_feature_registry_metadata_from_db,
+        load_feature_view_spec_from_db,
+        load_identifier_coordinates_from_db,
+        load_mv_equities_spec_from_db,
+        summarize_inference_data,
+    )
+except ImportError:
+    ARVIZ_AVAILABLE = False
+
+    # Coordinate & metadata classes → None
+    EquityCoordinates = None
+    FeatureCoordinates = None
+    IdentifierCoordinates = None
+    EquitiesSchemaMetadata = None
+    FeatureRegistryMetadata = None
+    FeatureViewSpec = None
+    EquitiesMaterializedViewSpec = None
+
+    FEATURE_VIEW_REGISTRY = {}
+
+    # Generate stub functions for every builder and loader
+    _ns = globals()
+    for _name in _INFERENCE_BUILDER_NAMES + _INFERENCE_LOADER_NAMES:
+        _ns[_name] = _unavailable_stub(_INFERENCE_LABEL)
+    del _ns, _name
+
+# ---------------------------------------------------------------------------
+# Probability Analytics — optional dependency
+# ---------------------------------------------------------------------------
+_PROBABILITY_LABEL = "probability_analytics module"
+
+try:
+    from finance_ml.analytics.probability_analytics import (  # noqa: F401
+        CreditRiskProbabilityModel,
+        EarningsBeatProbabilityModel,
+    )
+except ImportError:
+    EarningsBeatProbabilityModel = None
+    CreditRiskProbabilityModel = None

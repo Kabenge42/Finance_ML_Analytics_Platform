@@ -202,6 +202,12 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_tri_model_posterior_comparison",
             "create_feature_view_posterior_panel",
             "create_anomaly_conditional_probability_chart",
+            # MCMC-enhanced probability model visualizations (v3.3)
+            "create_mcmc_anomaly_posterior_chart",
+            "create_mcmc_credit_risk_chart",
+            "create_mcmc_dividend_cut_chart",
+            "create_mcmc_price_target_chart",
+            "create_mcmc_category_posterior_chart",
         ],
     ),
     # Expected returns pipeline visualization functions
@@ -221,6 +227,27 @@ _IMPORT_REGISTRY: Sequence[tuple[str, Sequence[str]]] = (
             "create_sector_return_analytics_heatmap",
             "create_screening_summary_chart",
             "create_price_target_drift_dashboard",
+        ],
+    ),
+    # ArviZ-backed diagnostic visualizations for expected returns pipeline
+    (
+        ".arviz_diagnostics",
+        [
+            "build_screening_inference_data",
+            "create_screening_posterior_ridge",
+            "create_productivity_frontier_posterior",
+            "build_resampled_posterior_idata",
+            "create_resampled_posterior_diagnostics",
+            "create_resampled_sector_forest",
+            "build_alignment_inference_data",
+            "create_model_alignment_arviz_panel",
+            "create_agreement_posterior_by_sector",
+            "create_hierarchical_shrinkage_diagnostic",
+            "create_multi_level_mcmc_comparison",
+            "create_mcmc_convergence_panel_arviz",
+            "build_category_analytics_idata",
+            "create_category_posterior_diagnostics",
+            "create_cross_category_summary",
         ],
     ),
 )

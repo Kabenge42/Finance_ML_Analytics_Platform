@@ -418,7 +418,7 @@ def create_beat_vs_achievement_scatter(
     if beat.empty or pt.empty:
         return create_no_data_figure("Beat vs Achievement — Insufficient Data")
 
-    merged = beat[["ticker", "posterior_beat_prob", "confidence_score"]].merge(
+    merged = beat[["ticker", "prob_beat_given_momentum", "confidence_score"]].merge(
         pt[["ticker", "achievement_probability", "expected_return_prob_weighted"]],
         on="ticker",
         how="inner",
@@ -428,14 +428,14 @@ def create_beat_vs_achievement_scatter(
 
     fig = px.scatter(
         merged,
-        x="posterior_beat_prob",
+        x="prob_beat_given_momentum",
         y="achievement_probability",
         color="expected_return_prob_weighted",
         size="confidence_score",
         hover_data=["ticker"],
         title="P(Beat Earnings) vs P(Reach Price Target)",
         labels={
-            "posterior_beat_prob": "P(Beat Next Quarter)",
+            "prob_beat_given_momentum": "P(Beat Next Quarter)",
             "achievement_probability": "P(Reach Price Target)",
         },
         color_continuous_scale="RdYlGn",
@@ -718,6 +718,9 @@ def create_price_target_drift_dashboard(
     price-target horizons and creates a multi-line chart showing
     PT median/high/low drift over 1W/1M/3M/6M/1Y.
 
+    Also displays historical price drift using ``mv_spec.historical_price_columns``
+    to compare actual price movement against price target evolution.
+
     Parameters
     ----------
     mv_equities_df : pd.DataFrame
@@ -735,8 +738,12 @@ def create_price_target_drift_dashboard(
     # Discover price target columns
     if mv_spec is not None:
         pt_cols = mv_spec.price_target_columns
+        hist_price_cols = mv_spec.historical_price_columns
     else:
         pt_cols = [c for c in mv_equities_df.columns if c.startswith("price_target")]
+        hist_price_cols = [
+            c for c in mv_equities_df.columns if c.startswith("close_") and "_ago" in c
+        ]
 
     if not pt_cols:
         return create_no_data_figure("Price Target Drift — No PT Columns")
@@ -753,6 +760,7 @@ def create_price_target_drift_dashboard(
     fig = go.Figure()
     color_idx = 0
 
+    # Add price target drift lines
     for base in base_cols[:3]:  # limit to 3 base metrics
         # Current value
         if base in mv_equities_df.columns:
@@ -760,10 +768,14 @@ def create_price_target_drift_dashboard(
             points = [("Current", median_val)]
 
             for suffix, label in zip(horizon_order, horizon_labels):
-                hist_col = f"{base}_{suffix}" if f"{base}_{suffix}" in mv_equities_df.columns else None
+                hist_col = (
+                    f"{base}_{suffix}" if f"{base}_{suffix}" in mv_equities_df.columns else None
+                )
                 if hist_col is None:
                     # Try matching pattern
-                    candidates = [c for c in pt_cols if base.replace("price_target", "") in c and suffix in c]
+                    candidates = [
+                        c for c in pt_cols if base.replace("price_target", "") in c and suffix in c
+                    ]
                     hist_col = candidates[0] if candidates else None
                 if hist_col and hist_col in mv_equities_df.columns:
                     points.append((label, mv_equities_df[hist_col].median()))
@@ -782,13 +794,42 @@ def create_price_target_drift_dashboard(
                 )
                 color_idx += 1
 
+    # Add historical price drift lines
+    if hist_price_cols:
+        # Find current price column
+        current_price_col = next(
+            (c for c in mv_equities_df.columns if c in ["close", "price", "current_price"]), None
+        )
+
+        if current_price_col and current_price_col in mv_equities_df.columns:
+            price_points = [("Current", mv_equities_df[current_price_col].median())]
+
+            for suffix, label in zip(horizon_order, horizon_labels):
+                # Look for historical price columns matching the horizon
+                hist_price_col = next((c for c in hist_price_cols if suffix in c), None)
+                if hist_price_col and hist_price_col in mv_equities_df.columns:
+                    price_points.append((label, mv_equities_df[hist_price_col].median()))
+
+            if len(price_points) > 1:
+                labels, values = zip(*price_points)
+                fig.add_trace(
+                    go.Scatter(
+                        x=list(labels),
+                        y=list(values),
+                        mode="lines+markers",
+                        name="Historical Price",
+                        line=dict(color="black", width=2, dash="dot"),
+                        marker=dict(size=8, symbol="square"),
+                    )
+                )
+
     if not fig.data:
         return create_no_data_figure("Price Target Drift — Insufficient Historical Data")
 
     fig.update_layout(
-        title="Price Target Drift Across Historical Snapshots",
+        title="Price Target & Historical Price Drift Across Snapshots",
         xaxis_title="Snapshot Horizon",
-        yaxis_title="Median Price Target",
+        yaxis_title="Median Value",
         template=PLOTLY_TEMPLATE,
         height=500,
     )

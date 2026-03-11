@@ -760,7 +760,7 @@ def _build_feature_query(
     """Build a parameterised SQL query for the feature materialized view."""
     base_sql = f"""
         SELECT *
-        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC
+        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '3 months' and industry <> 'Consumer Finance' ORDER BY next_earnings ASC
     """
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
@@ -848,7 +848,7 @@ def _build_equities_query(
     """Build a parameterised SQL query for the equities materialized view."""
     base_sql = f"""
         SELECT *
-        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC
+        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '3 months' and industry <> 'Consumer Finance' ORDER BY next_earnings ASC
     """
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
@@ -917,7 +917,7 @@ def load_equities_data_from_db(
 
     engine = create_engine(db_url)
 
-    base_sql = f"SELECT * FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC"
+    base_sql = f"SELECT * FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '3 months' and industry <> 'Consumer Finance' ORDER BY next_earnings ASC"
     if limit is not None:
         base_sql += f" LIMIT {int(limit)}"
     query = text(base_sql)
@@ -967,9 +967,93 @@ def backfill_feature_columns(df: pd.DataFrame) -> pd.DataFrame:
             df["analyst_neutral_pct"] = neutral.clip(lower=0, upper=100)
 
     # Map inventory_turnover to expected column name
-    if "inventory_turnover_mv" not in df.columns:
-        if "inventory_turnover" in df.columns:
-            df["inventory_turnover_mv"] = df["inventory_turnover"]
+    if "inventory_turnover" not in df.columns:
+        for src_col in ["inventory_turnover_mv", "inventory_turnover_ltm", "inventory_turnover_fy"]:
+            if src_col in df.columns:
+                df["inventory_turnover"] = df[src_col]
+                break
+
+    # Also keep inventory_turnover_mv for backward compatibility if needed
+    if "inventory_turnover_mv" not in df.columns and "inventory_turnover" in df.columns:
+        df["inventory_turnover_mv"] = df["inventory_turnover"]
+
+    # Map asset_turnover
+    if "asset_turnover" not in df.columns:
+        for src_col in ["asset_turnover_ltm", "asset_turnover_fy", "asset_turnover_ratio"]:
+            if src_col in df.columns:
+                df["asset_turnover"] = df[src_col]
+                break
+
+    # Map receivables_turnover
+    if "receivables_turnover" not in df.columns:
+        for src_col in ["receivables_turnover_ltm", "receivables_turnover_fy"]:
+            if src_col in df.columns:
+                df["receivables_turnover"] = df[src_col]
+                break
+
+    # Map revenue_per_employee
+    if "revenue_per_employee" not in df.columns:
+        for src_col in ["revenue_per_employee_ltm", "revenue_per_employee_fy", "revenue_per_employee_1fy"]:
+            if src_col in df.columns:
+                df["revenue_per_employee"] = df[src_col]
+                break
+
+    # Map retention_ratio / retention_rate
+    if "retention_ratio" not in df.columns:
+        for src_col in ["retention_rate", "earnings_retention_rate", "retention_ratio_ltm"]:
+            if src_col in df.columns:
+                df["retention_ratio"] = df[src_col]
+                break
+    if "retention_rate" not in df.columns and "retention_ratio" in df.columns:
+        df["retention_rate"] = df["retention_ratio"]
+
+    # Map ev_ebitda
+    if "ev_ebitda" not in df.columns:
+        for src_col in ["ev_to_ebitda", "ev_ebitda_ltm", "ev_ebitda_fy"]:
+            if src_col in df.columns:
+                df["ev_ebitda"] = df[src_col]
+                break
+
+    # Map eps_actual / eps_estimate
+    if "eps_actual" not in df.columns:
+        for src_col in ["eps_adj_ltm", "net_eps_basic_ltm", "eps_ltm", "eps_actual_ltm_fy"]:
+            if src_col in df.columns:
+                df["eps_actual"] = df[src_col]
+                break
+    if "eps_estimate" not in df.columns:
+        for src_col in ["eps_est_avg_fy1e", "eps_est_avg_ntm", "eps_estimate_fy1"]:
+            if src_col in df.columns:
+                df["eps_estimate"] = df[src_col]
+                break
+
+    # Map earnings_beat / eps_growth_yoy
+    if "earnings_beat" not in df.columns:
+        for src_col in ["earnings_beat_indicator", "surprise_flag", "is_beat"]:
+            if src_col in df.columns:
+                df["earnings_beat"] = df[src_col]
+                break
+    if "eps_growth_yoy" not in df.columns:
+        for src_col in ["earnings_growth_yoy", "ebitda_growth_yoy", "net_income_growth_yoy"]:
+            if src_col in df.columns:
+                df["eps_growth_yoy"] = df[src_col]
+                break
+
+    # Map missing composite scores / counts
+    if "combined_distress_risk_score" not in df.columns:
+        for src_col in ["distress_probability_composite", "risk_score_combined", "combined_risk_score"]:
+            if src_col in df.columns:
+                df["combined_distress_risk_score"] = df[src_col]
+                break
+    if "eps_trajectory_score" not in df.columns:
+        for src_col in ["eps_trend_score", "eps_momentum_score", "trajectory_score"]:
+            if src_col in df.columns:
+                df["eps_trajectory_score"] = df[src_col]
+                break
+    if "fcf_positive_years" not in df.columns:
+        for src_col in ["fcf_positive_count", "years_positive_fcf", "fcf_pos_years"]:
+            if src_col in df.columns:
+                df["fcf_positive_years"] = df[src_col]
+                break
 
     # Calculate inventory_days from turnover
     if "inventory_days" not in df.columns:
@@ -1144,7 +1228,7 @@ def load_all_feature_views(
         try:
             query = f"""
         SELECT *
-        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '30 days' ORDER BY next_earnings ASC
+        FROM {view_ref} WHERE next_earnings >= CURRENT_DATE - INTERVAL '3 months' and industry <> 'Consumer Finance' ORDER BY next_earnings ASC
         
     """
             df_view = pd.read_sql(query, engine)

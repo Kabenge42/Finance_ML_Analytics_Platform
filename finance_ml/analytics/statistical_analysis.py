@@ -255,7 +255,7 @@ class BayesianTechnicalResampler:
 
     def __init__(
         self,
-        prior_return_mean: float = 0.08,
+        prior_return_mean: float = 0.05,
         prior_return_std: float = 0.20,
         n_posterior_samples: int = 4000,
         n_chains: int = 4,
@@ -492,7 +492,7 @@ class BayesianTechnicalResampler:
 
         if ARVIZ_AVAILABLE and az is not None:
             return az.from_dict(
-                posterior={"expected_return": posterior_samples},
+                posterior={"expected_return_prob_weighted": posterior_samples},
                 posterior_predictive={"future_return": pp_samples},
                 log_likelihood={"return_obs": log_lik},
                 observed_data={"observed_return": observed_means},
@@ -503,14 +503,14 @@ class BayesianTechnicalResampler:
                 },
                 coords=coords,
                 dims={
-                    "expected_return": ["chain", "draw", "equity"],
+                    "expected_return_prob_weighted": ["chain", "draw", "equity"],
                     "future_return": ["chain", "draw", "equity"],
                     "return_obs": ["chain", "draw", "equity"],
                 },
             )
         elif xr is not None:
             return xr.Dataset(
-                {"expected_return": (["chain", "draw", "equity"], posterior_samples)},
+                {"expected_return_prob_weighted": (["chain", "draw", "equity"], posterior_samples)},
                 coords=coords,
             )
         return None
@@ -519,7 +519,7 @@ class BayesianTechnicalResampler:
 def resampled_posterior_returns(
         df: pd.DataFrame,
         freq: str = "1ME",
-        prior_return_mean: float = 0.08,
+        prior_return_mean: float = 0.10,
         prior_return_std: float = 0.20,
         n_posterior_samples: int = 4000,
         n_chains: int = 4,
@@ -547,12 +547,8 @@ def resampled_posterior_returns(
     tuple[pd.DataFrame, InferenceData | xr.Dataset | None]
         (result_df, idata)
     """
-    resampler = BayesianTechnicalResampler(
-        prior_return_mean=prior_return_mean,
-        prior_return_std=prior_return_std,
-        n_posterior_samples=n_posterior_samples,
-        n_chains=n_chains,
-    )
+    resampler = BayesianTechnicalResampler(prior_return_mean=prior_return_mean, prior_return_std=prior_return_std,
+                                           n_posterior_samples=n_posterior_samples, n_chains=n_chains)
     result_df = resampler.resample_returns(df, freq=freq)
     idata = resampler.build_inference_data(df, freq=freq, result_df=result_df)
     return result_df, idata
@@ -899,8 +895,8 @@ def hierarchical_mcmc_multi_level(
     feature: str,
     group_cols: list[str] | None = None,
     n_samples: int = 8000,
-    min_group_size: int = 20,
-    shrinkage_strength: float = 10.0,
+    min_group_size: int = 10,
+    shrinkage_strength: float = 20.0,
 ) -> dict:
     """
     Multi-level hierarchical MCMC with nested category pooling.
@@ -949,7 +945,7 @@ def hierarchical_mcmc_multi_level(
 
     Examples
     --------
-    >>> result = hierarchical_mcmc_multi_level(df, 'expected_upside_pct')
+    >>> result = hierarchical_mcmc_multi_level(df,'expected_upside_pct')
     >>> result['levels']['region']['North America']['posterior_mean']
     >>> result['levels']['sector']['Technology']['shrinkage']
     """
@@ -1211,6 +1207,10 @@ def calculate_ruin_probability(
         initial_capital_col: str = "market_cap",
         cash_burn_col: str = "cash_burn_rate",
         volatility_col: str = "volatility_regime",
+        # NEW: Additional leverage/liquidity inputs (v3.4)
+        debt_maturity_risk_col: str = "debt_maturity_risk",
+        balance_sheet_strength_col: str = "balance_sheet_strength",
+        cash_ratio_col: str = "cash_ratio",
         risk_tier_bins: list[float] | None = None,
         risk_tier_labels: list[str] | None = None,
 ) -> pd.DataFrame:
@@ -1305,6 +1305,26 @@ def calculate_ruin_probability(
         negative_drift_ruin,
     )
 
+    result["survival_probability"] = 1 - result["ruin_probability"]
+
+    # ── 4b. Leverage/liquidity adjustment (v3.4) ──
+    if debt_maturity_risk_col in df.columns:
+        debt_risk = df[debt_maturity_risk_col].fillna(0) / 100
+        result["ruin_probability"] = np.clip(
+            result["ruin_probability"] + debt_risk * 0.15, 0, 1
+        )
+    if balance_sheet_strength_col in df.columns:
+        bs = df[balance_sheet_strength_col].fillna(50) / 100
+        result["ruin_probability"] = np.clip(
+            result["ruin_probability"] * (1.3 - bs * 0.6), 0, 1
+        )
+    if cash_ratio_col in df.columns:
+        cr = df[cash_ratio_col].fillna(0.5)
+        # Low cash ratio increases ruin probability
+        cash_penalty = np.where(cr < 0.1, 0.10, np.where(cr < 0.3, 0.05, 0.0))
+        result["ruin_probability"] = np.clip(
+            result["ruin_probability"] + cash_penalty, 0, 1
+        )
     result["survival_probability"] = 1 - result["ruin_probability"]
 
     # ── 5. Risk tier classification (wider low-risk band) ──
@@ -2434,6 +2454,13 @@ def detect_accounting_anomalies(
         bins=tier_bins,
         labels=tier_labels,
     )
+
+    # ── Quality frequency flags (v3.4) ──
+    freq_cols = ["goodwill_impairment_frequency", "asset_writedown_frequency", "restructuring_frequency"]
+    available_freq = [c for c in freq_cols if c in df.columns]
+    if available_freq:
+        result["quality_frequency_score"] = df[available_freq].fillna(0).sum(axis=1)
+        result["repeat_offender_flag"] = (result["quality_frequency_score"] >= 2).astype(int)
 
     return result
 

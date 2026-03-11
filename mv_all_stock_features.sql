@@ -32,6 +32,7 @@ SELECT
     id.isin,
     id.ticker,
     id.name,
+    id.description,
     id.industry,
     id.sector,
     id.trading_country,

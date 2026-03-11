@@ -29,6 +29,7 @@ SELECT
     id.isin,
     id.ticker,
     id.name,
+    id.description,
     id.region,
     id.country,
     id.trading_country,

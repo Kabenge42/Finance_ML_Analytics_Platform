@@ -9,7 +9,8 @@ Environment Variable Required: GEIB_DASHBOARD=true
 import os
 from datetime import datetime
 from pathlib import Path
-
+import warnings
+from requests.exceptions import RequestsDependencyWarning
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -47,6 +48,10 @@ from finance_ml.analytics.screening import (
     screen_valuation_reversion_candidates,
     screen_integrity_filtered_growth,
     screen_high_yield_safe_dividends,
+    create_sector_relative_ranking,
+    screen_low_volatility_quality,
+    screen_fcf_growth_compounders,
+    screen_total_return_leaders,
 )
 
 # Import probabilistic visualizations
@@ -93,6 +98,27 @@ try:
         create_earnings_probability_dashboard,
         AccountingAnomalyProbabilityModel,
     )
+    from finance_ml.analytics.visualizations.valuation import (
+        create_valuation_multiples_comparison,
+        create_valuation_distribution_dashboard,
+        create_relative_valuation_matrix,
+        create_valuation_vs_growth_quadrant,
+        create_historical_valuation_percentile,
+    )
+    from finance_ml.analytics.visualizations.earnings_quality import (
+        create_earnings_surprise_dashboard,
+        create_eps_trajectory_analysis,
+        create_earnings_quality_decomposition,
+        create_beat_rate_heatmap,
+        create_earnings_consistency_matrix,
+    )
+    from finance_ml.analytics.visualizations.growth_analysis import (
+        create_growth_waterfall_chart,
+        create_growth_consistency_matrix,
+        create_growth_vs_profitability_quadrant,
+        create_growth_acceleration_chart,
+        create_sustainable_growth_analysis,
+    )
 
     ER_VIZ_AVAILABLE = True
 except ImportError as _er_import_err:
@@ -102,6 +128,25 @@ except ImportError as _er_import_err:
 from plotly.subplots import make_subplots
 from typing import Tuple
 
+
+def _safe_hover_data(
+    candidates: list[str] | dict[str, str],
+    df: pd.DataFrame,
+) -> list[str] | dict[str, str] | None:
+    """Filter *candidates* to columns actually present in *df*.
+
+    Accepts either a list of column names or a dict mapping column names
+    to format strings (the Plotly ``hover_data`` dict form).  Returns the
+    same type with missing columns removed, or *None* when nothing remains
+    so that ``px.scatter`` simply omits the parameter.
+    """
+    if isinstance(candidates, dict):
+        filtered = {k: v for k, v in candidates.items() if k in df.columns}
+        return filtered or None
+    filtered = [c for c in candidates if c in df.columns]
+    return filtered or None
+
+warnings.filterwarnings("ignore", category=RequestsDependencyWarning)
 # Project root path for consistent path resolution
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
@@ -333,6 +378,14 @@ TABLE_STYLE_DATA_CONDITIONAL = [
     {
         "if": {
             "column_id": "accounting_anomaly_tier",
+            "filter_query": '{accounting_anomaly_tier} = "Watch"',
+        },
+        "color": COLORS["warning"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "accounting_anomaly_tier",
             "filter_query": '{accounting_anomaly_tier} = "Clean"',
         },
         "color": COLORS["success"],
@@ -407,30 +460,209 @@ TABLE_STYLE_DATA_CONDITIONAL = [
         "color": COLORS["success"],
         "fontWeight": "bold",
     },
+    # Resampled posterior: green for positive, red for negative
+    {
+        "if": {
+            "column_id": "resampled_posterior_mean",
+            "filter_query": "{resampled_posterior_mean} > 0",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "resampled_posterior_mean",
+            "filter_query": "{resampled_posterior_mean} < 0",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Momentum signal
+    {
+        "if": {
+            "column_id": "momentum_signal",
+            "filter_query": "{momentum_signal} > 0.5",
+        },
+        "color": COLORS["success"],
+    },
+    {
+        "if": {
+            "column_id": "momentum_signal",
+            "filter_query": "{momentum_signal} < -0.5",
+        },
+        "color": COLORS["danger"],
+    },
+    # EPS revision momentum
+    {
+        "if": {
+            "column_id": "eps_revision_momentum",
+            "filter_query": "{eps_revision_momentum} > 0.5",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "eps_revision_momentum",
+            "filter_query": "{eps_revision_momentum} < -0.5",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Piotroski F-Score (0-9 integer scale)
+    {
+        "if": {
+            "column_id": "piotroski_f_score",
+            "filter_query": "{piotroski_f_score} >= 7",
+        },
+        "color": COLORS["success"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "piotroski_f_score",
+            "filter_query": "{piotroski_f_score} <= 3",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    # Beneish M-Score (< -2.22 = unlikely manipulator)
+    {
+        "if": {
+            "column_id": "beneish_m_score",
+            "filter_query": "{beneish_m_score} > -2.22",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
+    {
+        "if": {
+            "column_id": "beneish_m_score",
+            "filter_query": "{beneish_m_score} < -2.22",
+        },
+        "color": COLORS["success"],
+    },
+    # Volatility regime score
+    {
+        "if": {
+            "column_id": "volatility_regime_score",
+            "filter_query": "{volatility_regime_score} > 0.7",
+        },
+        "color": COLORS["danger"],
+        "fontWeight": "bold",
+    },
 ]
 
 
+# --- Schema-driven column formatting sets (populated at module load) ---
+_SCHEMA_CURRENCY_COLS: set[str] = set()
+_SCHEMA_PERCENTAGE_COLS: set[str] = set()
+_SCHEMA_RATIO_COLS: set[str] = set()
+_SCHEMA_COUNT_COLS: set[str] = set()
+_SCHEMA_EARNINGS_COLS: set[str] = set()
+
+# Roles from equities_schema_metadata that map to currency formatting
+_CURRENCY_ROLES = {
+    "price_col", "price_target_col", "market_data",
+    "revenue_cols", "ebitda_cols", "ebit_cols", "net_income_cols",
+    "operating_income_cols", "gross_profit_cols", "cash_flow",
+    "balance_sheet", "operating_expenses_cols", "interest_cols",
+    "sg&a_cols", "r&d_expenses_cols", "marketing_exp_cols",
+    "tax_cols", "income_statement_cols",
+}
+
+
+def _populate_schema_format_sets() -> None:
+    """Populate module-level formatting sets from ``get_equities_schema()``."""
+    global _SCHEMA_CURRENCY_COLS, _SCHEMA_PERCENTAGE_COLS, _SCHEMA_RATIO_COLS
+    global _SCHEMA_COUNT_COLS, _SCHEMA_EARNINGS_COLS
+    schema = get_equities_schema()
+    if not schema:
+        return
+    for alias, meta in schema.items():
+        role = meta.get("role", "")
+        if role in _CURRENCY_ROLES:
+            _SCHEMA_CURRENCY_COLS.add(alias)
+        elif role == "percentage":
+            _SCHEMA_PERCENTAGE_COLS.add(alias)
+        elif role == "ratio":
+            _SCHEMA_RATIO_COLS.add(alias)
+        elif role == "count":
+            _SCHEMA_COUNT_COLS.add(alias)
+        elif role == "earnings_cols":
+            _SCHEMA_EARNINGS_COLS.add(alias)
+
+
+# Hardcoded fallback sets used when the DB schema is unavailable
+_FALLBACK_CURRENCY_COLS = {
+    "last_price", "price_target", "price_target_high", "price_target_low",
+    "price_target_median", "price_target_prob_weighted", "price_target_mc",
+    "kalman_estimate", "market_cap", "enterprise_value", "ci_lower", "ci_upper",
+}
+_FALLBACK_PCT_100_COLS = {
+    "expected_upside_pct", "filtered_upside", "expected_return_prob_weighted",
+    "var_5_pct", "accounting_anomaly_score", "anomaly_severity_score",
+    "sector_anomaly_percentile", "payout_ratio", "yield_vs_5y_avg",
+    "revenue_growth_yoy", "eps_growth_yoy", "roe", "retention_ratio",
+}
+_FALLBACK_PROB_COLS = {
+    "achievement_probability", "posterior_beat_prob", "confidence_score",
+    "prob_positive_upside", "weighted_agreement", "prob_beat_given_momentum",
+    "analyst_conviction", "eps_revision_momentum", "analyst_rating_normalized",
+    "resampled_posterior_mean", "technical_adjustment", "momentum_signal",
+    "volatility_regime_score", "distress_probability", "ruin_probability",
+    "survival_probability", "dividend_cut_probability", "dividend_consistency",
+    "data_quality_score", "beta_stability_score", "safety_score",
+    "fcf_dividend_coverage", "anomaly_conditional_probability",
+}
+_FALLBACK_PCTILE_COLS = {
+    "expected_upside_pct_pctile", "filtered_upside_pctile",
+    "expected_return_prob_weighted_pctile", "anomaly_risk_rank",
+}
+_FALLBACK_ZSCORE_COLS = {
+    "expected_upside_pct_zscore", "filtered_upside_zscore",
+    "expected_return_prob_weighted_zscore", "sector_relative_anomaly",
+    "altman_z_score", "altman_z_trend",
+}
+_FALLBACK_TEXT_COLS = {"credible_interval_90", "credible_interval_95"}
+_FALLBACK_INT_COLS = {
+    "agreement_score", "anomaly_feature_count", "dividend_streak",
+    "high_yield_flag", "sustainable_flag", "piotroski_f_score",
+}
+_FALLBACK_RATIO_COLS = {"p_e_ratio", "p_b_ratio", "ev_ebitda", "beneish_m_score"}
+_FALLBACK_EPS_COLS = {"eps_actual", "eps_estimate"}
+_FALLBACK_SCORE_COLS = {
+    "composite_score", "kelly_pct", "risk_reward_ratio",
+    "liquidity_stress_score", "cash_runway_months", "wealth_buffer",
+}
+
+
 def get_formatted_columns(cols_list):
-    """Return column definitions with specific formatting rules."""
+    """Return column definitions with formatting rules driven by schema metadata.
+
+    Uses ``get_equities_schema()`` roles when available, falling back to
+    hardcoded sets so the dashboard works without a database connection.
+    """
+    # Ensure schema sets are populated (no-op after first call)
+    if not _SCHEMA_CURRENCY_COLS:
+        _populate_schema_format_sets()
+
+    currency = _SCHEMA_CURRENCY_COLS or _FALLBACK_CURRENCY_COLS
+    pct_100 = _FALLBACK_PCT_100_COLS | _SCHEMA_PERCENTAGE_COLS
+    prob_01 = _FALLBACK_PROB_COLS
+    pctile = _FALLBACK_PCTILE_COLS
+    zscore = _FALLBACK_ZSCORE_COLS
+    text_cols = _FALLBACK_TEXT_COLS
+    int_cols = _FALLBACK_INT_COLS | _SCHEMA_COUNT_COLS
+    ratio_cols = _FALLBACK_RATIO_COLS | _SCHEMA_RATIO_COLS
+    eps_cols = _FALLBACK_EPS_COLS | _SCHEMA_EARNINGS_COLS
+    score_cols = _FALLBACK_SCORE_COLS
+
     formatted = []
     for col in cols_list:
         spec = {"id": col, "name": col.replace("_", " ").capitalize()}
 
-        # Currency formatting
-        if col in [
-            "last_price",
-            "price_target",
-            "price_target_high",
-            "price_target_low",
-            "price_target_median",
-            "price_target_prob_weighted",
-            "price_target_mc",
-            "kalman_estimate",
-            "market_cap",
-            "enterprise_value",
-            "ci_lower",
-            "ci_upper",
-        ]:
+        if col in currency:
             spec.update(
                 {
                     "type": "numeric",
@@ -439,19 +671,7 @@ def get_formatted_columns(cols_list):
                     .symbol_prefix("$"),
                 }
             )
-
-        # Percentage formatting (for columns already in 0-100 scale)
-        elif col in [
-            "expected_upside_pct",
-            "filtered_upside",
-            "expected_return_prob_weighted",
-            "var_5_pct",
-            "accounting_anomaly_score",
-            "anomaly_severity_score",
-            "sector_anomaly_percentile",
-            "payout_ratio",
-            "yield_vs_5y_avg",
-        ]:
+        elif col in pct_100:
             spec.update(
                 {
                     "type": "numeric",
@@ -460,46 +680,14 @@ def get_formatted_columns(cols_list):
                     .symbol_suffix("%"),
                 }
             )
-
-        # Percentage formatting (for probability columns in 0-1 scale)
-        elif col in [
-            "achievement_probability",
-            "posterior_beat_prob",
-            "confidence_score",
-            "prob_positive_upside",
-            "weighted_agreement",
-            "prob_beat_given_momentum",
-            "analyst_conviction",
-            "eps_revision_momentum",
-            "analyst_rating_normalized",
-            "resampled_posterior_mean",
-            "technical_adjustment",
-            "momentum_signal",
-            "volatility_regime_score",
-            "distress_probability",
-            "ruin_probability",
-            "survival_probability",
-            "dividend_cut_probability",
-            "dividend_consistency",
-            "data_quality_score",
-            "beta_stability_score",
-            "safety_score",
-            "fcf_dividend_coverage",
-        ]:
+        elif col in prob_01:
             spec.update(
                 {
                     "type": "numeric",
                     "format": Format(precision=2, scheme=Scheme.percentage),
                 }
             )
-
-        # Percentile formatting (0-100 scale, no suffix needed but show as rank)
-        elif col in [
-            "expected_upside_pct_pctile",
-            "filtered_upside_pctile",
-            "expected_return_prob_weighted_pctile",
-            "anomaly_risk_rank",
-        ]:
+        elif col in pctile:
             spec.update(
                 {
                     "type": "numeric",
@@ -508,16 +696,7 @@ def get_formatted_columns(cols_list):
                     .symbol_suffix("th"),
                 }
             )
-
-        # Z-score formatting
-        elif col in [
-            "expected_upside_pct_zscore",
-            "filtered_upside_zscore",
-            "expected_return_prob_weighted_zscore",
-            "sector_relative_anomaly",
-            "altman_z_score",
-            "altman_z_trend",
-        ]:
+        elif col in zscore:
             spec.update(
                 {
                     "type": "numeric",
@@ -526,17 +705,21 @@ def get_formatted_columns(cols_list):
                     .symbol_suffix("σ"),
                 }
             )
-
-        # Integer scores
-        elif col in ["agreement_score", "anomaly_feature_count", "dividend_streak",
-                      "high_yield_flag", "sustainable_flag"]:
+        elif col in text_cols:
+            spec.update({"type": "text"})
+        elif col in int_cols:
             spec.update(
                 {"type": "numeric", "format": Format(precision=0, scheme=Scheme.fixed)}
             )
-
-        # Composite / weighted scores
-        elif col in ["composite_score", "kelly_pct", "risk_reward_ratio",
-                      "liquidity_stress_score", "cash_runway_months", "wealth_buffer"]:
+        elif col in ratio_cols:
+            spec.update(
+                {"type": "numeric", "format": Format(precision=2, scheme=Scheme.fixed)}
+            )
+        elif col in eps_cols:
+            spec.update(
+                {"type": "numeric", "format": Format(precision=2, scheme=Scheme.fixed)}
+            )
+        elif col in score_cols:
             spec.update(
                 {"type": "numeric", "format": Format(precision=3, scheme=Scheme.fixed)}
             )
@@ -645,11 +828,85 @@ FILTER_CONFIG = [
         "column": "risk_category",
         "width": "18%",
     },
+    {
+        "label": "FY End",
+        "id": "fy-end-dropdown",
+        "column": "fy_end",
+        "width": "18%",
+    },
+    {
+        "label": "Next Fiscal Quarter",
+        "id": "next-fq-dropdown",
+        "column": "next_fiscal_quarter",
+        "width": "18%",
+    },
 ]
+
+# Numeric range slider configuration for quantitative filtering
+RANGE_SLIDER_CONFIG = [
+    {
+        "label": "Market Cap ($)",
+        "id": "market-cap-slider",
+        "column": "market_cap",
+        "log": True,
+    },
+    {
+        "label": "Expected Upside (%)",
+        "id": "expected-upside-slider",
+        "column": "expected_upside_pct",
+        "log": False,
+    },
+    {
+        "label": "Confidence Score",
+        "id": "confidence-score-slider",
+        "column": "confidence_score",
+        "log": False,
+    },
+    {
+        "label": "Composite Score",
+        "id": "composite-score-slider",
+        "column": "composite_score",
+        "log": False,
+    },
+    {
+        "label": "Altman Z-Score",
+        "id": "altman-zscore-slider",
+        "column": "altman_z_score",
+        "log": False,
+    },
+]
+
+ALL_RANGE_SLIDER_IDS = [s["id"] for s in RANGE_SLIDER_CONFIG]
 
 # All filter dropdown IDs (for callbacks)
 ALL_FILTER_IDS = [f["id"] for f in FILTER_CONFIG]
 ALL_FILTER_COLUMNS = [f["column"] for f in FILTER_CONFIG]
+
+# Column tooltips for technical columns
+COLUMN_TOOLTIPS = {
+    "resampled_posterior_mean": "Bayesian resampled posterior expected return",
+    "technical_adjustment": "Technical signal adjustment factor applied to base return",
+    "momentum_signal": "Composite momentum signal (-1 to +1)",
+    "volatility_regime_score": "Volatility regime indicator (higher = more volatile)",
+    "credible_interval_90": "90% Bayesian credible interval [low, high]",
+    "credible_interval_95": "95% Bayesian credible interval [low, high]",
+    "prob_beat_given_momentum": "Conditional P(earnings beat | momentum signal)",
+    "eps_revision_momentum": "EPS revision momentum score",
+    "analyst_rating_normalized": "Normalized analyst consensus rating (0-1)",
+    "var_5_pct": "Value at Risk at 5% confidence level",
+    "altman_z_score": "Altman Z-Score: <1.81 distress, 1.81-2.99 grey zone, >2.99 safe",
+    "piotroski_f_score": "Piotroski F-Score (0-9): higher = stronger fundamentals",
+    "beneish_m_score": "Beneish M-Score: > -2.22 suggests earnings manipulation",
+    "expected_upside_pct_zscore": "Z-score of expected upside within the universe",
+    "filtered_upside_zscore": "Z-score of filtered upside within the universe",
+    "expected_upside_pct_pctile": "Percentile rank of expected upside",
+    "filtered_upside_pctile": "Percentile rank of filtered upside",
+    "composite_score": "Weighted composite quality score (0-1)",
+    "confidence_score": "Model confidence score (0-1)",
+    "risk_reward_ratio": "Expected return / risk ratio",
+    "accounting_anomaly_score": "Accounting anomaly detection score (higher = more anomalous)",
+    "sector_relative_anomaly": "Sector-relative anomaly Z-score",
+}
 
 
 def build_filter_options(dataframe: pd.DataFrame, column: str) -> list:
@@ -663,7 +920,7 @@ def build_filter_options(dataframe: pd.DataFrame, column: str) -> list:
 
 
 def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
-    """Build the entire filter panel from FILTER_CONFIG."""
+    """Build the entire filter panel from FILTER_CONFIG and RANGE_SLIDER_CONFIG."""
     dropdowns = []
     for f in FILTER_CONFIG:
         dropdowns.append(
@@ -689,6 +946,80 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
                 style={"width": f["width"], "display": "inline-block", "margin": "5px"},
             )
         )
+
+    # Build numeric range sliders
+    sliders = []
+    for s in RANGE_SLIDER_CONFIG:
+        col = s["column"]
+        if col in dataframe.columns and len(dataframe) > 0:
+            vals = pd.to_numeric(dataframe[col], errors="coerce").dropna()
+            if len(vals) > 0:
+                col_min = float(vals.min())
+                col_max = float(vals.max())
+                # Avoid degenerate range
+                if col_min == col_max:
+                    col_max = col_min + 1
+                step = round((col_max - col_min) / 100, 4) or 0.01
+                sliders.append(
+                    html.Div(
+                        [
+                            html.Label(
+                                s["label"],
+                                className="filter-label",
+                                style={"color": COLORS["text_secondary"]},
+                            ),
+                            dcc.RangeSlider(
+                                id=s["id"],
+                                min=col_min,
+                                max=col_max,
+                                step=step,
+                                value=[col_min, col_max],
+                                marks={
+                                    col_min: {"label": f"{col_min:.1f}"},
+                                    col_max: {"label": f"{col_max:.1f}"},
+                                },
+                                tooltip={"placement": "bottom", "always_visible": False},
+                                allowCross=False,
+                            ),
+                        ],
+                        style={
+                            "width": "18%",
+                            "display": "inline-block",
+                            "margin": "5px",
+                            "verticalAlign": "top",
+                        },
+                    )
+                )
+            else:
+                # Column exists but no valid numeric data
+                sliders.append(
+                    html.Div(
+                        [
+                            html.Label(
+                                s["label"],
+                                className="filter-label",
+                                style={"color": COLORS["text_secondary"]},
+                            ),
+                            dcc.RangeSlider(id=s["id"], min=0, max=1, value=[0, 1], disabled=True),
+                        ],
+                        style={"width": "18%", "display": "inline-block", "margin": "5px"},
+                    )
+                )
+        else:
+            # Column not present — render disabled placeholder
+            sliders.append(
+                html.Div(
+                    [
+                        html.Label(
+                            s["label"],
+                            className="filter-label",
+                            style={"color": COLORS["text_secondary"]},
+                        ),
+                        dcc.RangeSlider(id=s["id"], min=0, max=1, value=[0, 1], disabled=True),
+                    ],
+                    style={"width": "18%", "display": "inline-block", "margin": "5px"},
+                )
+            )
 
     return html.Div(
         [
@@ -727,20 +1058,45 @@ def build_filter_panel(dataframe: pd.DataFrame) -> html.Div:
                     "justifyContent": "space-around",
                 },
             ),
+            # Numeric range sliders section
+            html.Div(
+                [
+                    html.H5(
+                        "Numeric Range Filters",
+                        style={
+                            "marginTop": "15px",
+                            "marginBottom": "10px",
+                            "color": COLORS["text_secondary"],
+                        },
+                    ),
+                    html.Div(
+                        sliders,
+                        style={
+                            "display": "flex",
+                            "flexWrap": "wrap",
+                            "justifyContent": "space-around",
+                        },
+                    ),
+                ]
+            ) if sliders else html.Div(),
         ],
         style={
             "padding": "20px",
             "backgroundColor": COLORS["background_panel"],
-            "margin": "10px",
+            "margin": "10px 0",
             "borderRadius": "8px",
             "border": f"1px solid {COLORS['border']}",
         },
     )
 
 
-def apply_global_filters(dataframe: pd.DataFrame, filter_values: dict) -> pd.DataFrame:
+def apply_global_filters(
+    dataframe: pd.DataFrame,
+    filter_values: dict,
+    range_values: dict | None = None,
+) -> pd.DataFrame:
     """
-    Apply all global filters to a DataFrame consistently.
+    Apply all global filters (dropdown + range slider) to a DataFrame consistently.
 
     Parameters
     ----------
@@ -748,6 +1104,8 @@ def apply_global_filters(dataframe: pd.DataFrame, filter_values: dict) -> pd.Dat
         The DataFrame to filter.
     filter_values : dict
         Mapping of column name -> selected values (list or None).
+    range_values : dict or None
+        Mapping of column name -> [min, max] range (from RangeSliders).
 
     Returns
     -------
@@ -758,6 +1116,14 @@ def apply_global_filters(dataframe: pd.DataFrame, filter_values: dict) -> pd.Dat
     for column, values in filter_values.items():
         if values and column in filtered.columns:
             filtered = filtered[filtered[column].isin(values)]
+    # Apply numeric range filters
+    if range_values:
+        for column, bounds in range_values.items():
+            if bounds and column in filtered.columns and len(bounds) == 2:
+                col_vals = pd.to_numeric(filtered[column], errors="coerce")
+                filtered = filtered[
+                    (col_vals >= bounds[0]) & (col_vals <= bounds[1]) | col_vals.isna()
+                ]
     return filtered
 
 
@@ -769,6 +1135,61 @@ def collect_filter_values(*args) -> dict:
         filter_values = collect_filter_values(*args[:len(FILTER_CONFIG)])
     """
     return {cfg["column"]: val for cfg, val in zip(FILTER_CONFIG, args)}
+
+
+def collect_range_slider_values(*args) -> dict:
+    """
+    Zip range slider arguments (in RANGE_SLIDER_CONFIG order) into a
+    {column: [min, max]} dict.
+    """
+    return {cfg["column"]: val for cfg, val in zip(RANGE_SLIDER_CONFIG, args)}
+
+
+# =============================================================================
+# Reusable KPI Card Builder
+# =============================================================================
+
+
+def build_kpi_card(title: str, value: str, color: str = "info") -> html.Div:
+    """Build a styled KPI card for the dashboard header row."""
+    bg = COLORS.get(color, COLORS["info"])
+    return html.Div(
+        [
+            html.H6(title, style={"margin": "0", "color": COLORS["text_secondary"], "fontSize": "0.8rem"}),
+            html.H4(value, style={"margin": "5px 0 0 0", "color": bg, "fontWeight": "bold"}),
+        ],
+        style={
+            "backgroundColor": COLORS["background_panel"],
+            "border": f"1px solid {COLORS['border']}",
+            "borderLeft": f"4px solid {bg}",
+            "borderRadius": "6px",
+            "padding": "12px 18px",
+            "minWidth": "160px",
+            "textAlign": "center",
+        },
+    )
+
+
+# =============================================================================
+# Screening Strategy Registry (all 13 screens)
+# =============================================================================
+
+ALL_SCREENING_STRATEGIES = [
+    ("quality", "Enhanced Quality", create_enhanced_screener),
+    ("earnings_quality", "Earnings Quality", screen_earnings_quality),
+    ("value", "Value Opportunities", screen_value_opportunities),
+    ("growth", "Growth Momentum", screen_growth_momentum),
+    ("garp", "GARP", screen_garp_opportunities),
+    ("dividend", "Dividend Quality", screen_dividend_quality),
+    ("healthy", "Financial Health", screen_financial_health),
+    ("valuation_reversion", "Valuation Reversion", screen_valuation_reversion_candidates),
+    ("integrity_growth", "Integrity Growth", screen_integrity_filtered_growth),
+    ("high_yield_safe", "High Yield Safe", screen_high_yield_safe_dividends),
+    ("sector_relative", "Sector Relative", lambda df: create_sector_relative_ranking(df, metric="expected_upside_pct")),
+    ("low_vol_quality", "Low Volatility Quality", screen_low_volatility_quality),
+    ("fcf_compounders", "FCF Compounders", screen_fcf_growth_compounders),
+    ("total_return_leaders", "Total Return Leaders", screen_total_return_leaders),
+]
 
 
 # =============================================================================
@@ -1162,6 +1583,7 @@ VIZ_REQUIRED_COLUMNS = {
     "create_accounting_anomaly_dashboard": [
         "accounting_anomaly_score",
         "accounting_anomaly_tier",
+        "anomaly_conditional_probability",
         "anomaly_feature_count",
         "multi_flag_alert",
     ],
@@ -1182,6 +1604,13 @@ VIZ_REQUIRED_COLUMNS = {
         "fcf_dividend_coverage",
         "payout_ratio",
     ],
+    "create_valuation_multiples_comparison": ["p_e_ratio", "p_b_ratio", "ev_ebitda"],
+    "create_valuation_vs_growth_quadrant": ["p_e_ratio", "revenue_growth_yoy"],
+    "create_earnings_surprise_dashboard": ["eps_actual", "eps_estimate"],
+    "create_eps_trajectory_analysis": ["eps_actual"],
+    "create_beat_rate_heatmap": ["earnings_beat", "industry"],
+    "create_growth_waterfall_chart": ["revenue_growth_yoy", "eps_growth_yoy"],
+    "create_sustainable_growth_analysis": ["roe", "retention_ratio"],
 }
 
 
@@ -1199,12 +1628,14 @@ def load_geib_data():
         "anomaly": pd.DataFrame(),
         "dividend_safety": pd.DataFrame(),
         "model_confidence": pd.DataFrame(),
+        "resampled_posterior": pd.DataFrame(),
         "equities": pd.DataFrame(),
         "feature_views": {},
         "feature_categories": {},
         "view_category_mapping": {},
         "schema_metadata": {},
         "validation": {},
+        "screens": {},
     }
 
     if not os.environ.get("GEIB_DASHBOARD", "").lower() == "true":
@@ -1430,6 +1861,39 @@ def load_geib_data():
                 # Keep tri_model in sync (it was copied before enrichment)
                 data["tri_model"] = data["summary"].copy()
 
+        # --- 4d. Resampled Posterior Data ---
+        try:
+            data["resampled_posterior"] = pd.read_sql(
+                f"SELECT * FROM {analytics_schema}.resampled_posterior_returns", engine
+            )
+        except Exception:
+            # Fallback: resampled columns in expected_returns_summary
+            _resamp_cols = [c for c in ["ticker", "resampled_posterior_mean", "technical_adjustment",
+                                         "momentum_signal", "volatility_regime_score"]
+                            if c in data["summary"].columns]
+            if _resamp_cols:
+                data["resampled_posterior"] = data["summary"][_resamp_cols].copy()
+                print("ℹ️ Resampled posterior data sourced from expected_returns_summary columns")
+
+        # --- 4e. Load Pre-computed Screening Results from DB ---
+        _screen_table_names = [
+            "earnings_quality_stocks", "value_stocks", "growth_momentum_stocks",
+            "garp_stocks", "dividend_quality_stocks", "financial_health_stocks",
+            "valuation_reversion_stocks", "integrity_growth_stocks",
+            "high_yield_safe_stocks", "sector_relative_stocks",
+            "low_vol_quality_stocks", "fcf_compounders_stocks",
+            "total_return_leaders_stocks",
+        ]
+        for screen_name in _screen_table_names:
+            try:
+                data["screens"][screen_name] = pd.read_sql(
+                    f"SELECT * FROM {analytics_schema}.{screen_name}", engine
+                )
+            except Exception:
+                pass
+        if data["screens"]:
+            print(f"ℹ️ Loaded {len(data['screens'])} pre-computed screening tables from DB")
+
         # --- 8. Feature categories + view mapping ---
         data["feature_categories"] = load_feature_categories_from_db(db_url)
         data["view_category_mapping"] = get_view_category_mapping(db_url=db_url)
@@ -1461,6 +1925,8 @@ df_credit = all_data["credit"]
 df_anomaly = all_data["anomaly"]
 df_dividend_safety = all_data["dividend_safety"]
 df_confidence = all_data["model_confidence"]
+df_resampled_posterior = all_data["resampled_posterior"]
+precomputed_screens = all_data["screens"]
 view_category_mapping = all_data["view_category_mapping"]
 feature_views = all_data["feature_views"]
 
@@ -1501,52 +1967,124 @@ def serve_artifact(filename):
     return send_from_directory(artifacts_dir, filename)
 
 
-# Add custom CSS for dropdown selection highlighting
+# Custom CSS for dropdown selection highlighting and slider tooltips (consolidated)
 app.index_string = f"""
-    <!DOCTYPE html>
-    <html>
-        <head>
-            {{%metas%}}
-            <title>{{%title%}}</title>
-            {{%favicon%}}
-            {{%css%}}
-            <style>
-                /* Highlight selected values in multi-dropdown */
-                .Select-value {{
-                    background-color: {COLORS["primary"]} !important;
-                    border: 1px solid {COLORS["border"]} !important;
-                    color: {COLORS["text_primary"]} !important;
-                }}
-                .Select-value-icon {{
-                    border-right: 1px solid {COLORS["border"]} !important;
-                    color: {COLORS["text_primary"]} !important;
-                }}
-                .Select-value-icon:hover {{
-                    background-color: {COLORS["danger"]} !important;
-                    color: {COLORS["text_primary"]} !important;
-                }}
-                .filter-label {{
-                    color: {COLORS["text_secondary"]};
-                    font-weight: bold;
-                    font-size: 0.9rem;
-                }}
-                /* Global Background */
-                body {{
-                    background-color: {COLORS["background_main"]};
-                    color: {COLORS["text_primary"]};
-                }}
-            </style>
-        </head>
-        <body>
-            {{%app_entry%}}
-            <footer>
-                {{%config%}}
-                {{%scripts%}}
-                {{%renderer%}}
-            </footer>
-        </body>
-    </html>
-    """
+<!DOCTYPE html>
+<html>
+    <head>
+        {{%metas%}}
+        <title>{{%title%}}</title>
+        {{%favicon%}}
+        {{%css%}}
+        <style>
+            /* Highlight selected values in multi-dropdown */
+            .Select-value {{
+                background-color: {COLORS["primary"]} !important;
+                border: 1px solid {COLORS["border"]} !important;
+                color: {COLORS["text_primary"]} !important;
+            }}
+            .Select-value-icon {{
+                border-right: 1px solid {COLORS["border"]} !important;
+                color: {COLORS["text_primary"]} !important;
+            }}
+            .Select-value-icon:hover {{
+                background-color: {COLORS["danger"]} !important;
+                color: {COLORS["text_primary"]} !important;
+            }}
+            .filter-label {{
+                color: {COLORS["text_secondary"]};
+                font-weight: bold;
+                font-size: 0.9rem;
+            }}
+            /* Global Background */
+            body {{
+                background-color: {COLORS["background_main"]};
+                color: {COLORS["text_primary"]};
+            }}
+            /* RangeSlider / Slider tooltip styling (consolidated) */
+            .rc-slider-tooltip-inner,
+            .rc-slider-tooltip .rc-slider-tooltip-inner,
+            .dash-slider .rc-slider-tooltip-inner,
+            [class*="rc-slider-tooltip"] .rc-slider-tooltip-inner,
+            .rc-slider-tooltip-inner span,
+            .rc-slider-tooltip-inner div {{
+                color: #000000 !important;
+                background-color: #ffffff !important;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+                font-weight: 600 !important;
+                font-size: 13px !important;
+                opacity: 1 !important;
+            }}
+            .rc-slider-tooltip-arrow,
+            .rc-slider-tooltip .rc-slider-tooltip-arrow {{
+                border-bottom-color: #ffffff !important;
+                border-top-color: #ffffff !important;
+            }}
+            .rc-slider-tooltip *,
+            .rc-slider-tooltip-inner *,
+            [class*="rc-slider-tooltip"] * {{
+                color: #000000 !important;
+            }}
+            .rc-slider-tooltip-placement-top .rc-slider-tooltip-inner,
+            .rc-slider-tooltip-placement-bottom .rc-slider-tooltip-inner,
+            .rc-slider-tooltip-placement-top .rc-slider-tooltip-inner *,
+            .rc-slider-tooltip-placement-bottom .rc-slider-tooltip-inner * {{
+                color: #000000 !important;
+                background-color: #ffffff !important;
+            }}
+            .rc-slider-tooltip-placement-top .rc-slider-tooltip-arrow {{
+                border-top-color: #ffffff !important;
+            }}
+            .rc-slider-tooltip-placement-bottom .rc-slider-tooltip-arrow {{
+                border-bottom-color: #ffffff !important;
+            }}
+            .rc-slider-mark-text,
+            .rc-slider-mark .rc-slider-mark-text,
+            .dash-slider .rc-slider-mark-text {{
+                color: {COLORS["text_secondary"]} !important;
+                font-size: 11px !important;
+                white-space: nowrap !important;
+            }}
+        </style>
+    </head>
+    <body>
+        {{%app_entry%}}
+        <footer>
+            {{%config%}}
+            {{%scripts%}}
+            {{%renderer%}}
+        </footer>
+    </body>
+</html>
+"""
+
+# Compute slider bounds for Price Target vs Current Price controls
+_pt_price_min = 0
+_pt_price_max = 1000
+_pt_target_min = 0
+_pt_target_max = 1000
+_pt_price_step = 1
+_pt_target_step = 1
+
+if not df.empty:
+    if "last_price" in df.columns:
+        _lp = pd.to_numeric(df["last_price"], errors="coerce").dropna()
+        if len(_lp) > 0:
+            _pt_price_min = float(max(0, _lp.quantile(0.0)))
+            _pt_price_max = float(_lp.quantile(0.99))
+            _pt_price_step = max(1, round((_pt_price_max - _pt_price_min) / 500))
+
+    # Use the max across all three target metrics for the target slider range
+    _target_vals = pd.Series(dtype=float)
+    for _tcol in ["price_target_median", "price_target_mc", "kalman_estimate", "price_target_prob_weighted"]:
+        if _tcol in df.columns:
+            _target_vals = pd.concat(
+                [_target_vals, pd.to_numeric(df[_tcol], errors="coerce").dropna()]
+            )
+    if len(_target_vals) > 0:
+        _pt_target_min = float(max(0, _target_vals.quantile(0.0)))
+        _pt_target_max = float(_target_vals.quantile(0.99))
+        _pt_target_step = max(1, round((_pt_target_max - _pt_target_min) / 500))
 
 # Layout
 app.layout = html.Div(
@@ -1585,13 +2123,19 @@ app.layout = html.Div(
             ],
             style={"textAlign": "center", "padding": "10px"},
         ),
+        # Global filter state store (cross-tab persistence)
+        dcc.Store(id="global-filter-store", data={}),
         # KPI Summary Cards
         html.Div(
             id="kpi-cards",
             style={
                 "display": "flex",
                 "justifyContent": "space-around",
-                "margin": "20px",
+                "flexWrap": "wrap",
+                "gap": "10px",
+                "padding": "10px 0",
+                "margin": "10px 0",
+                "width": "100%",
             },
         ),
         # Filters — generated from FILTER_CONFIG
@@ -1658,6 +2202,10 @@ app.layout = html.Div(
                                                                 {
                                                                     "label": "Kalman Estimate",
                                                                     "value": "kalman_estimate",
+                                                                },
+                                                                {
+                                                                    "label": "Price Target MC",
+                                                                    "value": "price_target_mc",
                                                                 },
                                                                 {
                                                                     "label": "Price Target Prob Weighted",
@@ -1792,48 +2340,30 @@ app.layout = html.Div(
                                                                 "color": "white",
                                                             },
                                                         ),
-                                                        html.Div(
-                                                            [
-                                                                dcc.Input(
-                                                                    id="pt-scatter-price-min",
-                                                                    type="number",
-                                                                    placeholder="Min",
-                                                                    debounce=True,
-                                                                    style={
-                                                                        "width": "100px",
-                                                                        "color": "black",
-                                                                    },
-                                                                ),
-                                                                html.Span(
-                                                                    " - ",
-                                                                    style={
-                                                                        "margin": "0 8px",
-                                                                        "alignSelf": "center",
-                                                                        "color": "white",
-                                                                    },
-                                                                ),
-                                                                dcc.Input(
-                                                                    id="pt-scatter-price-max",
-                                                                    type="number",
-                                                                    placeholder="Max",
-                                                                    debounce=True,
-                                                                    style={
-                                                                        "width": "100px",
-                                                                        "color": "black",
-                                                                    },
-                                                                ),
-                                                            ],
-                                                            style={
-                                                                "display": "flex",
-                                                                "alignItems": "center",
-                                                                "flexWrap": "wrap",
+                                                        dcc.RangeSlider(
+                                                            id="pt-scatter-price-range",
+                                                            min=_pt_price_min,
+                                                            max=_pt_price_max,
+                                                            step=_pt_price_step,
+                                                            value=[_pt_price_min, _pt_price_max],
+                                                            marks={
+                                                                int(_pt_price_min): f"${int(_pt_price_min)}",
+                                                                int(_pt_price_max): f"${int(_pt_price_max)}",
                                                             },
+                                                            tooltip={
+                                                                "placement": "bottom",
+                                                                "always_visible": True,
+                                                            },
+                                                            allowCross=False,
                                                         ),
                                                     ],
                                                     style={
                                                         "display": "flex",
                                                         "flexDirection": "column",
-                                                        "marginRight": "15px",
+                                                        "marginRight": "30px",
+                                                        "minWidth": "300px",
+                                                        "flex": "1",
+                                                        "paddingBottom": "25px",
                                                     },
                                                 ),
                                                 html.Div(
@@ -1847,48 +2377,30 @@ app.layout = html.Div(
                                                                 "color": "white",
                                                             },
                                                         ),
-                                                        html.Div(
-                                                            [
-                                                                dcc.Input(
-                                                                    id="pt-scatter-target-min",
-                                                                    type="number",
-                                                                    placeholder="Min",
-                                                                    debounce=True,
-                                                                    style={
-                                                                        "width": "100px",
-                                                                        "color": "black",
-                                                                    },
-                                                                ),
-                                                                html.Span(
-                                                                    " - ",
-                                                                    style={
-                                                                        "margin": "0 8px",
-                                                                        "alignSelf": "center",
-                                                                        "color": "white",
-                                                                    },
-                                                                ),
-                                                                dcc.Input(
-                                                                    id="pt-scatter-target-max",
-                                                                    type="number",
-                                                                    placeholder="Max",
-                                                                    debounce=True,
-                                                                    style={
-                                                                        "width": "100px",
-                                                                        "color": "black",
-                                                                    },
-                                                                ),
-                                                            ],
-                                                            style={
-                                                                "display": "flex",
-                                                                "alignItems": "center",
-                                                                "flexWrap": "wrap",
+                                                        dcc.RangeSlider(
+                                                            id="pt-scatter-target-range",
+                                                            min=_pt_target_min,
+                                                            max=_pt_target_max,
+                                                            step=_pt_target_step,
+                                                            value=[_pt_target_min, _pt_target_max],
+                                                            marks={
+                                                                int(_pt_target_min): f"${int(_pt_target_min)}",
+                                                                int(_pt_target_max): f"${int(_pt_target_max)}",
                                                             },
+                                                            tooltip={
+                                                                "placement": "bottom",
+                                                                "always_visible": True,
+                                                            },
+                                                            allowCross=False,
                                                         ),
                                                     ],
                                                     style={
                                                         "display": "flex",
                                                         "flexDirection": "column",
-                                                        "marginRight": "15px",
+                                                        "marginRight": "30px",
+                                                        "minWidth": "300px",
+                                                        "flex": "1",
+                                                        "paddingBottom": "25px",
                                                     },
                                                 ),
                                             ],
@@ -1898,7 +2410,7 @@ app.layout = html.Div(
                                         "padding": "15px",
                                         "backgroundColor": "#333",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 dcc.Loading(
@@ -1913,7 +2425,8 @@ app.layout = html.Div(
                                         )
                                     ],
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -1924,7 +2437,8 @@ app.layout = html.Div(
                             [
                                 dcc.Graph(id="model-signals-plot"),
                                 dcc.Graph(id="confidence-distribution"),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -1982,7 +2496,7 @@ app.layout = html.Div(
                                     page_size=500,
                                     sort_action="native",
                                     filter_action="native",
-                                    style_table={"overflowX": "auto"},
+                                    style_table={"overflowX": "auto", "width": "100%"},
                                     style_header=TABLE_STYLE_HEADER,
                                     style_cell=TABLE_STYLE_CELL,
                                     style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
@@ -1999,9 +2513,10 @@ app.layout = html.Div(
                                         ),
                                         dcc.Graph(id="artifact-er-screening-summary"),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -2028,7 +2543,7 @@ app.layout = html.Div(
                                             id="artifact-er-sector-return-analytics"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 # Model Dispersion Dashboard
                                 html.Div(
@@ -2042,9 +2557,46 @@ app.layout = html.Div(
                                         ),
                                         dcc.Graph(id="artifact-er-model-dispersion"),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                                # Growth Analysis Artifacts (v3.1) — dynamic
+                                html.Div(
+                                    [
+                                        html.H4("Sustainable Growth Analysis", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-sustainable-growth"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Growth Acceleration", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-growth-acceleration"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Growth vs Profitability Quadrant", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-growth-vs-profitability"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Growth Consistency Matrix", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-growth-consistency-matrix"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Growth Waterfall", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-growth-waterfall"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -2096,7 +2648,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2136,7 +2688,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2171,7 +2723,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2203,7 +2755,8 @@ app.layout = html.Div(
                                             style={
                                                 "width": "30%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                     ],
@@ -2211,11 +2764,11 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 html.Div(
-                                    id="zscore-kpi-cards", style={"margin": "10px"}
+                                    id="zscore-kpi-cards", style={"margin": "10px 0"}
                                 ),
                                 dbc.Row(
                                     [
@@ -2294,15 +2847,52 @@ app.layout = html.Div(
                                             page_size=500,
                                             sort_action="native",
                                             filter_action="native",
-                                            style_table={"overflowX": "auto"},
+                                            style_table={"overflowX": "auto", "width": "100%"},
                                             style_header=TABLE_STYLE_HEADER,
                                             style_cell=TABLE_STYLE_CELL,
                                             style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                                # Valuation Analysis Artifacts (v3.1) — dynamic
+                                html.Div(
+                                    [
+                                        html.H4("Historical Valuation Percentile", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-historical-valuation-percentile"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Valuation vs Growth Quadrant", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-valuation-vs-growth"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Relative Valuation Matrix", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-relative-valuation-matrix"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Valuation Distribution", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-valuation-distribution"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Valuation Multiples Comparison", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-valuation-multiples"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -2359,7 +2949,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2390,7 +2980,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                     ],
@@ -2398,12 +2988,12 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 html.Div(
                                     id="earnings-calendar-kpis",
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 dbc.Row(
                                     [
@@ -2455,16 +3045,53 @@ app.layout = html.Div(
                                             page_size=500,
                                             sort_action="native",
                                             filter_action="native",
-                                            style_table={"overflowX": "auto"},
+                                            style_table={"overflowX": "auto", "width": "100%"},
                                             style_header=TABLE_STYLE_HEADER,
                                             style_cell=TABLE_STYLE_CELL,
                                             style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 html.Div(id="artifact-er-earnings-prob-dashboard"),
-                            ]
+                                # Earnings Quality Artifacts (v3.1) — dynamic
+                                html.Div(
+                                    [
+                                        html.H4("Earnings Consistency Matrix", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-earnings-consistency-matrix"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Beat Rate Heatmap", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-beat-rate-heatmap"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Earnings Quality Decomposition", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-earnings-quality-decomposition"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("EPS Trajectory Analysis", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-eps-trajectory"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                                html.Div(
+                                    [
+                                        html.H4("Earnings Surprise Dashboard", style={"textAlign": "center", "marginTop": "20px"}),
+                                        dcc.Graph(id="dynamic-earnings-surprise"),
+                                    ],
+                                    style={"margin": "10px 0"},
+                                ),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -2525,7 +3152,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "18%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2547,7 +3174,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "18%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2574,7 +3201,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "18%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2583,23 +3210,30 @@ app.layout = html.Div(
                                                     "Risk-Free Rate",
                                                     style={"color": "white"},
                                                 ),
-                                                dcc.Dropdown(
+                                                dcc.RangeSlider(
                                                     id="risk-free-rate-dropdown",
-                                                    options=[
-                                                        {
-                                                            "label": f"{i}%",
-                                                            "value": float(i),
-                                                        }
-                                                        for i in [0, 2, 3, 4, 5]
-                                                    ],
-                                                    value=3.0,
-                                                    style={"color": "black"},
+                                                    min=0,
+                                                    max=1,
+                                                    step=0.05,
+                                                    value=[0.03],
+                                                    marks={
+                                                        0: "0%",
+                                                        0.25: "25%",
+                                                        0.5: "50%",
+                                                        0.75: "75%",
+                                                        1: "100%",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
-                                                "width": "18%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -2635,7 +3269,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "18%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -2667,7 +3301,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "97%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                     ],
@@ -2675,7 +3309,7 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 dbc.Row(
@@ -2690,7 +3324,8 @@ app.layout = html.Div(
                                     ]
                                 ),
                                 html.Div(id="artifact-er-quality-risk-quadrant"),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -2760,7 +3395,7 @@ app.layout = html.Div(
                                             id="artifact-er-bayesian-profitability-ridge"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 html.Div(
                                     [
@@ -2775,7 +3410,7 @@ app.layout = html.Div(
                                             id="artifact-er-bayesian-sentiment-ridge"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 # Distress Early Warning
                                 html.Div(
@@ -2791,7 +3426,7 @@ app.layout = html.Div(
                                             id="artifact-er-distress-early-warning"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 # Accounting Anomaly Dashboard (Step 5b)
                                 html.Div(
@@ -2816,7 +3451,7 @@ app.layout = html.Div(
                                             id="artifact-er-accounting-anomaly"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
                                 # Dividend Safety Summary
                                 html.Div(
@@ -2832,9 +3467,23 @@ app.layout = html.Div(
                                             id="artifact-er-dividend-safety"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                                # Earnings Beat / Revision Artifacts (v3.1)
+                                render_artifact_or_placeholder("er_price_target_drift", "Price Target Drift Dashboard"),
+                                render_artifact_or_placeholder("er_gaap_divergence", "GAAP vs Adjusted EPS Divergence"),
+                                render_artifact_or_placeholder("er_revision_momentum", "Revision Momentum"),
+                                # Earnings Quality & Growth Artifacts (v3.1 — previously not surfaced)
+                                render_artifact_or_placeholder("er_enhanced_beat_probability", "Enhanced Beat Probability"),
+                                render_artifact_or_placeholder("er_beat_rate_heatmap", "Beat Rate Heatmap"),
+                                render_artifact_or_placeholder("er_earnings_consistency_matrix", "Earnings Consistency Matrix"),
+                                render_artifact_or_placeholder("er_earnings_quality_decomposition", "Earnings Quality Decomposition"),
+                                # Other Missing Artifacts
+                                render_artifact_or_placeholder("er_kalman_vs_raw", "Kalman vs Raw Scatter"),
+                                render_artifact_or_placeholder("er_tri_model_agreement", "Tri-Model Agreement"),
+                                render_artifact_or_placeholder("er_posterior_return_forest", "Posterior Return Forest Plot"),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -2857,7 +3506,7 @@ app.layout = html.Div(
                                     },
                                 ),
                                 # KPI cards
-                                html.Div(id="credit-risk-kpis", style={"margin": "10px"}),
+                                html.Div(id="credit-risk-kpis", style={"margin": "10px 0"}),
                                 # Charts
                                 dbc.Row(
                                     [
@@ -2908,8 +3557,14 @@ app.layout = html.Div(
                                                 [
                                                     "ticker",
                                                     "name",
+                                                    "country",
+                                                    "trading_country",
+                                                    "exchange",
                                                     "sector",
                                                     "industry",
+                                                    "style_class",
+                                                    "size_class",
+                                                    "unit",
                                                     "risk_level",
                                                     "altman_z_score",
                                                     "altman_z_trend",
@@ -2923,6 +3578,7 @@ app.layout = html.Div(
                                                     "accounting_anomaly_tier",
                                                     "accounting_anomaly_score",
                                                     "anomaly_feature_count",
+                                                    "anomaly_conditional_probability",
                                                     "multi_flag_alert",
                                                     "dividend_cut_probability",
                                                     "safety_score",
@@ -2938,15 +3594,32 @@ app.layout = html.Div(
                                             page_size=500,
                                             sort_action="native",
                                             filter_action="native",
-                                            style_table={"overflowX": "auto"},
+                                            style_table={"overflowX": "auto", "width": "100%"},
                                             style_header=TABLE_STYLE_HEADER,
                                             style_cell=TABLE_STYLE_CELL,
                                             style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                                # MCMC Posterior Charts (v3.3)
+                                html.H4("MCMC Posterior Diagnostics", style={"textAlign": "center", "marginTop": "30px"}),
+                                html.P(
+                                    "MCMC-enhanced Bayesian posterior distributions for credit risk, dividend cut, "
+                                    "and price target achievement probabilities.",
+                                    style={"textAlign": "center", "fontStyle": "italic", "color": "#999"},
+                                ),
+                                render_artifact_or_placeholder("er_mcmc_credit_risk_posterior", "MCMC Credit Risk Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_dividend_cut_posterior", "MCMC Dividend Cut Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_price_target_posterior", "MCMC Price Target Posterior"),
+                                # Quality & Risk Artifacts (v3.2)
+                                html.H4("Quality & Risk Scoring", style={"textAlign": "center", "marginTop": "30px"}),
+                                render_artifact_or_placeholder("er_piotroski_fscore", "Piotroski F-Score Breakdown"),
+                                render_artifact_or_placeholder("er_altman_zscore", "Altman Z-Score Distribution"),
+                                render_artifact_or_placeholder("er_beneish_mscore", "Beneish M-Score Analysis"),
+                                render_artifact_or_placeholder("er_risk_tier_sunburst", "Sector → Industry → Risk Tier Sunburst"),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -3019,8 +3692,14 @@ app.layout = html.Div(
                                                 [
                                                     "ticker",
                                                     "name",
+                                                    "country",
+                                                    "trading_country",
+                                                    "exchange",
                                                     "sector",
                                                     "industry",
+                                                    "style_class",
+                                                    "size_class",
+                                                    "unit",
                                                     "accounting_anomaly_tier",
                                                     "accounting_anomaly_score",
                                                     "anomaly_severity_score",
@@ -3042,6 +3721,9 @@ app.layout = html.Div(
                                     ],
                                     style={"margin": "10px 0"},
                                 ),
+                                # MCMC Anomaly Posterior (v3.3)
+                                render_artifact_or_placeholder("er_mcmc_anomaly_posterior", "MCMC Anomaly Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_category_sentiment_posterior", "MCMC Category Sentiment Posterior"),
                             ],
                             style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
@@ -3103,7 +3785,8 @@ app.layout = html.Div(
                                         ),
                                     ]
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -3156,7 +3839,8 @@ app.layout = html.Div(
                                         ),
                                     ]
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -3202,7 +3886,8 @@ app.layout = html.Div(
                                                             id="model-registry-table",
                                                             page_size=500,
                                                             style_table={
-                                                                "overflowX": "auto"
+                                                                "overflowX": "auto",
+                                                                "width": "100%",
                                                             },
                                                             style_header={
                                                                 "backgroundColor": "rgb(30, 30, 30)",
@@ -3229,7 +3914,8 @@ app.layout = html.Div(
                                         ),
                                     ]
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -3286,7 +3972,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3295,34 +3981,30 @@ app.layout = html.Div(
                                                     "Loss Ratio:",
                                                     style={"color": "white"},
                                                 ),
-                                                dcc.Dropdown(
+                                                dcc.RangeSlider(
                                                     id="mc-loss-ratio",
-                                                    options=[
-                                                        {
-                                                            "label": "0.25 (25%)",
-                                                            "value": 0.25,
-                                                        },
-                                                        {
-                                                            "label": "0.5 (50%)",
-                                                            "value": 0.5,
-                                                        },
-                                                        {
-                                                            "label": "0.75 (75%)",
-                                                            "value": 0.75,
-                                                        },
-                                                        {
-                                                            "label": "1.0 (100%)",
-                                                            "value": 1.0,
-                                                        },
-                                                    ],
-                                                    value=0.5,
-                                                    style={"color": "black"},
+                                                    min=0,
+                                                    max=1,
+                                                    step=0.05,
+                                                    value=[0.5],
+                                                    marks={
+                                                        0: "0%",
+                                                        0.25: "25%",
+                                                        0.5: "50%",
+                                                        0.75: "75%",
+                                                        1: "100%",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
-                                                "width": "15%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -3354,7 +4036,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3380,9 +4062,10 @@ app.layout = html.Div(
                                                 ),
                                             ],
                                             style={
-                                                "width": "15%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -3426,7 +4109,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "30%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                     ],
@@ -3434,7 +4117,7 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 # Stats Display
@@ -3443,7 +4126,7 @@ app.layout = html.Div(
                                     style={
                                         "backgroundColor": "#f5f5f5",
                                         "padding": "15px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                         "borderRadius": "5px",
                                         "color": "black",
                                     },
@@ -3489,9 +4172,10 @@ app.layout = html.Div(
                                             id="artifact-er-return-distribution-fit"
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -3522,23 +4206,30 @@ app.layout = html.Div(
                                                     "Risk-Free Rate:",
                                                     style={"color": "white"},
                                                 ),
-                                                dcc.Dropdown(
+                                                dcc.RangeSlider(
                                                     id="capm-risk-free-rate",
-                                                    options=[
-                                                        {"label": "0%", "value": 0.0},
-                                                        {"label": "2%", "value": 2.0},
-                                                        {"label": "3%", "value": 3.0},
-                                                        {"label": "4%", "value": 4.0},
-                                                        {"label": "5%", "value": 5.0},
-                                                    ],
-                                                    value=3.0,
-                                                    style={"color": "black"},
+                                                    min=0,
+                                                    max=1,
+                                                    step=0.05,
+                                                    value=[0.03],
+                                                    marks={
+                                                        0: "0%",
+                                                        0.25: "25%",
+                                                        0.5: "50%",
+                                                        0.75: "75%",
+                                                        1: "100%",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
-                                                "width": "15%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -3564,9 +4255,10 @@ app.layout = html.Div(
                                                 ),
                                             ],
                                             style={
-                                                "width": "15%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -3602,7 +4294,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3634,7 +4326,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                     ],
@@ -3642,7 +4334,7 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 dbc.Row(
@@ -3695,7 +4387,8 @@ app.layout = html.Div(
                                         ),
                                     ]
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -3726,17 +4419,30 @@ app.layout = html.Div(
                                                     "Kelly Fraction:",
                                                     style={"color": "white"},
                                                 ),
-                                                dcc.Dropdown(
+                                                dcc.RangeSlider(
                                                     id="kelly-fraction-dropdown",
-                                                    options=KELLY_FRACTION_OPTIONS,
-                                                    value=0.25,
-                                                    style={"color": "black"},
+                                                    min=0,
+                                                    max=1,
+                                                    step=0.05,
+                                                    value=[0.25],
+                                                    marks={
+                                                        0: "0%",
+                                                        0.25: "25%",
+                                                        0.5: "50%",
+                                                        0.75: "75%",
+                                                        1: "100%",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
-                                                "width": "15%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -3745,17 +4451,30 @@ app.layout = html.Div(
                                                     "Max Position Size:",
                                                     style={"color": "white"},
                                                 ),
-                                                dcc.Dropdown(
+                                                dcc.RangeSlider(
                                                     id="kelly-max-position-dropdown",
-                                                    options=MAX_POSITION_OPTIONS,
-                                                    value=0.10,
-                                                    style={"color": "black"},
+                                                    min=0,
+                                                    max=1,
+                                                    step=0.05,
+                                                    value=[0.10],
+                                                    marks={
+                                                        0: "0%",
+                                                        0.25: "25%",
+                                                        0.5: "50%",
+                                                        0.75: "75%",
+                                                        1: "100%",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
-                                                "width": "15%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -3774,7 +4493,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3793,7 +4512,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3812,7 +4531,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3831,7 +4550,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -3850,7 +4569,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                     ],
@@ -3858,12 +4577,12 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 # Kelly KPI summary row
                                 html.Div(
-                                    id="kelly-kpi-summary", style={"margin": "10px"}
+                                    id="kelly-kpi-summary", style={"margin": "10px 0"}
                                 ),
                                 # Charts side-by-side
                                 dbc.Row(
@@ -3963,15 +4682,16 @@ app.layout = html.Div(
                                             ),
                                             page_size=500,
                                             sort_action="native",
-                                            style_table={"overflowX": "auto"},
+                                            style_table={"overflowX": "auto", "width": "100%"},
                                             style_header=TABLE_STYLE_HEADER,
                                             style_cell=TABLE_STYLE_CELL,
                                             style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
                                         ),
                                     ],
-                                    style={"margin": "10px"},
+                                    style={"margin": "10px 0"},
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -4046,7 +4766,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "30%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -4058,24 +4778,30 @@ app.layout = html.Div(
                                                         "fontWeight": "bold",
                                                     },
                                                 ),
-                                                dcc.Dropdown(
+                                                dcc.RangeSlider(
                                                     id="ef-risk-free-rate",
-                                                    options=[
-                                                        {"label": "0%", "value": 0.0},
-                                                        {"label": "2%", "value": 2.0},
-                                                        {"label": "3%", "value": 3.0},
-                                                        {"label": "4%", "value": 4.0},
-                                                        {"label": "5%", "value": 5.0},
-                                                    ],
-                                                    value=3.0,
-                                                    style={"color": "black"},
-                                                    searchable=False,
+                                                    min=0,
+                                                    max=1,
+                                                    step=0.05,
+                                                    value=[0.03],
+                                                    marks={
+                                                        0: "0%",
+                                                        0.25: "25%",
+                                                        0.5: "50%",
+                                                        0.75: "75%",
+                                                        1: "100%",
+                                                    },
+                                                    tooltip={
+                                                        "placement": "bottom",
+                                                        "always_visible": True,
+                                                    },
                                                 ),
                                             ],
                                             style={
-                                                "width": "12%",
+                                                "width": "20%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
+                                                "paddingBottom": "25px",
                                             },
                                         ),
                                         html.Div(
@@ -4111,7 +4837,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "15%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                         html.Div(
@@ -4145,7 +4871,7 @@ app.layout = html.Div(
                                             style={
                                                 "width": "12%",
                                                 "display": "inline-block",
-                                                "margin": "10px",
+                                                "margin": "10px 0",
                                             },
                                         ),
                                     ],
@@ -4153,7 +4879,7 @@ app.layout = html.Div(
                                         "backgroundColor": "#333",
                                         "padding": "10px",
                                         "borderRadius": "5px",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
                                 dcc.Loading(
@@ -4177,10 +4903,221 @@ app.layout = html.Div(
                                     style={
                                         "marginTop": "20px",
                                         "overflowX": "auto",
-                                        "margin": "10px",
+                                        "margin": "10px 0",
                                     },
                                 ),
-                            ]
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
+                        )
+                    ],
+                ),
+                # =============================================================
+                # NEW TAB: 📋 Stock Screening Explorer
+                # =============================================================
+                dcc.Tab(
+                    label="📋 Stock Screening Explorer",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Interactive Stock Screening Explorer",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Select a screening strategy to view filtered results. "
+                                    "All 13 pipeline screens are available including sector-relative, "
+                                    "low-volatility quality, FCF compounders, and total return leaders.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Label("Screening Strategy:", style={"color": "white"}),
+                                                dcc.Dropdown(
+                                                    id="screening-strategy-dropdown",
+                                                    options=[
+                                                        {"label": label, "value": key}
+                                                        for key, label, _ in ALL_SCREENING_STRATEGIES
+                                                    ],
+                                                    value="earnings_quality",
+                                                    style={"color": "black"},
+                                                    clearable=False,
+                                                ),
+                                            ],
+                                            style={"width": "30%", "display": "inline-block", "margin": "10px"},
+                                        ),
+                                        html.Button(
+                                            "📥 Download CSV",
+                                            id="screening-download-btn",
+                                            n_clicks=0,
+                                            style={
+                                                "marginLeft": "20px",
+                                                "backgroundColor": COLORS["primary"],
+                                                "color": COLORS["text_primary"],
+                                                "border": "none",
+                                                "padding": "8px 18px",
+                                                "borderRadius": "4px",
+                                                "cursor": "pointer",
+                                                "fontWeight": "bold",
+                                                "verticalAlign": "bottom",
+                                            },
+                                        ),
+                                        dcc.Download(id="screening-download"),
+                                    ],
+                                    style={
+                                        "backgroundColor": "#333",
+                                        "padding": "10px",
+                                        "borderRadius": "5px",
+                                        "margin": "10px 0",
+                                    },
+                                ),
+                                # KPI summary for selected screen
+                                html.Div(id="screening-kpis", style={"margin": "10px 0"}),
+                                # Screening summary bar chart
+                                dcc.Graph(id="screening-summary-chart"),
+                                # Screening results table
+                                html.Div(
+                                    id="screening-results-table-container",
+                                    style={"margin": "10px 0"},
+                                ),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
+                        )
+                    ],
+                ),
+                # =============================================================
+                # NEW TAB: 🧪 Resampled Posterior & MCMC
+                # =============================================================
+                dcc.Tab(
+                    label="🧪 Resampled Posterior & MCMC",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Bayesian Resampled Posterior & MCMC Diagnostics",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Resampled posterior distributions, MCMC convergence diagnostics, "
+                                    "hierarchical shrinkage, and category posterior analytics from v3.1/v3.3.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                # Resampled Posterior Scatter
+                                dcc.Graph(id="resampled-posterior-scatter"),
+                                # Bayesian Ridge Plots
+                                render_artifact_or_placeholder("er_bayesian_profitability_ridge", "Bayesian Profitability Ridge"),
+                                render_artifact_or_placeholder("er_bayesian_sentiment_ridge", "Bayesian Sentiment Ridge"),
+                                # MCMC Diagnostics
+                                html.H4("MCMC Convergence & Posterior Diagnostics", style={"textAlign": "center", "marginTop": "20px"}),
+                                render_artifact_or_placeholder("er_mcmc_credit_risk_posterior", "MCMC Credit Risk Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_anomaly_posterior", "MCMC Anomaly Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_dividend_cut_posterior", "MCMC Dividend Cut Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_price_target_posterior", "MCMC Price Target Posterior"),
+                                render_artifact_or_placeholder("er_mcmc_category_sentiment_posterior", "MCMC Category Sentiment Posterior"),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
+                        )
+                    ],
+                ),
+                # =============================================================
+                # NEW TAB: 📊 Valuation Deep-Dive
+                # =============================================================
+                dcc.Tab(
+                    label="📊 Valuation Deep-Dive",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Valuation Deep-Dive Analytics",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Multiples comparison, distribution analysis, relative valuation matrix, "
+                                    "valuation-vs-growth quadrants, and historical percentile rankings.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                render_artifact_or_placeholder("er_valuation_multiples", "Valuation Multiples Comparison"),
+                                render_artifact_or_placeholder("er_valuation_distribution", "Valuation Distribution"),
+                                render_artifact_or_placeholder("er_relative_valuation_matrix", "Relative Valuation Matrix"),
+                                render_artifact_or_placeholder("er_valuation_vs_growth", "Valuation vs Growth Quadrant"),
+                                render_artifact_or_placeholder("er_historical_valuation_percentile", "Historical Valuation Percentile"),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
+                        )
+                    ],
+                ),
+                # =============================================================
+                # NEW TAB: 📈 Growth & Earnings Quality
+                # =============================================================
+                dcc.Tab(
+                    label="📈 Growth & Earnings Quality",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Growth & Earnings Quality Analytics",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Growth consistency, acceleration, sustainability analysis, "
+                                    "and earnings quality decomposition from v3.1 feature engineering.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                # Static artifacts from pipeline
+                                render_artifact_or_placeholder("er_growth_consistency_matrix", "Growth Consistency Matrix"),
+                                render_artifact_or_placeholder("er_growth_vs_profitability", "Growth vs Profitability"),
+                                render_artifact_or_placeholder("er_growth_acceleration", "Growth Acceleration"),
+                                render_artifact_or_placeholder("er_sustainable_growth", "Sustainable Growth Analysis"),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
+                        )
+                    ],
+                ),
+                # =============================================================
+                # NEW TAB: 📊 Quality & Risk Deep-Dive
+                # =============================================================
+                dcc.Tab(
+                    label="📊 Quality & Risk Deep-Dive",
+                    children=[
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Quality & Risk Deep-Dive",
+                                    style={"textAlign": "center", "marginTop": "20px"},
+                                ),
+                                html.P(
+                                    "Comprehensive quality scoring (Piotroski F-Score, Altman Z-Score, Beneish M-Score), "
+                                    "risk tier analysis, and posterior return distributions.",
+                                    style={
+                                        "textAlign": "center",
+                                        "fontStyle": "italic",
+                                        "color": "#999",
+                                    },
+                                ),
+                                render_artifact_or_placeholder("er_piotroski_fscore", "Piotroski F-Score Breakdown"),
+                                render_artifact_or_placeholder("er_altman_zscore", "Altman Z-Score Distribution"),
+                                render_artifact_or_placeholder("er_beneish_mscore", "Beneish M-Score Analysis"),
+                                render_artifact_or_placeholder("er_risk_tier_sunburst", "Risk Tier Sunburst"),
+                                render_artifact_or_placeholder("er_posterior_return_forest", "Posterior Return Forest Plot"),
+                            ],
+                            style={"width": "100%", "maxWidth": "100%", "padding": "0"},
                         )
                     ],
                 ),
@@ -4288,13 +5225,27 @@ def run_monte_carlo_simulation(
 
 
 @app.callback(
-    [Output(f["id"], "value") for f in FILTER_CONFIG],
+    [Output(f["id"], "value") for f in FILTER_CONFIG]
+    + [Output(s["id"], "value") for s in RANGE_SLIDER_CONFIG],
     Input("reset-filters-btn", "n_clicks"),
     prevent_initial_call=True,
 )
 def _reset_filters(_n):
-    """Reset all filter dropdowns to None (no selection)."""
-    return [None] * len(FILTER_CONFIG)
+    """Reset all filter dropdowns and range sliders to defaults."""
+    dropdown_resets = [None] * len(FILTER_CONFIG)
+    # Reset range sliders to their full range (use stored initial bounds)
+    slider_resets = []
+    for s in RANGE_SLIDER_CONFIG:
+        col = s["column"]
+        if col in df.columns and len(df) > 0:
+            vals = pd.to_numeric(df[col], errors="coerce").dropna()
+            if len(vals) > 0:
+                slider_resets.append([float(vals.min()), float(vals.max())])
+            else:
+                slider_resets.append([0, 1])
+        else:
+            slider_resets.append([0, 1])
+    return dropdown_resets + slider_resets
 
 
 @app.callback(
@@ -4333,8 +5284,14 @@ def _reset_filters(_n):
         Output("artifact-er-accounting-anomaly", "children"),
         Output("artifact-er-dividend-safety", "children"),
         Output("artifact-er-return-distribution-fit", "figure"),
+        # Growth analysis dynamic outputs (v3.1)
+        Output("dynamic-sustainable-growth", "figure"),
+        Output("dynamic-growth-acceleration", "figure"),
+        Output("dynamic-growth-vs-profitability", "figure"),
+        Output("dynamic-growth-consistency-matrix", "figure"),
+        Output("dynamic-growth-waterfall", "figure"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("scoring-method-dropdown", "value"),
         Input("min-agreement-dropdown", "value"),
@@ -4347,20 +5304,24 @@ def _reset_filters(_n):
 def update_dashboard(*args):
     """Update dashboard visualizations based on selected filters."""
     # Unpack: first 12 args are global filters, rest are tab-specific
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
 
     (
         scoring_method,
         min_agreement,
         min_confidence,
-        risk_free_rate,
+        risk_free_rate_slider,
         scatter_color,
         prob_tickers,
-    ) = args[num_filters:]
+    ) = args[1:]
+
+    # Unpack RangeSlider value (returns a list)
+    risk_free_rate = risk_free_rate_slider[0] if risk_free_rate_slider else 0.03
 
     # Apply all global filters consistently
-    filtered_df = apply_global_filters(df, filter_values)
+    filtered_df = apply_global_filters(df, filter_values, range_values)
 
     # 2. Apply Numerical Threshold Filters
     if min_agreement is not None and "agreement_score" in filtered_df.columns:
@@ -4380,6 +5341,7 @@ def update_dashboard(*args):
             + [empty_fig] * 5
             + [html.Div()] * 3  # distress + anomaly + dividend_safety
             + [empty_fig]
+            + [empty_fig] * 5  # growth analysis
         )
 
     # ---------------------------------------------------------
@@ -4445,7 +5407,7 @@ def update_dashboard(*args):
         ranking_df["risk_adjusted_return"] = ranking_df["reward_score"] / (
             ranking_df["risk_score"] + 1e-6
         )
-        risk_free_rate_decimal = (risk_free_rate or 0) / 100
+        risk_free_rate_decimal = risk_free_rate or 0
         ranking_df["sharpe_like_ratio"] = (
             ranking_df["expected_return_prob_weighted"] / 100 - risk_free_rate_decimal
         ) / (ranking_df["risk_score"] + 1e-6)
@@ -4504,7 +5466,7 @@ def update_dashboard(*args):
                 ),
                 color="primary",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -4515,7 +5477,7 @@ def update_dashboard(*args):
                 ),
                 color="success" if avg_expected_return > 0 else "danger",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -4526,7 +5488,7 @@ def update_dashboard(*args):
                 ),
                 color="info",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -4537,7 +5499,7 @@ def update_dashboard(*args):
                 ),
                 color="warning",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -4548,7 +5510,7 @@ def update_dashboard(*args):
                 ),
                 color="secondary",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -4559,7 +5521,7 @@ def update_dashboard(*args):
                 ),
                 color="danger" if anomaly_alerts > 0 else "success",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
             dbc.Card(
                 dbc.CardBody(
@@ -4570,7 +5532,7 @@ def update_dashboard(*args):
                 ),
                 color="danger" if distressed_count > 0 else "success",
                 inverse=True,
-                style={"width": "14%", "textAlign": "center"},
+                style={"flex": "1 1 0", "minWidth": "140px", "textAlign": "center"},
             ),
         ]
 
@@ -4789,22 +5751,21 @@ def update_dashboard(*args):
         elif ranking_df["ev_score"].min() >= 0:
             rr_size = "ev_score"
 
+        rr_hover = _safe_hover_data(
+            [
+                "ticker", "name", "sector", "quality_tier",
+                "composite_score", "ev_score",
+                "risk_adjusted_return", "sharpe_like_ratio",
+            ],
+            ranking_df,
+        )
         risk_reward_scatter = px.scatter(
             ranking_df,
             x="risk_score",
             y="reward_score",
             color=scatter_color_col,
             size=rr_size,
-            hover_data=[
-                "ticker",
-                "name",
-                "sector",
-                "quality_tier",
-                "composite_score",
-                "ev_score",
-                "risk_adjusted_return",
-                "sharpe_like_ratio",
-            ],
+            hover_data=rr_hover,
             title="Risk vs Reward Analysis",
             labels={
                 "risk_score": "Risk Score (Uncertainty & Disagreement)",
@@ -4835,9 +5796,9 @@ def update_dashboard(*args):
             )
 
             # Apply same filters to probabilistic data sources CONSISTENTLY
-            filtered_tri = apply_global_filters(df_tri, filter_values)
-            filtered_earnings = apply_global_filters(df_earnings, filter_values)
-            filtered_credit = apply_global_filters(df_credit, filter_values)
+            filtered_tri = apply_global_filters(df_tri, filter_values, range_values)
+            filtered_earnings = apply_global_filters(df_earnings, filter_values, range_values)
+            filtered_credit = apply_global_filters(df_credit, filter_values, range_values)
 
             # 2. Tri-Model Comparison (now filtered)
             if not filtered_tri.empty:
@@ -4887,11 +5848,11 @@ def update_dashboard(*args):
     )
 
     # Apply global filters to auxiliary data sources
-    filtered_tri = apply_global_filters(df_tri, filter_values)
-    filtered_earnings = apply_global_filters(df_earnings, filter_values)
-    filtered_credit = apply_global_filters(df_credit, filter_values)
-    filtered_anomaly = apply_global_filters(df_anomaly, filter_values)
-    filtered_dividend_safety = apply_global_filters(df_dividend_safety, filter_values)
+    filtered_tri = apply_global_filters(df_tri, filter_values, range_values)
+    filtered_earnings = apply_global_filters(df_earnings, filter_values, range_values)
+    filtered_credit = apply_global_filters(df_credit, filter_values, range_values)
+    filtered_anomaly = apply_global_filters(df_anomaly, filter_values, range_values)
+    filtered_dividend_safety = apply_global_filters(df_dividend_safety, filter_values, range_values)
 
     # 1. Expected Returns Summary Posterior (MC distribution)
     art_summary_posterior = empty_artifact
@@ -5004,18 +5965,7 @@ def update_dashboard(*args):
     if ER_VIZ_AVAILABLE and not filtered_df.empty:
         try:
             screens = {}
-            for label, func in [
-                ("quality", create_enhanced_screener),
-                ("earnings_quality", screen_earnings_quality),
-                ("value", screen_value_opportunities),
-                ("growth", screen_growth_momentum),
-                ("garp", screen_garp_opportunities),
-                ("dividend", screen_dividend_quality),
-                ("healthy", screen_financial_health),
-                ("valuation_reversion", screen_valuation_reversion_candidates),
-                ("integrity_growth", screen_integrity_filtered_growth),
-                ("high_yield_safe", screen_high_yield_safe_dividends),
-            ]:
+            for label, _display_name, func in ALL_SCREENING_STRATEGIES:
                 try:
                     result = func(filtered_df)
                     if not result.empty:
@@ -5186,7 +6136,7 @@ def update_dashboard(*args):
                             page_size=25,
                             sort_action="native",
                             filter_action="native",
-                            style_table={"overflowX": "auto"},
+                            style_table={"overflowX": "auto", "width": "100%"},
                             style_header=TABLE_STYLE_HEADER,
                             style_cell=TABLE_STYLE_CELL,
                             style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
@@ -5203,6 +6153,34 @@ def update_dashboard(*args):
             art_return_dist_fit = create_return_distribution_fit_chart(filtered_df)
         except Exception as e:
             print(f"Error generating return distribution fit: {e}")
+
+    # 19. Growth Analysis Charts (v3.1)
+    art_sustainable_growth = empty_artifact
+    art_growth_acceleration = empty_artifact
+    art_growth_vs_profitability = empty_artifact
+    art_growth_consistency = empty_artifact
+    art_growth_waterfall = empty_artifact
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            art_sustainable_growth = create_sustainable_growth_analysis(filtered_df)
+        except Exception as e:
+            print(f"Error generating sustainable growth analysis: {e}")
+        try:
+            art_growth_acceleration = create_growth_acceleration_chart(filtered_df)
+        except Exception as e:
+            print(f"Error generating growth acceleration chart: {e}")
+        try:
+            art_growth_vs_profitability = create_growth_vs_profitability_quadrant(filtered_df)
+        except Exception as e:
+            print(f"Error generating growth vs profitability quadrant: {e}")
+        try:
+            art_growth_consistency = create_growth_consistency_matrix(filtered_df)
+        except Exception as e:
+            print(f"Error generating growth consistency matrix: {e}")
+        try:
+            art_growth_waterfall = create_growth_waterfall_chart(filtered_df)
+        except Exception as e:
+            print(f"Error generating growth waterfall chart: {e}")
 
     return (
         kpi_cards,
@@ -5239,6 +6217,12 @@ def update_dashboard(*args):
         art_accounting_anomaly,
         art_dividend_safety,
         art_return_dist_fit,
+        # Growth analysis (v3.1)
+        art_sustainable_growth,
+        art_growth_acceleration,
+        art_growth_vs_profitability,
+        art_growth_consistency,
+        art_growth_waterfall,
     )
 
 
@@ -5249,33 +6233,36 @@ def update_dashboard(*args):
 
 @app.callback(
     Output("price_target_vs_current_scatter", "figure"),
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("pt-scatter-metric-control", "value"),
         Input("pt-scatter-size-control", "value"),
         Input("pt-scatter-color-control", "value"),
-        Input("pt-scatter-price-min", "value"),
-        Input("pt-scatter-price-max", "value"),
-        Input("pt-scatter-target-min", "value"),
-        Input("pt-scatter-target-max", "value"),
+        Input("pt-scatter-price-range", "value"),
+        Input("pt-scatter-target-range", "value"),
     ],
 )
 def update_price_target_scatter(*args):
     """Update the Price Target vs Current Price scatter plot."""
     import traceback as tb
 
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
 
     (
         price_target_metric,
         size_encoding,
         color_encoding,
-        price_min,
-        price_max,
-        target_min,
-        target_max,
-    ) = args[num_filters:]
+        price_range,
+        target_range,
+    ) = args[1:]
+
+    # Unpack slider range values
+    price_min = price_range[0] if price_range else None
+    price_max = price_range[1] if price_range else None
+    target_min = target_range[0] if target_range else None
+    target_max = target_range[1] if target_range else None
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
@@ -5292,7 +6279,7 @@ def update_price_target_scatter(*args):
 
     try:
         # Apply ALL global filters consistently
-        filtered_df = apply_global_filters(df, filter_values)
+        filtered_df = apply_global_filters(df, filter_values, range_values)
 
         if filtered_df.empty:
             return empty_fig
@@ -5306,6 +6293,7 @@ def update_price_target_scatter(*args):
         required_cols = [
             "last_price",
             "price_target_median",
+            "price_target_mc",
             "kalman_estimate",
             "price_target_prob_weighted",
             "expected_upside_pct",
@@ -5328,6 +6316,7 @@ def update_price_target_scatter(*args):
         for col in [
             "last_price",
             "price_target_median",
+            "price_target_mc",
             "kalman_estimate",
             "price_target_prob_weighted",
             "expected_upside_pct",
@@ -5397,27 +6386,23 @@ def update_price_target_scatter(*args):
             color_col = None
 
         # Build scatter plot
+        pt_hover_candidates = {
+            "ticker": True, "name": True, "sector": True,
+            "industry": True, "country": True, "trading_country": True,
+            "exchange": True, "last_price": ":.2f",
+            price_target_metric: ":.2f", "expected_upside_pct": ":.2f",
+            "risk_level": True, "accounting_anomaly_tier": True,
+        }
+        pt_hover = _safe_hover_data(pt_hover_candidates, plot_df)
         scatter_kwargs = dict(
             data_frame=plot_df,
             x="last_price",
             y=price_target_metric,
             size=size_col,
-            hover_data={
-                "ticker": True,
-                "name": True,
-                "sector": True,
-                "industry": True,
-                "country": True,
-                "trading_country": True,
-                "exchange": True,
-                "last_price": ":.2f",
-                price_target_metric: ":.2f",
-                "expected_upside_pct": ":.2f",
-                **({"risk_level": True} if "risk_level" in plot_df.columns else {}),
-                **({"accounting_anomaly_tier": True} if "accounting_anomaly_tier" in plot_df.columns else {}),
-            },
             template="plotly_dark",
         )
+        if pt_hover:
+            scatter_kwargs["hover_data"] = pt_hover
 
         if color_col:
             scatter_kwargs["color"] = color_col
@@ -5486,8 +6471,14 @@ def update_price_target_scatter(*args):
         Output("zscore-sector-box-plot", "figure"),
         Output("composite-vs-percentile-plot", "figure"),
         Output("zscore-ranking-table", "data"),
+        # Valuation analysis dynamic outputs (v3.1)
+        Output("dynamic-historical-valuation-percentile", "figure"),
+        Output("dynamic-valuation-vs-growth", "figure"),
+        Output("dynamic-relative-valuation-matrix", "figure"),
+        Output("dynamic-valuation-distribution", "figure"),
+        Output("dynamic-valuation-multiples", "figure"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("zscore-metric-dropdown", "value"),
         Input("zscore-color-dropdown", "value"),
@@ -5497,17 +6488,18 @@ def update_price_target_scatter(*args):
 )
 def update_zscore_tab(*args):
     """Update Z-Score & Percentile Ranking tab visualizations."""
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
-    metric, color_by, size_by, zscore_threshold = args[num_filters:]
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    metric, color_by, size_by, zscore_threshold = args[1:]
 
-    filtered_df = apply_global_filters(df, filter_values)
+    filtered_df = apply_global_filters(df, filter_values, range_values)
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
     )
 
     if filtered_df.empty:
-        return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig, []
+        return html.Div(), empty_fig, empty_fig, empty_fig, empty_fig, [], empty_fig, empty_fig, empty_fig, empty_fig, empty_fig
 
     # Column mapping for selected metric
     metric_map = {
@@ -5626,13 +6618,15 @@ def update_zscore_tab(*args):
             data_frame=filtered_df,
             x=pctile_col,
             y=zscore_col,
-            hover_data=["ticker", "name", "sector", metric],
             labels={
                 pctile_col: f"{metric.replace('_', ' ').title()} Percentile",
                 zscore_col: f"{metric.replace('_', ' ').title()} Z-Score",
             },
             template="plotly_dark",
         )
+        hover = _safe_hover_data(["ticker", "name", "sector", metric], filtered_df)
+        if hover:
+            scatter_kwargs["hover_data"] = hover
         if color_by != "none" and color_by in filtered_df.columns:
             scatter_kwargs["color"] = color_by
         if size_by != "none" and size_by in filtered_df.columns:
@@ -5699,7 +6693,6 @@ def update_zscore_tab(*args):
             data_frame=filtered_df,
             x="composite_score",
             y=pctile_col,
-            hover_data=["ticker", "name", "sector", "quality_tier"],
             labels={
                 "composite_score": "Composite Score",
                 pctile_col: f"{metric.replace('_', ' ').title()} Percentile",
@@ -5707,6 +6700,9 @@ def update_zscore_tab(*args):
             template="plotly_dark",
             title="Composite Score vs Percentile Rank",
         )
+        hover = _safe_hover_data(["ticker", "name", "sector", "quality_tier"], filtered_df)
+        if hover:
+            cp_kwargs["hover_data"] = hover
         if "quality_tier" in filtered_df.columns:
             cp_kwargs["color"] = "quality_tier"
         composite_pctile = px.scatter(**cp_kwargs)
@@ -5751,6 +6747,34 @@ def update_zscore_tab(*args):
         "records"
     )
 
+    # Valuation Analysis Charts (v3.1)
+    val_historical_pctile = empty_fig
+    val_vs_growth = empty_fig
+    val_relative_matrix = empty_fig
+    val_distribution = empty_fig
+    val_multiples = empty_fig
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            val_historical_pctile = create_historical_valuation_percentile(filtered_df)
+        except Exception as e:
+            print(f"Error generating historical valuation percentile: {e}")
+        try:
+            val_vs_growth = create_valuation_vs_growth_quadrant(filtered_df)
+        except Exception as e:
+            print(f"Error generating valuation vs growth quadrant: {e}")
+        try:
+            val_relative_matrix = create_relative_valuation_matrix(filtered_df)
+        except Exception as e:
+            print(f"Error generating relative valuation matrix: {e}")
+        try:
+            val_distribution = create_valuation_distribution_dashboard(filtered_df)
+        except Exception as e:
+            print(f"Error generating valuation distribution dashboard: {e}")
+        try:
+            val_multiples = create_valuation_multiples_comparison(filtered_df)
+        except Exception as e:
+            print(f"Error generating valuation multiples comparison: {e}")
+
     return (
         kpi_cards,
         zscore_scatter,
@@ -5758,6 +6782,12 @@ def update_zscore_tab(*args):
         sector_box,
         composite_pctile,
         table_data,
+        # Valuation analysis (v3.1)
+        val_historical_pctile,
+        val_vs_growth,
+        val_relative_matrix,
+        val_distribution,
+        val_multiples,
     )
 
 
@@ -5773,8 +6803,14 @@ def update_zscore_tab(*args):
         Output("earnings-by-status-chart", "figure"),
         Output("earnings-calendar-table", "data"),
         Output("artifact-er-earnings-prob-dashboard", "children"),
+        # Earnings quality dynamic outputs (v3.1)
+        Output("dynamic-earnings-consistency-matrix", "figure"),
+        Output("dynamic-beat-rate-heatmap", "figure"),
+        Output("dynamic-earnings-quality-decomposition", "figure"),
+        Output("dynamic-eps-trajectory", "figure"),
+        Output("dynamic-earnings-surprise", "figure"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("earnings-days-ahead", "value"),
         Input("earnings-sort-by", "value"),
@@ -5782,11 +6818,12 @@ def update_zscore_tab(*args):
 )
 def update_earnings_calendar(*args):
     """Update Earnings Calendar & Events tab."""
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
-    days_ahead, sort_by = args[num_filters:]
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    days_ahead, sort_by = args[1:]
 
-    filtered_df = apply_global_filters(df, filter_values)
+    filtered_df = apply_global_filters(df, filter_values, range_values)
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
     )
@@ -5798,6 +6835,7 @@ def update_earnings_calendar(*args):
             empty_fig,
             [],
             html.Div(),
+            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
         )
 
     # Parse dates and filter to upcoming window
@@ -5946,7 +6984,7 @@ def update_earnings_calendar(*args):
     # Earnings Probability Dashboard artifact
     art_earnings_prob = html.Div()
     if ER_VIZ_AVAILABLE:
-        filtered_earnings = apply_global_filters(df_earnings, filter_values)
+        filtered_earnings = apply_global_filters(df_earnings, filter_values, range_values)
         if (
             not filtered_earnings.empty
             and "posterior_beat_prob" in filtered_earnings.columns
@@ -5965,7 +7003,39 @@ def update_earnings_calendar(*args):
             except Exception as e:
                 print(f"Error generating earnings probability dashboard: {e}")
 
-    return kpi_cards, timeline_fig, status_fig, table_data, art_earnings_prob
+    # Earnings Quality Charts (v3.1)
+    eq_consistency = empty_fig
+    eq_beat_heatmap = empty_fig
+    eq_quality_decomp = empty_fig
+    eq_eps_trajectory = empty_fig
+    eq_earnings_surprise = empty_fig
+    if ER_VIZ_AVAILABLE and not filtered_df.empty:
+        try:
+            eq_consistency = create_earnings_consistency_matrix(filtered_df)
+        except Exception as e:
+            print(f"Error generating earnings consistency matrix: {e}")
+        try:
+            eq_beat_heatmap = create_beat_rate_heatmap(filtered_df)
+        except Exception as e:
+            print(f"Error generating beat rate heatmap: {e}")
+        try:
+            eq_quality_decomp = create_earnings_quality_decomposition(filtered_df)
+        except Exception as e:
+            print(f"Error generating earnings quality decomposition: {e}")
+        try:
+            eq_eps_trajectory = create_eps_trajectory_analysis(filtered_df)
+        except Exception as e:
+            print(f"Error generating EPS trajectory analysis: {e}")
+        try:
+            eq_earnings_surprise = create_earnings_surprise_dashboard(filtered_df)
+        except Exception as e:
+            print(f"Error generating earnings surprise dashboard: {e}")
+
+    return (
+        kpi_cards, timeline_fig, status_fig, table_data, art_earnings_prob,
+        # Earnings quality (v3.1)
+        eq_consistency, eq_beat_heatmap, eq_quality_decomp, eq_eps_trajectory, eq_earnings_surprise,
+    )
 
 
 @app.callback(
@@ -5976,7 +7046,7 @@ def update_earnings_calendar(*args):
         Output("artifact-er-mc-distribution", "figure"),
         Output("artifact-er-var-analysis", "figure"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("mc-num-simulations", "value"),
         Input("mc-loss-ratio", "value"),
@@ -5987,15 +7057,19 @@ def update_earnings_calendar(*args):
 )
 def update_monte_carlo(*args):
     """Update Monte Carlo simulation visualizations."""
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
 
-    num_simulations, loss_ratio, weighting, target_return, signal_filter = args[
+    num_simulations, loss_ratio_slider, weighting, target_return, signal_filter = args[
         num_filters:
     ]
 
+    # Unpack RangeSlider value (returns a list)
+    loss_ratio = loss_ratio_slider[0] if loss_ratio_slider else 0.5
+
     # Apply ALL global filters consistently
-    mc_df = apply_global_filters(df, filter_values)
+    mc_df = apply_global_filters(df, filter_values, range_values)
 
     # Apply MC-specific signal filter
     if signal_filter:
@@ -6214,12 +7288,14 @@ def update_monte_carlo(*args):
         Output("anomaly-flags-heatmap", "figure"),
         Output("credit-risk-table", "data"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [Input("global-filter-store", "data")],
 )
 def update_credit_risk_tab(*args):
     """Update Credit Risk & Dividend Safety tab visualizations."""
-    filter_values = collect_filter_values(*args)
-    filtered_df = apply_global_filters(df, filter_values)
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    filtered_df = apply_global_filters(df, filter_values, range_values)
 
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
@@ -6325,11 +7401,11 @@ def update_credit_risk_tab(*args):
     # --- Dividend Safety Scatter ---
     div_scatter = empty_fig
     if all(c in filtered_df.columns for c in ["dividend_cut_probability", "safety_score"]):
+        plot_df = filtered_df.dropna(subset=["dividend_cut_probability", "safety_score"])
         scatter_kwargs = dict(
-            data_frame=filtered_df.dropna(subset=["dividend_cut_probability", "safety_score"]),
+            data_frame=plot_df,
             x="safety_score",
             y="dividend_cut_probability",
-            hover_data=["ticker", "name", "sector", "dividend_streak", "payout_ratio"],
             title="Dividend Safety Score vs Cut Probability",
             labels={
                 "safety_score": "Safety Score",
@@ -6337,7 +7413,12 @@ def update_credit_risk_tab(*args):
             },
             template="plotly_dark",
         )
-        if "risk_category" in filtered_df.columns:
+        hover = _safe_hover_data(
+            ["ticker", "name", "sector", "dividend_streak", "payout_ratio"], plot_df,
+        )
+        if hover:
+            scatter_kwargs["hover_data"] = hover
+        if "risk_category" in plot_df.columns:
             scatter_kwargs["color"] = "risk_category"
         div_scatter = px.scatter(**scatter_kwargs)
 
@@ -6362,12 +7443,22 @@ def update_credit_risk_tab(*args):
 
     # --- Table data ---
     table_cols = [
-        "ticker", "name", "sector", "industry", "risk_level",
+        "ticker",
+        "name",
+        "country",
+        "trading_country",
+        "exchange",
+        "sector",
+        "industry",
+        "style_class",
+        "size_class",
+        "unit",
+        "risk_level",
         "altman_z_score", "altman_z_trend", "distress_probability",
         "liquidity_stress_score", "cash_runway_months", "beta_stability_score",
         "ruin_probability", "survival_probability", "wealth_buffer",
         "accounting_anomaly_tier", "accounting_anomaly_score",
-        "anomaly_feature_count", "multi_flag_alert",
+        "anomaly_feature_count", "multi_flag_alert", "anomaly_conditional_probability",
         "dividend_cut_probability", "safety_score", "risk_category",
         "fcf_dividend_coverage", "payout_ratio", "dividend_streak",
         "dividend_consistency", "data_quality_score", "signal",
@@ -6399,12 +7490,14 @@ def update_credit_risk_tab(*args):
         Output("anomaly-cond-prob-chart", "figure"),
         Output("anomaly-analytics-table", "data"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [Input("global-filter-store", "data")],
 )
 def update_anomaly_analytics_tab(*args):
     """Update Accounting Anomaly Analytics tab visualizations."""
-    filter_values = collect_filter_values(*args)
-    filtered_summary = apply_global_filters(df, filter_values)
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    filtered_summary = apply_global_filters(df, filter_values, range_values)
 
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
@@ -6504,7 +7597,16 @@ def update_anomaly_analytics_tab(*args):
 
     # --- Table data ---
     table_cols = [
-        "ticker", "name", "sector", "industry",
+        "ticker",
+        "name",
+        "country",
+        "trading_country",
+        "exchange",
+        "sector",
+        "industry",
+        "style_class",
+        "size_class",
+        "unit",
         "accounting_anomaly_tier", "accounting_anomaly_score",
         "anomaly_severity_score", "anomaly_conditional_probability",
         "anomaly_risk_rank", "sector_anomaly_percentile",
@@ -6539,12 +7641,14 @@ def update_anomaly_analytics_tab(*args):
         Output("model-agreement-heatmap", "figure"),
         Output("calibration-metrics-display", "children"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [Input("global-filter-store", "data")],
 )
 def update_uncertainty_calibration(*args):
     """Update Uncertainty & Calibration tab visualizations."""
-    filter_values = collect_filter_values(*args)
-    filtered_df = apply_global_filters(df, filter_values)
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    filtered_df = apply_global_filters(df, filter_values, range_values)
 
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
@@ -6796,12 +7900,14 @@ def update_uncertainty_calibration(*args):
         Output("safety-threshold-chart", "figure"),
         Output("data-quality-summary", "children"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [Input("global-filter-store", "data")],
 )
 def update_safety_rails(*args):
     """Update Safety Rails & Data Quality tab visualizations."""
-    filter_values = collect_filter_values(*args)
-    filtered_df = apply_global_filters(df, filter_values)
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    filtered_df = apply_global_filters(df, filter_values, range_values)
 
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
@@ -6846,6 +7952,7 @@ def update_safety_rails(*args):
         "accounting_anomaly_score",
         "accounting_anomaly_tier",
         "anomaly_feature_count",
+        "anomaly_conditional_probability",
         "multi_flag_alert",
         "altman_z_score",
         "distress_probability",
@@ -7116,12 +8223,14 @@ def update_safety_rails(*args):
         Output("model-registry-table", "data"),
         Output("governance-metrics-display", "children"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [Input("global-filter-store", "data")],
 )
 def update_model_governance(*args):
     """Update Model Governance tab visualizations."""
-    filter_values = collect_filter_values(*args)
-    filtered_df = apply_global_filters(df, filter_values)
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    filtered_df = apply_global_filters(df, filter_values, range_values)
 
     empty_fig = go.Figure().update_layout(
         title="No data available", template="plotly_dark"
@@ -7344,7 +8453,7 @@ def _calculate_capm_expected_return(beta: float, rf: float, rm: float) -> float:
         Output("capm-bar-graph", "figure"),
         Output("capm-bar-error", "children"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("capm-risk-free-rate", "value"),
         Input("capm-market-return", "value"),
@@ -7356,12 +8465,16 @@ def update_beta_capm(*args):
     """Update Beta & CAPM scatter and alpha bar charts."""
     import traceback
 
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
 
-    risk_free_rate, market_return, size_encoding, capm_confidence_level = args[
+    risk_free_rate_slider, market_return, size_encoding, capm_confidence_level = args[
         num_filters:
     ]
+
+    # Unpack RangeSlider value (returns a list)
+    risk_free_rate = risk_free_rate_slider[0] if risk_free_rate_slider else 0.03
 
     empty_fig = go.Figure()
     empty_fig.update_layout(
@@ -7383,7 +8496,7 @@ def update_beta_capm(*args):
 
     try:
         # Apply ALL global filters consistently
-        filtered_df = apply_global_filters(df, filter_values)
+        filtered_df = apply_global_filters(df, filter_values, range_values)
 
         # Apply CAPM-specific confidence level filter
         if capm_confidence_level == "high_only":
@@ -7396,8 +8509,8 @@ def update_beta_capm(*args):
         if filtered_df.empty:
             return empty_fig, "", empty_fig, ""
 
-        # CAPM parameters
-        rf = float(risk_free_rate) if risk_free_rate is not None else 3.0
+        # CAPM parameters — slider value is already a fraction (0–1)
+        rf = float(risk_free_rate) * 100 if risk_free_rate is not None else 3.0
         rm = float(market_return) if market_return is not None else 10.0
 
         # Calculate beta and CAPM return
@@ -7411,18 +8524,16 @@ def update_beta_capm(*args):
         )
 
         # --- Scatter Chart: Beta vs Expected Return ---
+        capm_hover = _safe_hover_data(
+            {"name": True, "ticker": True, "beta": ":.2f",
+             "expected_upside_pct": ":.2f", "sector": True},
+            filtered_df,
+        )
         scatter_kwargs = dict(
             data_frame=filtered_df,
             x="beta",
             y="expected_upside_pct",
             color="sector",
-            hover_data={
-                "name": True,
-                "ticker": True,
-                "beta": ":.2f",
-                "expected_upside_pct": ":.2f",
-                "sector": True,
-            },
             labels={
                 "beta": "Beta (Systematic Risk)",
                 "expected_upside_pct": "Expected Return (%)",
@@ -7430,10 +8541,13 @@ def update_beta_capm(*args):
             },
             template="plotly_dark",
         )
+        if capm_hover:
+            scatter_kwargs["hover_data"] = capm_hover
 
         if size_encoding != "none" and size_encoding in filtered_df.columns:
             scatter_kwargs["size"] = size_encoding
-            scatter_kwargs["hover_data"][size_encoding] = ":.0f"
+            if isinstance(scatter_kwargs.get("hover_data"), dict):
+                scatter_kwargs["hover_data"][size_encoding] = ":.0f"
 
         scatter_fig = px.scatter(**scatter_kwargs)
 
@@ -7529,7 +8643,7 @@ def update_beta_capm(*args):
         Output("kelly-kpi-summary", "children"),
         Output("kelly-positions-table", "data"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("kelly-fraction-dropdown", "value"),
         Input("kelly-max-position-dropdown", "value"),
@@ -7544,22 +8658,23 @@ def update_kelly_criterion(*args):
     """Update Kelly Criterion Position Sizer tab visualizations."""
     import traceback as tb
 
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
 
     (
-        kelly_fraction,
-        max_position,
+        kelly_fraction_slider,
+        max_position_slider,
         min_confidence,
         adjustment_method,
         bar_color_by,
         scatter_color_by,
         scatter_size_by,
-    ) = args[num_filters:]
+    ) = args[1:]
 
-    # Defaults
-    kelly_fraction = kelly_fraction if kelly_fraction is not None else 0.25
-    max_position = max_position if max_position is not None else 0.10
+    # Unpack RangeSlider values (returns a list)
+    kelly_fraction = kelly_fraction_slider[0] if kelly_fraction_slider else 0.25
+    max_position = max_position_slider[0] if max_position_slider else 0.10
     min_confidence = min_confidence if min_confidence is not None else 0.35
     adjustment_method = adjustment_method if adjustment_method is not None else "both"
     bar_color_by = bar_color_by if bar_color_by is not None else "none"
@@ -7588,7 +8703,7 @@ def update_kelly_criterion(*args):
 
     try:
         # Apply all global filters
-        filtered_df = apply_global_filters(df, filter_values)
+        filtered_df = apply_global_filters(df, filter_values, range_values)
 
         if filtered_df.empty:
             return empty_fig, "", empty_fig, "", html.Div("No data"), []
@@ -7730,20 +8845,18 @@ def update_kelly_criterion(*args):
 
         if bar_color_by == "sector" and "sector" in top30.columns:
             bar_kwargs["color"] = "sector"
-            bar_kwargs["hover_data"] = {
-                "sector": True,
-                "kelly_pct": ":.2f",
-                "confidence_level": True,
-            }
+            bar_kwargs["hover_data"] = _safe_hover_data(
+                {"sector": True, "kelly_pct": ":.2f", "confidence_level": True}, top30,
+            )
         elif bar_color_by == "confidence_level" and "confidence_level" in top30.columns:
             bar_kwargs["color"] = "confidence_level"
-            bar_kwargs["hover_data"] = {"confidence_level": True, "kelly_pct": ":.2f"}
+            bar_kwargs["hover_data"] = _safe_hover_data(
+                {"confidence_level": True, "kelly_pct": ":.2f"}, top30,
+            )
         else:
-            bar_kwargs["hover_data"] = {
-                "kelly_pct": ":.2f",
-                "sector": True,
-                "confidence_level": True,
-            }
+            bar_kwargs["hover_data"] = _safe_hover_data(
+                {"kelly_pct": ":.2f", "sector": True, "confidence_level": True}, top30,
+            )
 
         bar_fig = px.bar(**bar_kwargs)
         bar_fig.update_xaxes(tickangle=-45)
@@ -7768,7 +8881,9 @@ def update_kelly_criterion(*args):
             template="plotly_dark",
         )
 
-        hover_cols = {"ticker": True, "filtered_upside": ":.2f", "kelly_pct": ":.2f"}
+        hover_cols = _safe_hover_data(
+            {"ticker": True, "filtered_upside": ":.2f", "kelly_pct": ":.2f"}, kelly_df,
+        ) or {}
 
         if (
             scatter_color_by == "confidence_level"
@@ -7864,7 +8979,7 @@ def update_kelly_criterion(*args):
         Output("ef-portfolio-table", "children"),
         Output("ef-error-display", "children"),
     ],
-    [Input(f["id"], "value") for f in FILTER_CONFIG]
+    [Input("global-filter-store", "data")]
     + [
         Input("ef-stock-selector", "value"),
         Input("ef-risk-free-rate", "value"),
@@ -7876,13 +8991,14 @@ def update_efficient_frontier(*args):
     """Update Efficient Frontier visualization based on filters and parameters."""
     import traceback as tb
 
-    num_filters = len(FILTER_CONFIG)
-    filter_values = collect_filter_values(*args[:num_filters])
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
 
-    stock_selector, risk_free_rate, constraint_type, num_portfolios = args[num_filters:]
+    stock_selector, risk_free_rate_slider, constraint_type, num_portfolios = args[1:]
 
-    # Defaults
-    risk_free_rate = risk_free_rate if risk_free_rate is not None else 3.0
+    # Unpack RangeSlider value (returns a list) — slider is 0–1 fraction, convert to percentage for downstream use
+    risk_free_rate = risk_free_rate_slider[0] * 100 if risk_free_rate_slider else 3.0
     constraint_type = constraint_type if constraint_type is not None else "long_only"
     num_portfolios = num_portfolios if num_portfolios is not None else 500
 
@@ -7901,7 +9017,7 @@ def update_efficient_frontier(*args):
 
     try:
         # Apply all global filters
-        filtered_df = apply_global_filters(df, filter_values)
+        filtered_df = apply_global_filters(df, filter_values, range_values)
 
         if filtered_df.empty:
             return empty_fig, "", ""
@@ -8087,7 +9203,7 @@ def update_efficient_frontier(*args):
             columns=[{"name": c, "id": c} for c in table_df.columns],
             page_size=500,
             sort_action="native",
-            style_table={"overflowX": "auto"},
+            style_table={"overflowX": "auto", "width": "100%"},
             style_header=TABLE_STYLE_HEADER,
             style_cell=TABLE_STYLE_CELL,
             style_data_conditional=[
@@ -8109,7 +9225,7 @@ def update_efficient_frontier(*args):
 
 @app.callback(
     Output("ef-stock-selector", "options"),
-    [Input(f["id"], "value") for f in FILTER_CONFIG],
+    [Input("global-filter-store", "data")],
     [State("ef-stock-selector", "value")],
 )
 def update_ef_stock_options(*args):
@@ -8119,10 +9235,11 @@ def update_ef_stock_options(*args):
     tickers are retained in the options list even when filters change.
     """
     try:
-        num_filters = len(FILTER_CONFIG)
-        filter_values = collect_filter_values(*args[:num_filters])
+        filter_data = args[0] or {}
+        filter_values = filter_data.get("filters", {})
+        range_values = filter_data.get("ranges", {})
         current_selection = args[num_filters]  # State value
-        filtered_df = apply_global_filters(df, filter_values)
+        filtered_df = apply_global_filters(df, filter_values, range_values)
 
         if filtered_df.empty or "market_cap" not in filtered_df.columns:
             return []
@@ -8154,6 +9271,244 @@ def update_ef_stock_options(*args):
         return options
     except Exception:
         return []
+
+
+# =============================================================================
+# Cascading Filters: region → country/exchange/trading_country
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("country-dropdown", "options"),
+        Output("exchange-dropdown", "options"),
+        Output("trading-country-dropdown", "options"),
+    ],
+    Input("region-dropdown", "value"),
+)
+def update_cascading_region_filters(selected_regions):
+    """Update country, exchange, and trading_country options based on region selection."""
+    filtered = df if not selected_regions else df[df["region"].isin(selected_regions)]
+    return (
+        build_filter_options(filtered, "country"),
+        build_filter_options(filtered, "exchange"),
+        build_filter_options(filtered, "trading_country"),
+    )
+
+
+@app.callback(
+    Output("industry-dropdown", "options"),
+    Input("sector-dropdown", "value"),
+)
+def update_cascading_sector_filters(selected_sectors):
+    """Update industry options based on sector selection."""
+    filtered = df if not selected_sectors else df[df["sector"].isin(selected_sectors)]
+    return build_filter_options(filtered, "industry")
+
+
+# =============================================================================
+# Global Filter Store — persist filter state across tabs
+# =============================================================================
+
+
+@app.callback(
+    Output("global-filter-store", "data"),
+    [Input("global-filter-store", "data")]
+    + [Input(s["id"], "value") for s in RANGE_SLIDER_CONFIG],
+)
+def update_global_filter_store(*args):
+    """Update the global filter store whenever any filter changes."""
+    filter_data = args[0] or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
+    range_values = collect_range_slider_values(*args[1:])
+    return {"filters": filter_values, "ranges": range_values}
+
+
+# =============================================================================
+# Stock Screening Explorer Tab Callback
+# =============================================================================
+
+
+@app.callback(
+    [
+        Output("screening-kpis", "children"),
+        Output("screening-summary-chart", "figure"),
+        Output("screening-results-table-container", "children"),
+    ],
+    [
+        Input("screening-strategy-dropdown", "value"),
+    ]
+    + [Input("global-filter-store", "data")],
+)
+def update_screening_explorer(selected_strategy, *filter_args):
+    """Update the Stock Screening Explorer tab based on selected strategy and filters."""
+    empty_fig = go.Figure().update_layout(
+        title="No data", template="plotly_dark"
+    )
+
+    filter_values = collect_filter_values(*filter_args)
+    filtered_df = apply_global_filters(df, filter_values, range_values)
+
+    if filtered_df.empty:
+        return [], empty_fig, html.Div("No data matching filters.")
+
+    # Run all screens for summary chart
+    all_screens = {}
+    for key, label, func in ALL_SCREENING_STRATEGIES:
+        try:
+            result = func(filtered_df)
+            if not result.empty:
+                all_screens[key] = result
+        except Exception:
+            pass
+
+    # Summary bar chart
+    summary_fig = empty_fig
+    if ER_VIZ_AVAILABLE and all_screens:
+        try:
+            summary_fig = create_screening_summary_chart(all_screens)
+        except Exception:
+            pass
+
+    # Selected screen results
+    selected_result = all_screens.get(selected_strategy, pd.DataFrame())
+
+    # KPIs
+    kpis = []
+    total_universe = len(filtered_df)
+    screen_count = len(selected_result)
+    hit_rate = (screen_count / total_universe * 100) if total_universe > 0 else 0
+    kpis.append(build_kpi_card("Universe Size", f"{total_universe:,}", "info"))
+    kpis.append(build_kpi_card("Screen Hits", f"{screen_count:,}", "success"))
+    kpis.append(build_kpi_card("Hit Rate", f"{hit_rate:.1f}%", "primary"))
+    kpis.append(build_kpi_card("Screens Available", f"{len(all_screens)}", "warning"))
+
+    # Results table
+    if selected_result.empty:
+        table_component = html.Div(
+            "No stocks pass this screening strategy with current filters.",
+            style={"color": COLORS["warning"], "textAlign": "center", "padding": "20px"},
+        )
+    else:
+        display_cols = [c for c in [
+            "ticker", "name", "sector", "industry", "country",
+            "expected_upside_pct", "filtered_upside", "confidence_score",
+            "composite_score", "achievement_probability", "signal",
+            "resampled_posterior_mean", "momentum_signal",
+        ] if c in selected_result.columns]
+        table_component = dash_table.DataTable(
+            data=selected_result[display_cols].to_dict("records"),
+            columns=get_formatted_columns(display_cols),
+            page_size=50,
+            sort_action="native",
+            filter_action="native",
+            style_table={"overflowX": "auto", "width": "100%"},
+            style_header=TABLE_STYLE_HEADER,
+            style_cell=TABLE_STYLE_CELL,
+            style_data_conditional=TABLE_STYLE_DATA_CONDITIONAL,
+            tooltip_header={
+                col: COLUMN_TOOLTIPS.get(col, col.replace("_", " ").title())
+                for col in display_cols
+            },
+        )
+
+    return kpis, summary_fig, table_component
+
+
+@app.callback(
+    Output("screening-download", "data"),
+    Input("screening-download-btn", "n_clicks"),
+    [
+        State("screening-strategy-dropdown", "value"),
+    ]
+    + [State(f["id"], "value") for f in FILTER_CONFIG],
+    prevent_initial_call=True,
+)
+def download_screening_results(n_clicks, selected_strategy, *filter_args):
+    """Download selected screening results as CSV."""
+    if not n_clicks:
+        return dash.no_update
+
+    filter_values = collect_filter_values(*filter_args)
+    filtered_df = apply_global_filters(df, filter_values, range_values)
+
+    if filtered_df.empty:
+        return dash.no_update
+
+    # Find the screen function
+    func = None
+    for key, _label, fn in ALL_SCREENING_STRATEGIES:
+        if key == selected_strategy:
+            func = fn
+            break
+
+    if func is None:
+        return dash.no_update
+
+    try:
+        result = func(filtered_df)
+        if result.empty:
+            return dash.no_update
+        return dcc.send_data_frame(result.to_csv, f"screening_{selected_strategy}.csv", index=False)
+    except Exception:
+        return dash.no_update
+
+
+# =============================================================================
+# Resampled Posterior & MCMC Tab Callback
+# =============================================================================
+
+
+@app.callback(
+    Output("resampled-posterior-scatter", "figure"),
+    [Input("global-filter-store", "data")],
+)
+def update_resampled_posterior_scatter(*filter_args):
+    """Generate resampled posterior distribution scatter plot."""
+    filter_values = collect_filter_values(*filter_args)
+    filtered_df = apply_global_filters(df, filter_values, range_values)
+
+    if filtered_df.empty or "resampled_posterior_mean" not in filtered_df.columns:
+        return go.Figure().update_layout(
+            title="Resampled Posterior Mean — No Data Available",
+            template="plotly_dark",
+        )
+
+    plot_df = filtered_df.dropna(subset=["resampled_posterior_mean"]).copy()
+    if plot_df.empty:
+        return go.Figure().update_layout(
+            title="Resampled Posterior Mean — No Valid Data",
+            template="plotly_dark",
+        )
+
+    color_col = "sector" if "sector" in plot_df.columns else None
+    size_col = None
+    if "confidence_score" in plot_df.columns:
+        size_col = "confidence_score"
+
+    resamp_hover = _safe_hover_data(
+        {"momentum_signal": ":.3f", "technical_adjustment": ":.3f",
+         "volatility_regime_score": ":.3f"},
+        plot_df,
+    )
+    fig = px.scatter(
+        plot_df,
+        x="resampled_posterior_mean",
+        y="expected_upside_pct" if "expected_upside_pct" in plot_df.columns else "resampled_posterior_mean",
+        color=color_col,
+        size=size_col,
+        hover_name="ticker" if "ticker" in plot_df.columns else None,
+        hover_data=resamp_hover,
+        title="Resampled Posterior Mean vs Expected Upside",
+        template="plotly_dark",
+        labels={
+            "resampled_posterior_mean": "Resampled Posterior Mean",
+            "expected_upside_pct": "Expected Upside (%)",
+        },
+    )
+    fig.update_layout(height=600)
+    return fig
 
 
 if __name__ == "__main__":

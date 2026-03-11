@@ -82,6 +82,7 @@ CREATE OR REPLACE VIEW vw_identifier_columns AS
 SELECT e."ISIN"                              AS isin,
        e."Ticker"                            AS ticker,
        e."Name"                              AS name,
+       e."Description"                       AS description,
        e."Region"                            AS region,
        e."Country"                           AS country,
        e."Trading Country"                   AS trading_country,
@@ -4281,16 +4282,16 @@ SELECT "ISIN",
        "Effective Tax Rate - (Ratio) (FQ)" - "Effective Tax Rate - (Ratio) (-1FQFQ)",
        -- Stability: range across available quarterly periods (lower = more stable)
        GREATEST(
-           COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
-           COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
-           COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
-           COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
+               COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
+               COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
+               COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
+               COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
        ) - LEAST(
-           COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
-           COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
-           COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
-           COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
-       ),
+               COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
+               COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
+               COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
+               COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
+           ),
        CASE WHEN "Effective Tax Rate - (Ratio) (LTM)" < 0.10 THEN 1 ELSE 0 END,
        -- Trend across 4 quarters (FQ vs avg of prior 3)
        "Effective Tax Rate - (Ratio) (FQ)" -
@@ -4311,15 +4312,15 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION calc_opex_temporal_features(p_isin TEXT DEFAULT NULL)
     RETURNS TABLE
             (
-                isin                    TEXT,
-                opex_fq                 NUMERIC,
-                opex_ltm                NUMERIC,
-                opex_fy                 NUMERIC,
-                opex_qoq_growth         NUMERIC,
-                opex_yoy_growth         NUMERIC,
-                opex_vs_revenue_trend   NUMERIC,
-                sga_qoq_growth          NUMERIC,
-                sga_yoy_growth          NUMERIC,
+                isin                     TEXT,
+                opex_fq                  NUMERIC,
+                opex_ltm                 NUMERIC,
+                opex_fy                  NUMERIC,
+                opex_qoq_growth          NUMERIC,
+                opex_yoy_growth          NUMERIC,
+                opex_vs_revenue_trend    NUMERIC,
+                sga_qoq_growth           NUMERIC,
+                sga_yoy_growth           NUMERIC,
                 operating_leverage_score NUMERIC
             )
     STABLE PARALLEL SAFE
@@ -5872,54 +5873,53 @@ CREATE MATERIALIZED VIEW mv_all_stock_features AS
 SELECT id.*,
 
        -- Reference columns from equities (not in vw_identifier_columns)
-       e."Market Cap"            AS market_cap,
-       e."Enterprise Value"      AS enterprise_value,
-       e."Last Price"            AS last_price,
-       e."Price Target"          AS price_target,
-       e."Price Target - High"   AS price_target_high,
-       e."Price Target - Low"    AS price_target_low,
-       e."Price Target - Median" AS price_target_median,
-       e."Volume (Shrs)"         AS volume_shrs,
-       e."Shrs Out"              AS shares_outstanding,
+       e."Market Cap"                      AS market_cap,
+       e."Enterprise Value"                AS enterprise_value,
+       e."Last Price"                      AS last_price,
+       e."Price Target"                    AS price_target,
+       e."Price Target - High"             AS price_target_high,
+       e."Price Target - Low"              AS price_target_low,
+       e."Price Target - Median"           AS price_target_median,
+       e."Volume (Shrs)"                   AS volume_shrs,
+       e."Shrs Out"                        AS shares_outstanding,
 
        -- =========================================================================
        -- Enhancement 1: Direct Reference Columns from equities
        -- =========================================================================
-       e."Current Fiscal Quarter"           AS current_fiscal_quarter,
-       e."Dividend Record (Currency)"       AS dividend_record_currency,
-       e."Dividend Record (Amount)"         AS dividend_record_amount,
-       e."Dividend Per Share (LTM)"         AS dividend_per_share_ltm,
-       e."Description"                      AS description,
-       e."Market Cap (Country R)"           AS market_cap_country_r,
-       e."Rel. Volume"                      AS rel_volume,
-       e."1-Day %"                          AS one_day_pct,
-       e."Total Return (YTD)"               AS total_return_ytd,
-       e."Total Return (5Y)"                AS total_return_5y,
-       e."Total Return (10Y)"               AS total_return_10y,
-       e."Tot. Return %/CAGR (3Y)"          AS tot_return_pct_cagr_3y,
-       e."Tot. Return %/CAGR (10Y)"         AS tot_return_pct_cagr_10y,
-       e."Total Revenues/CAGR (5Y FY)"      AS total_revenues_cagr_5y_fy,
-       e."Shrs Out (-1FY)"                  AS shrs_out_1fy,
-       e."Analyst Rating"                   AS analyst_rating,
-       e."Price Target - #"                 AS price_target_count,
+       e."Current Fiscal Quarter"          AS current_fiscal_quarter,
+       e."Dividend Record (Currency)"      AS dividend_record_currency,
+       e."Dividend Record (Amount)"        AS dividend_record_amount,
+       e."Dividend Per Share (LTM)"        AS dividend_per_share_ltm,
+       e."Market Cap (Country R)"          AS market_cap_country_r,
+       e."Rel. Volume"                     AS rel_volume,
+       e."1-Day %"                         AS one_day_pct,
+       e."Total Return (YTD)"              AS total_return_ytd,
+       e."Total Return (5Y)"               AS total_return_5y,
+       e."Total Return (10Y)"              AS total_return_10y,
+       e."Tot. Return %/CAGR (3Y)"         AS tot_return_pct_cagr_3y,
+       e."Tot. Return %/CAGR (10Y)"        AS tot_return_pct_cagr_10y,
+       e."Total Revenues/CAGR (5Y FY)"     AS total_revenues_cagr_5y_fy,
+       e."Shrs Out (-1FY)"                 AS shrs_out_1fy,
+       e."Analyst Rating"                  AS analyst_rating,
+       e."Price Target - #"                AS price_target_count,
 
        -- =========================================================================
        -- Enhancement 6: Analyst Rating Breakdown
        -- =========================================================================
-       e."# Strong Buys Ratings"            AS num_strong_buys_ratings,
-       e."# Buys Ratings"                   AS num_buys_ratings,
-       e."# Hold Ratings"                   AS num_hold_ratings,
-       e."# Sell Ratings"                   AS num_sell_ratings,
-       e."# Strong Sell Ratings"            AS num_strong_sell_ratings,
-       e."EPS Norm - Est # (FY1E)"          AS eps_norm_est_num_fy1e,
+       e."# Strong Buys Ratings"           AS num_strong_buys_ratings,
+       e."# Buys Ratings"                  AS num_buys_ratings,
+       e."# Hold Ratings"                  AS num_hold_ratings,
+       e."# Sell Ratings"                  AS num_sell_ratings,
+       e."# Strong Sell Ratings"           AS num_strong_sell_ratings,
+       e."EPS Norm - Est # (FY1E)"         AS eps_norm_est_num_fy1e,
 
        -- =========================================================================
        -- Enhancement 7: GAAP EPS Estimate Columns
        -- =========================================================================
-       e."EPS GAAP - Est Avg (NTM)"         AS eps_gaap_est_avg_ntm,
-       e."EPS GAAP - Est Avg (FY1E)"        AS eps_gaap_est_avg_fy1e,
-       e."EPS Norm - Est Avg (NTM)"         AS eps_norm_est_avg_ntm,
-       e."EPS Norm - Est Avg (FY1E)"        AS eps_norm_est_avg_fy1e,
+       e."EPS GAAP - Est Avg (NTM)"        AS eps_gaap_est_avg_ntm,
+       e."EPS GAAP - Est Avg (FY1E)"       AS eps_gaap_est_avg_fy1e,
+       e."EPS Norm - Est Avg (NTM)"        AS eps_norm_est_avg_ntm,
+       e."EPS Norm - Est Avg (FY1E)"       AS eps_norm_est_avg_fy1e,
 
        -- =========================================================================
        -- SECTION 1: VALUATION RATIOS (vw_features_valuation_ratios)
@@ -5931,7 +5931,7 @@ SELECT id.*,
        vf.p_b_ratio,
        vf.ev_ebitda_ratio,
        vf.ev_sales_ratio,
-       vf.dividend_yield         AS valuation_dividend_yield,
+       vf.dividend_yield                   AS valuation_dividend_yield,
        vf.peg_ratio,
 
        -- calc_valuation_timeseries_features
@@ -6230,7 +6230,7 @@ SELECT id.*,
        -- =========================================================================
        -- calc_growth_features
        gf.revenue_growth_yoy,
-       gf.ebitda_growth_yoy      AS growth_ebitda_growth_yoy,
+       gf.ebitda_growth_yoy                AS growth_ebitda_growth_yoy,
        gf.operating_income_growth,
        gf.fcf_growth,
        gf.revenue_cagr_5y,
@@ -6593,7 +6593,7 @@ SELECT id.*,
        cc.fcf_growth_yoy,
        cc.fcf_yield,
        cc.cfo_positive_years,
-       cc.fcf_positive_years     AS fcf_positive_years_comp,
+       cc.fcf_positive_years               AS fcf_positive_years_comp,
 
        -- =========================================================================
        -- SECTION 13: TEMPORAL (vw_features_temporal)
@@ -6657,9 +6657,9 @@ SELECT id.*,
        itf.inventory_qoq_change,
        itf.inventory_yoy_change,
        itf.inventory_4q_trend,
-       itf.inventory_vs_5y_avg   AS inventory_vs_5y_avg_itf,
+       itf.inventory_vs_5y_avg             AS inventory_vs_5y_avg_itf,
        itf.inventory_days,
-       itf.inventory_turnover    AS inventory_turnover_itf,
+       itf.inventory_turnover              AS inventory_turnover_itf,
        itf.inventory_to_revenue,
        itf.inventory_to_assets,
        itf.inventory_buildup_flag,
@@ -6748,7 +6748,7 @@ SELECT id.*,
        -- =========================================================================
        -- calc_composite_scores
        cs.piotroski_f_score,
-       etf.eps_trajectory_score  AS composite_eps_trajectory_score,
+       etf.eps_trajectory_score            AS composite_eps_trajectory_score,
        cs.dilution_score,
        cs.quality_momentum_score,
 
@@ -6786,7 +6786,7 @@ SELECT id.*,
        -- =========================================================================
        uif.other_unusual_items_ltm,
        uif.impairment_goodwill_ltm,
-       uif.asset_writedown_ltm   AS unusual_asset_writedown_ltm,
+       uif.asset_writedown_ltm             AS unusual_asset_writedown_ltm,
        uif.restructuring_charges_ltm,
        uif.total_unusual_items,
        uif.unusual_items_to_revenue,
@@ -6798,19 +6798,19 @@ SELECT id.*,
        -- SECTION 18: VOLATILITY SURFACE (Enhancement 2 + 3)
        -- Source: calc_volatility_surface_features
        -- =========================================================================
-       vsf.vol_1m                    AS volatility_1m,
-       vsf.vol_3m                    AS volatility_3m,
-       vsf.vol_6m                    AS volatility_6m,
-       vsf.vol_1y                    AS volatility_1y,
-       vsf.vol_term_spread_short     AS volatility_trend_short,
-       vsf.vol_term_spread_long      AS volatility_trend_long,
+       vsf.vol_1m                          AS volatility_1m,
+       vsf.vol_3m                          AS volatility_3m,
+       vsf.vol_6m                          AS volatility_6m,
+       vsf.vol_1y                          AS volatility_1y,
+       vsf.vol_term_spread_short           AS volatility_trend_short,
+       vsf.vol_term_spread_long            AS volatility_trend_long,
        vsf.vol_ratio_3m_1y,
        vsf.vol_hump,
        vsf.beta_2y,
        vsf.beta_term_structure,
        vsf.beta_convexity,
        vsf.realized_vs_implied_proxy,
-       vsf.beta_1y - vsf.beta_2y    AS beta_short_term_shift,
+       vsf.beta_1y - vsf.beta_2y           AS beta_short_term_shift,
 
        -- =========================================================================
        -- SECTION 19: TAX RATE FEATURES (Enhancement 4)
@@ -6862,22 +6862,22 @@ SELECT id.*,
        -- SECTION 23: DIVIDEND HISTORY (Enhancement 10)
        -- Source: calc_dividend_history_features
        -- =========================================================================
-       dhf.div_yield_2fy             AS div_yield_2fyind,
-       dhf.div_yield_3fy             AS div_yield_3fyind,
-       dhf.div_yield_4fy             AS div_yield_4fyind,
-       dhf.div_yield_5fy             AS div_yield_5fyind,
-       dhf.div_yield_trend_3y        AS div_yield_5y_trend,
-       dhf.div_yield_volatility      AS div_yield_stability,
+       dhf.div_yield_2fy                   AS div_yield_2fyind,
+       dhf.div_yield_3fy                   AS div_yield_3fyind,
+       dhf.div_yield_4fy                   AS div_yield_4fyind,
+       dhf.div_yield_5fy                   AS div_yield_5fyind,
+       dhf.div_yield_trend_3y              AS div_yield_5y_trend,
+       dhf.div_yield_volatility            AS div_yield_stability,
 
        -- =========================================================================
        -- SECTION 24: INVESTMENT INCOME TEMPORAL (Enhancement 11)
        -- Source: calc_investment_income_temporal
        -- =========================================================================
-       iit.inv_income_fq             AS interest_income_fq,
-       iit.inv_income_fy             AS interest_income_fy,
-       iit.inv_income_qoq_growth     AS interest_income_qoq_growth,
-       iit.inv_income_yoy_growth     AS interest_income_yoy_growth,
-       iit.inv_income_to_revenue     AS interest_income_to_revenue_trend,
+       iit.inv_income_fq                   AS interest_income_fq,
+       iit.inv_income_fy                   AS interest_income_fy,
+       iit.inv_income_qoq_growth           AS interest_income_qoq_growth,
+       iit.inv_income_yoy_growth           AS interest_income_yoy_growth,
+       iit.inv_income_to_revenue           AS interest_income_to_revenue_trend,
 
        -- =========================================================================
        -- SECTION 25: SHARE DILUTION TRACKING (Enhancement 12)
@@ -6906,7 +6906,7 @@ SELECT id.*,
        -- =========================================================================
        -- METADATA: Timestamp for refresh tracking
        -- =========================================================================
-       CURRENT_TIMESTAMP         AS feature_calculated_at
+       CURRENT_TIMESTAMP                   AS feature_calculated_at
 
 FROM vw_identifier_columns                               id
 -- Base equities for reference columns
