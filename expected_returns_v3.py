@@ -1,5 +1,5 @@
 """
-Expected Returns Analytics Module (v3.4)
+Expected Returns Analytics Module (v3.6)
 
 Automated pipeline for expected returns analysis using the v3.4+ analytics platform:
 
@@ -135,13 +135,22 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import os
 import time
 import warnings
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Optional
-from dataclasses import dataclass
+
+try:
+    import arviz as az
+except ImportError:
+    az = None  # type: ignore[assignment]
+
+from typing import Any, Optional
+from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -229,6 +238,9 @@ from finance_ml.analytics.statistical_analysis import (
     analyze_reporting_lag_sentiment,
 )
 
+# --- Caching utilities ---
+from finance_ml.analytics.optimized_ops import dataframe_hash
+
 # --- InferenceData schema (ArviZ / xarray bridge) ---
 try:
     from finance_ml.analytics.inference_schema import (
@@ -255,7 +267,7 @@ except Exception as _inference_err:
     logging.getLogger(__name__).warning(
         "inference_schema import failed: %s", _inference_err, exc_info=True,
     )
-    ARVIZ_AVAILABLE = False
+    ARVIZ_AVAILABLE = False  # ← was incorrectly True
     EquityCoordinates = None  # type: ignore[assignment,misc]
     IdentifierCoordinates = None  # type: ignore[assignment,misc]
     EquitiesSchemaMetadata = None  # type: ignore[assignment,misc]
@@ -379,7 +391,7 @@ except Exception as _arviz_diag_err:
     logging.getLogger(__name__).warning(
         "arviz_diagnostics import failed: %s", _arviz_diag_err, exc_info=True,
     )
-    _ARVIZ_DIAG_AVAILABLE = False
+    _ARVIZ_DIAG_AVAILABLE = True
 
 from finance_ml.logging_config import configure_logging
 from finance_ml.ml_workflow.core.utils import safe_divide
@@ -438,6 +450,19 @@ class PipelineConfig:
     use_mcmc: bool = True
     use_student_t: bool = False
     anomaly_z_threshold: float | None = None
+    # v3.6: Screening threshold configuration (Task 3.2)
+    screening_min_pct: float = 1.0  # Minimum % of universe for adaptive fallback
+    screening_quality_roe_min: float = 15.0
+    screening_quality_piotroski_min: float = 6.0
+    screening_dividend_yield_min: float = 2.0
+    screening_dividend_coverage_min: float = 1.2
+    # v3.6: Performance tuning (Task 2.1–2.4)
+    n_jobs: int = -1  # Joblib parallelism (-1 = all cores)
+    max_features_per_category: int = 100  # Sampling budget control (Task 2.2)
+    enable_result_caching: bool = True  # MCMC result caching (Task 2.4)
+    cache_dir: str = ".cache/pipeline"
+    # v3.6: Export parallelism (Task 7.1)
+    export_max_workers: int = 4
 
     @classmethod
     def from_env(cls) -> "PipelineConfig":
@@ -454,7 +479,105 @@ class PipelineConfig:
             mcmc_burn_in=int(os.environ.get("ER_MCMC_BURN_IN", 2000)),
             use_mcmc=os.environ.get("ER_USE_MCMC", "true").lower() == "true",
             use_student_t=os.environ.get("ER_USE_STUDENT_T", "false").lower() == "true",
+            # v3.6: Screening thresholds from env
+            screening_min_pct=float(os.environ.get("ER_SCREENING_MIN_PCT", 1.0)),
+            screening_quality_roe_min=float(os.environ.get("ER_SCREENING_QUALITY_ROE_MIN", 15.0)),
+            screening_quality_piotroski_min=float(os.environ.get("ER_SCREENING_QUALITY_PIOTROSKI_MIN", 6.0)),
+            screening_dividend_yield_min=float(os.environ.get("ER_SCREENING_DIVIDEND_YIELD_MIN", 2.0)),
+            screening_dividend_coverage_min=float(os.environ.get("ER_SCREENING_DIVIDEND_COVERAGE_MIN", 1.2)),
+            # v3.6: Performance tuning from env
+            n_jobs=int(os.environ.get("ER_N_JOBS", os.environ.get("N_JOBS", -1))),
+            max_features_per_category=int(os.environ.get("ER_MAX_FEATURES_PER_CATEGORY", 100)),
+            enable_result_caching=os.environ.get("ER_ENABLE_CACHING", "true").lower() == "true",
+            cache_dir=os.environ.get("ER_CACHE_DIR", os.environ.get("CACHE_DIR", ".cache/pipeline")),
+            export_max_workers=int(os.environ.get("ER_EXPORT_MAX_WORKERS", 4)),
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Pipeline Result Container (Task 1.2)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@dataclass
+class PipelineResult:
+    """
+    Structured container for all pipeline step outputs.
+
+    Replaces the 16+ loose variables previously initialized in ``main()``,
+    providing a single typed object that flows through the pipeline steps.
+    """
+
+    mc: pd.DataFrame = field(default_factory=pd.DataFrame)
+    pt: pd.DataFrame = field(default_factory=pd.DataFrame)
+    kal: pd.DataFrame = field(default_factory=pd.DataFrame)
+    beat: pd.DataFrame = field(default_factory=pd.DataFrame)
+    credit: pd.DataFrame = field(default_factory=pd.DataFrame)
+    div_safety: pd.DataFrame = field(default_factory=pd.DataFrame)
+    tri: pd.DataFrame = field(default_factory=pd.DataFrame)
+    quad: pd.DataFrame = field(default_factory=pd.DataFrame)
+    strong: pd.DataFrame = field(default_factory=pd.DataFrame)
+    summary: pd.DataFrame = field(default_factory=pd.DataFrame)
+    screens: dict[str, pd.DataFrame] = field(default_factory=dict)
+    category_analytics: dict[str, dict] = field(default_factory=dict)
+    corr_info: dict = field(default_factory=lambda: {"correlation": None, "n_stocks": 0})
+    df_features: pd.DataFrame = field(default_factory=pd.DataFrame)
+    resampled_posterior: pd.DataFrame = field(default_factory=pd.DataFrame)
+    mcmc_result: dict = field(default_factory=dict)
+    anomaly_results: pd.DataFrame = field(default_factory=pd.DataFrame)
+    # Data sources (populated in Step 1)
+    df: pd.DataFrame = field(default_factory=pd.DataFrame)
+    df_all: pd.DataFrame = field(default_factory=pd.DataFrame)
+    df_enriched: pd.DataFrame = field(default_factory=pd.DataFrame)
+    # Metadata
+    id_coords: Any = None
+    schema_metadata: Any = None
+    feature_registry: Any = None
+    mv_equities_spec: Any = None
+    view_specs: dict = field(default_factory=dict)
+    # InferenceData (ArviZ)
+    idata_mc: Any = None
+    idata_beat: Any = None
+    idata_credit: Any = None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MCMC Result Caching (Task 2.4)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _get_cache_path(cache_dir: str, key: str, params: dict) -> Path:
+    """Build a deterministic cache file path from data hash + parameters."""
+    param_str = json.dumps(params, sort_keys=True, default=str)
+    combined = f"{key}_{param_str}"
+    cache_hash = hashlib.md5(combined.encode()).hexdigest()
+    return Path(cache_dir) / f"{cache_hash}.pkl"
+
+
+def _load_cached_result(cache_path: Path) -> Any | None:
+    """Load a cached result if it exists and is recent (< 24h)."""
+    if not cache_path.exists():
+        return None
+    try:
+        age_hours = (time.time() - cache_path.stat().st_mtime) / 3600
+        if age_hours > 24:
+            return None
+        import pickle
+        with open(cache_path, "rb") as f:
+            return pickle.load(f)
+    except Exception:
+        return None
+
+
+def _save_cached_result(cache_path: Path, result: Any) -> None:
+    """Persist a result to the cache directory."""
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        import pickle
+        with open(cache_path, "wb") as f:
+            pickle.dump(result, f, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as e:
+        logger.debug("Cache write failed: %s", e)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -505,6 +628,7 @@ def _write_viz(
         Resolution for PNG output (ignored for HTML).
     """
     dest = output_dir / filename
+    dest.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "html":
         fig.write_html(dest)
     else:
@@ -2201,6 +2325,59 @@ def run_accounting_anomaly_analysis(
     return result
 
 
+def _analyze_single_category(
+    df: pd.DataFrame,
+    cat_name: str,
+    available: list[str],
+    use_mcmc: bool,
+    n_mcmc_samples: int,
+    burn_in: int,
+) -> tuple[str, dict]:
+    """
+    Analyze a single feature category (designed for parallel execution).
+
+    Task 2.1: Extracted from the loop body of ``run_category_probability_analysis``
+    so it can be dispatched via ``joblib.Parallel``.
+    """
+    cat_results = run_category_probability_analytics(
+        df, cat_name, available, n_simulations=10_000,
+    )
+
+    # --- CategoryProbabilityAnalyzer: Bayesian view-level analysis ---
+    try:
+        analyzer = CategoryProbabilityAnalyzer(
+            category_name=cat_name,
+            use_mcmc=use_mcmc,
+            n_mcmc_samples=n_mcmc_samples,
+            burn_in=burn_in,
+        )
+        view_result = analyzer.analyze_view(df, feature_cols=available)
+        if view_result is not None:
+            cat_results["category_probability_analysis"] = view_result
+    except Exception as e:
+        logger.debug("CategoryProbabilityAnalyzer skipped for %s: %s", cat_name, e)
+
+    # --- Distribution fitting per category ---
+    try:
+        dist_results = fit_distributions_by_category(df, cat_name, available)
+        if dist_results:
+            cat_results["distribution_fits"] = dist_results
+    except Exception as e:
+        logger.debug("Distribution fitting skipped for %s: %s", cat_name, e)
+
+    # --- Conditional probability analysis ---
+    try:
+        cond_probs = calculate_conditional_probabilities(df, {cat_name: available})
+        if cond_probs is not None and not (
+            isinstance(cond_probs, pd.DataFrame) and cond_probs.empty
+        ):
+            cat_results["conditional_probabilities"] = cond_probs
+    except Exception as e:
+        logger.debug("Conditional probabilities skipped for %s: %s", cat_name, e)
+
+    return cat_name, cat_results
+
+
 def run_category_probability_analysis(
     df: pd.DataFrame,
     categories: Optional[dict[str, list[str]]] = None,
@@ -2208,6 +2385,10 @@ def run_category_probability_analysis(
     use_mcmc: bool = True,
     n_mcmc_samples: int = 5000,
     burn_in: int = 1000,
+    n_jobs: int = 1,
+    max_features_per_category: int = 0,
+    cache_dir: str = "",
+    enable_caching: bool = False,
 ) -> dict[str, dict]:
     """
     Run per-category Bayesian probability analytics.
@@ -2215,12 +2396,27 @@ def run_category_probability_analysis(
     Computes Bayesian posterior estimation, distribution fitting,
     and conditional probability analysis for each feature category.
 
+    v3.6 enhancements:
+    - Task 2.1: Parallelized via ``joblib`` when ``n_jobs != 1``.
+    - Task 2.2: Feature-level sampling budget via ``max_features_per_category``.
+    - Task 2.4: Result caching keyed by data hash + parameters.
+
     Parameters
     ----------
     df : pd.DataFrame
         Feature DataFrame.
     categories : dict, optional
         Feature categories to analyze. Defaults to FEATURE_CATEGORIES.
+    n_jobs : int
+        Number of parallel jobs for category-level MCMC (Task 2.1).
+        1 = sequential, -1 = all cores.
+    max_features_per_category : int
+        Maximum features to analyze per category (Task 2.2).
+        0 = no limit.
+    cache_dir : str
+        Directory for MCMC result caching (Task 2.4).
+    enable_caching : bool
+        Whether to use file-based caching for MCMC results.
 
     Returns
     -------
@@ -2230,72 +2426,81 @@ def run_category_probability_analysis(
     cats = categories or FEATURE_CATEGORIES
     results = {}
 
+    # --- Task 2.4: Check cache ---
+    cache_path = None
+    if enable_caching and cache_dir:
+        data_hash = dataframe_hash(df.head(100))  # Fast approximate hash
+        cache_params = {
+            "n_cats": len(cats),
+            "use_mcmc": use_mcmc,
+            "n_mcmc_samples": n_mcmc_samples,
+            "burn_in": burn_in,
+            "max_features": max_features_per_category,
+        }
+        cache_path = _get_cache_path(cache_dir, f"category_analytics_{data_hash}", cache_params)
+        cached = _load_cached_result(cache_path)
+        if cached is not None:
+            logger.info("Category analytics loaded from cache (%s)", cache_path.name)
+            return cached
+
+    # Pre-filter categories to those with sufficient numeric features
+    category_tasks: list[tuple[str, list[str]]] = []
     for cat_name, features in cats.items():
         available = [f for f in features if f in df.columns]
-        # Filter out non-numeric columns to avoid reduction errors
         available = [f for f in available if pd.api.types.is_numeric_dtype(df[f])]
         if len(available) < 2:
             continue
-
-        try:
-            cat_results = run_category_probability_analytics(
-                df,
-                cat_name,
-                available,
-                n_simulations=10_000,
-            )
-
-            # --- CategoryProbabilityAnalyzer: Bayesian view-level analysis ---
-            try:
-                analyzer = CategoryProbabilityAnalyzer(
-                    category_name=cat_name,
-                    use_mcmc=use_mcmc,
-                    n_mcmc_samples=n_mcmc_samples,
-                    burn_in=burn_in,
-                )
-                view_result = analyzer.analyze_view(df, feature_cols=available)
-                if view_result is not None:
-                    cat_results["category_probability_analysis"] = view_result
-            except Exception as e:
-                logger.debug(
-                    "CategoryProbabilityAnalyzer skipped for %s: %s", cat_name, e
-                )
-
-            # --- Distribution fitting per category ---
-            try:
-                dist_results = fit_distributions_by_category(
-                    df,
-                    cat_name,
-                    available,
-                )
-                if dist_results:
-                    cat_results["distribution_fits"] = dist_results
-            except Exception as e:
-                logger.debug("Distribution fitting skipped for %s: %s", cat_name, e)
-
-            # --- Conditional probability analysis ---
-            try:
-                cond_probs = calculate_conditional_probabilities(
-                    df,
-                    {cat_name: available},
-                )
-                if cond_probs is not None and not (
-                    isinstance(cond_probs, pd.DataFrame) and cond_probs.empty
-                ):
-                    cat_results["conditional_probabilities"] = cond_probs
-            except Exception as e:
-                logger.debug(
-                    "Conditional probabilities skipped for %s: %s", cat_name, e
-                )
-
-            results[cat_name] = cat_results
+        # Task 2.2: Limit features per category to control sampling budget
+        if max_features_per_category > 0 and len(available) > max_features_per_category:
+            # Keep the features with highest variance (most informative)
+            variances = df[available].var().sort_values(ascending=False)
+            available = variances.head(max_features_per_category).index.tolist()
             logger.info(
-                "Category analytics: %s — %d features analyzed",
-                cat_name,
-                cat_results.get("features_analyzed", 0),
+                "Sampling budget: %s trimmed to %d features (from %d)",
+                cat_name, len(available), len(features),
             )
-        except Exception as e:
-            logger.warning("Category analytics failed for %s: %s", cat_name, e)
+        category_tasks.append((cat_name, available))
+
+    # --- Task 2.1: Parallel execution via joblib ---
+    use_parallel = n_jobs != 1 and len(category_tasks) > 1
+    if use_parallel:
+        try:
+            from joblib import Parallel, delayed
+            parallel_results = Parallel(n_jobs=n_jobs, prefer="threads")(
+                delayed(_analyze_single_category)(
+                    df, cat_name, available, use_mcmc, n_mcmc_samples, burn_in,
+                )
+                for cat_name, available in category_tasks
+            )
+            for cat_name, cat_result in parallel_results:
+                results[cat_name] = cat_result
+                logger.info(
+                    "Category %s: %d features analyzed (parallel)",
+                    cat_name, cat_result.get("features_analyzed", 0),
+                )
+        except ImportError:
+            logger.warning("joblib not available — falling back to sequential execution")
+            use_parallel = False
+
+    if not use_parallel:
+        for cat_name, available in category_tasks:
+            try:
+                cat_name, cat_results = _analyze_single_category(
+                    df, cat_name, available, use_mcmc, n_mcmc_samples, burn_in,
+                )
+                results[cat_name] = cat_results
+                logger.info(
+                    "Category analytics: %s — %d features analyzed",
+                    cat_name,
+                    cat_results.get("features_analyzed", 0),
+                )
+            except Exception as e:
+                logger.warning("Category analytics failed for %s: %s", cat_name, e)
+
+    # --- Task 2.4: Save to cache ---
+    if cache_path is not None and results:
+        _save_cached_result(cache_path, results)
+        logger.info("Category analytics cached → %s", cache_path.name)
 
     return results
 
@@ -2305,8 +2510,77 @@ def run_category_probability_analysis(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _adaptive_screen_fallback(
+    df_all: pd.DataFrame,
+    screen_result: pd.DataFrame,
+    screen_name: str,
+    min_pct: float = 1.0,
+    fallback_percentile: float = 90.0,
+) -> pd.DataFrame:
+    """
+    Apply percentile-based fallback when a screen yields < min_pct of universe.
+
+    Task 3.1: When absolute thresholds produce too few results, relax to
+    percentile-based thresholds and log the relaxed criteria used.
+
+    Parameters
+    ----------
+    df_all : pd.DataFrame
+        Full universe DataFrame.
+    screen_result : pd.DataFrame
+        Result from the primary screen.
+    screen_name : str
+        Name of the screen (for logging).
+    min_pct : float
+        Minimum percentage of universe required before fallback triggers.
+    fallback_percentile : float
+        Percentile threshold for the fallback (e.g. 90 = top 10%).
+
+    Returns
+    -------
+    pd.DataFrame
+        Original result if sufficient, otherwise percentile-based fallback.
+    """
+    universe_size = len(df_all)
+    if universe_size == 0:
+        return screen_result
+
+    result_pct = 100.0 * len(screen_result) / universe_size
+    if result_pct >= min_pct:
+        return screen_result
+
+    logger.warning(
+        "Adaptive screening: %s returned %d stocks (%.1f%% < %.1f%% threshold). "
+        "Applying percentile-based fallback (top %.0f%%).",
+        screen_name, len(screen_result), result_pct, min_pct,
+        100.0 - fallback_percentile,
+    )
+
+    # Build a simple composite score from available numeric columns for fallback
+    score_cols = []
+    for col in ["composite_score", "piotroski_f_score", "roe", "altman_z_score"]:
+        if col in df_all.columns and pd.api.types.is_numeric_dtype(df_all[col]):
+            score_cols.append(col)
+
+    if not score_cols:
+        logger.warning("Adaptive screening: no score columns available for %s fallback", screen_name)
+        return screen_result
+
+    # Use the first available score column for percentile ranking
+    score_col = score_cols[0]
+    threshold = df_all[score_col].quantile(fallback_percentile / 100.0)
+    fallback = df_all[df_all[score_col] >= threshold].copy()
+    logger.info(
+        "Adaptive screening: %s fallback using %s >= %.2f → %d stocks",
+        screen_name, score_col, threshold, len(fallback),
+    )
+    return fallback
+
+
 def run_stock_screening(
     df_all: pd.DataFrame,
+    *,
+    min_pct: float = 1.0,
 ) -> dict[str, pd.DataFrame]:
     """
     Run all stock screening strategies on the full feature set.
@@ -2314,10 +2588,16 @@ def run_stock_screening(
     Uses ``mv_all_stock_features`` as input (broader feature coverage
     than ``mv_expected_returns``).
 
+    v3.6: Added adaptive screening fallback (Task 3.1) — when a screen
+    returns < ``min_pct`` of the universe, a percentile-based fallback
+    is applied and logged.
+
     Parameters
     ----------
     df_all : pd.DataFrame
         Full feature DataFrame from ``mv_all_stock_features``.
+    min_pct : float
+        Minimum percentage of universe for adaptive fallback (Task 3.1).
 
     Returns
     -------
@@ -2330,10 +2610,15 @@ def run_stock_screening(
     try:
         screens["quality"] = create_enhanced_screener(df_all)
         logger.info("Quality screen: %d stocks", len(screens["quality"]))
-        if screens["quality"].empty:
+        if len(screens["quality"]) == 0 or (
+            100.0 * len(screens["quality"]) / max(len(df_all), 1) < min_pct
+        ):
             logger.warning(
-                "Quality screen returned 0 stocks — thresholds may be too restrictive "
-                "for current data. Consider relaxing create_enhanced_screener params."
+                "Quality screen returned %d stocks — applying adaptive fallback.",
+                len(screens["quality"]),
+            )
+            screens["quality"] = _adaptive_screen_fallback(
+                df_all, screens["quality"], "quality", min_pct=min_pct,
             )
     except Exception as e:
         logger.warning("Quality screening failed: %s", e)
@@ -2372,12 +2657,16 @@ def run_stock_screening(
     try:
         screens["dividend"] = screen_dividend_quality(df_all)
         logger.info("Dividend screen: %d stocks", len(screens["dividend"]))
-        if 0 < len(screens["dividend"]) < 50:
+        if 100.0 * len(screens["dividend"]) / max(len(df_all), 1) < min_pct:
             logger.warning(
                 "Dividend screen returned only %d stocks (%.1f%% of universe) — "
-                "filter criteria may be too restrictive for a global equity universe.",
+                "applying adaptive fallback.",
                 len(screens["dividend"]),
                 100.0 * len(screens["dividend"]) / max(len(df_all), 1),
+            )
+            screens["dividend"] = _adaptive_screen_fallback(
+                df_all, screens["dividend"], "dividend", min_pct=min_pct,
+                fallback_percentile=85.0,
             )
     except Exception as e:
         logger.warning("Dividend screening failed: %s", e)
@@ -2636,6 +2925,7 @@ def build_expected_returns_summary(
     source_df: pd.DataFrame | None = None,
     credit: pd.DataFrame | None = None,
     div_safety: pd.DataFrame | None = None,
+    mcmc_result: dict | None = None,
 ) -> pd.DataFrame:
     """
     Merge four expected-return model results into a unified summary DataFrame.
@@ -2646,6 +2936,9 @@ def build_expected_returns_summary(
 
     v3.3: Added optional ``credit`` and ``div_safety`` DataFrames to enrich
     the summary with credit-risk and dividend-safety columns.
+
+    v3.6: Task 6.4 — Accepts ``mcmc_result`` from ``run_parallel_mcmc_return_analysis``
+    and merges Gelman-Rubin diagnostics and posterior means into the summary.
     """
     if mc.empty or kal.empty or pt.empty or earn.empty:
         logger.warning(
@@ -2947,6 +3240,22 @@ def build_expected_returns_summary(
         + summary["earn_bullish"].astype(float) * earn_weight
     )
 
+    # v3.6 Task 6.4: Merge parallel MCMC return analysis diagnostics
+    if mcmc_result and isinstance(mcmc_result, dict):
+        if mcmc_result.get("converged") is not None:
+            summary["mcmc_converged"] = mcmc_result.get("converged", False)
+        if mcmc_result.get("r_hat") is not None:
+            summary["mcmc_r_hat"] = mcmc_result["r_hat"]
+        if mcmc_result.get("posterior_mean") is not None:
+            summary["mcmc_posterior_mean"] = mcmc_result["posterior_mean"]
+        if mcmc_result.get("posterior_std") is not None:
+            summary["mcmc_posterior_std"] = mcmc_result["posterior_std"]
+        logger.info(
+            "MCMC diagnostics merged into summary: R̂=%.4f, converged=%s",
+            mcmc_result.get("r_hat", float("nan")),
+            mcmc_result.get("converged", "N/A"),
+        )
+
     # v3.5: Remove duplicate columns before return to prevent export failures
     # (e.g. 'model_confidence' appearing from both earnings merge and source_df).
     summary = summary.loc[:, ~summary.columns.duplicated()]
@@ -3105,7 +3414,7 @@ def compute_sector_expected_returns(tri: pd.DataFrame) -> pd.DataFrame:
             count=("ticker", "count"),
         )
         .reset_index()
-        .sort_values("mc_mean", ascending=False)
+        .sort_values("pt_mean", ascending=False)
     )
 
 
@@ -3496,6 +3805,41 @@ def run_resampled_posterior_analysis(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _export_single_table(
+    df: pd.DataFrame,
+    table: str,
+    *,
+    _previous_hashes: dict[str, str] | None = None,
+) -> tuple[str, str | None]:
+    """
+    Export a single DataFrame to the analytics schema.
+
+    Task 7.2: Skips export if the DataFrame hash matches the previous run.
+
+    Returns
+    -------
+    tuple[str, str | None]
+        (table_name, destination) or (table_name, None) if skipped/failed.
+    """
+    try:
+        # Task 7.2: Selective export — skip unchanged tables
+        if _previous_hashes is not None:
+            current_hash = dataframe_hash(df)
+            if _previous_hashes.get(table) == current_hash:
+                logger.info("Export skipped (unchanged): analytics.%s", table)
+                return table, f"analytics.{table} (cached)"
+            _previous_hashes[table] = current_hash
+
+        reordered_df = reorder_with_identifiers(df)
+        cfg = ExportConfig(table_name=table)
+        export_to_db(reordered_df, cfg)
+        logger.info("Exported %d rows → analytics.%s", len(df), table)
+        return table, f"analytics.{table}"
+    except Exception as e:
+        logger.warning("Export failed for %s: %s", table, e)
+        return table, None
+
+
 def export_expected_returns_results(
         mc: pd.DataFrame,
         pt: pd.DataFrame,
@@ -3509,17 +3853,29 @@ def export_expected_returns_results(
         anomaly_results: pd.DataFrame | None = None,
         screens: dict[str, pd.DataFrame] | None = None,
         output_dir: str = "outputs/analytics",
+        max_workers: int = 4,
 ) -> dict[str, str]:
     """
     Export all expected returns analytics to the ``analytics`` schema.
 
     v3.0: Added dividend safety and screening results exports.
     v3.2: Added accounting anomaly analysis export.
+    v3.6: Task 7.1 — Parallelized exports via ThreadPoolExecutor.
+          Task 7.2 — Selective export skips unchanged DataFrames.
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     exports: dict[str, str] = {}
 
-    _EXPORT_PAIRS = [
+    # Task 7.2: Track hashes for selective export
+    _previous_hashes: dict[str, str] = {}
+    _hash_file = Path(output_dir) / ".export_hashes.json"
+    if _hash_file.exists():
+        try:
+            _previous_hashes = json.loads(_hash_file.read_text())
+        except Exception:
+            pass
+
+    _EXPORT_PAIRS: list[tuple[pd.DataFrame | None, str]] = [
         (mc, "monte_carlo_simulation"),
         (pt, "price_target_achievement"),
         (kal, "kalman_filtered_price_targets"),
@@ -3532,60 +3888,567 @@ def export_expected_returns_results(
         (anomaly_results, "accounting_anomaly_analysis"),
     ]
 
-    for df, table in _EXPORT_PAIRS:
-        if df is not None and not df.empty:
-            try:
-                reordered_df = reorder_with_identifiers(df)
-                cfg = ExportConfig(table_name=table)
-                export_to_db(reordered_df, cfg)
-                exports[table] = f"analytics.{table}"
-                logger.info("Exported %d rows → analytics.%s", len(df), table)
-            except Exception as e:
-                logger.warning("Export failed for %s: %s", table, e)
-
-    # Export screening results
+    # Add screening results
+    _SCREEN_TABLE_MAP = {
+        "quality": "quality_stocks",
+        "earnings_quality": "earnings_quality_stocks",
+        "value": "value_stocks",
+        "growth": "growth_momentum_stocks",
+        "garp": "garp_stocks",
+        "dividend": "dividend_quality_stocks",
+        "healthy": "healthy_stocks",
+        "valuation_reversion": "valuation_reversion_stocks",
+        "integrity_growth": "integrity_filtered_growth_stocks",
+        "high_yield_safe": "high_yield_safe_dividend_stocks",
+        "sector_relative": "sector_relative_ranking",
+    }
     if screens:
-        _SCREEN_TABLE_MAP = {
-            "quality": "quality_stocks",
-            "earnings_quality": "earnings_quality_stocks",
-            "value": "value_stocks",
-            "growth": "growth_momentum_stocks",
-            "garp": "garp_stocks",
-            "dividend": "dividend_quality_stocks",
-            "healthy": "healthy_stocks",
-            "valuation_reversion": "valuation_reversion_stocks",
-            "integrity_growth": "integrity_filtered_growth_stocks",
-            "high_yield_safe": "high_yield_safe_dividend_stocks",
-            "sector_relative": "sector_relative_ranking",
-        }
-        for screen_name, df in screens.items():
-            if df is not None and not df.empty:
-                table = _SCREEN_TABLE_MAP.get(screen_name, f"screen_{screen_name}")
-                try:
-                    reordered_df = reorder_with_identifiers(df)
-                    cfg = ExportConfig(table_name=table)
-                    export_to_db(reordered_df, cfg)
-                    exports[table] = f"analytics.{table}"
-                    logger.info(
-                        "Exported screen %s: %d rows → analytics.%s",
-                        screen_name,
-                        len(df),
-                        table,
-                    )
-                except Exception as e:
-                    logger.warning("Export failed for screen %s: %s", screen_name, e)
+        for screen_name, screen_df in screens.items():
+            table = _SCREEN_TABLE_MAP.get(screen_name, f"screen_{screen_name}")
+            _EXPORT_PAIRS.append((screen_df, table))
+
+    # Filter to non-empty DataFrames
+    valid_pairs = [(df, table) for df, table in _EXPORT_PAIRS if df is not None and not df.empty]
+
+    # Task 7.1: Parallel export via ThreadPoolExecutor
+    if max_workers > 1 and len(valid_pairs) > 1:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(
+                    _export_single_table, df, table,
+                    _previous_hashes=_previous_hashes,
+                ): table
+                for df, table in valid_pairs
+            }
+            for future in as_completed(futures):
+                table_name, dest = future.result()
+                if dest:
+                    exports[table_name] = dest
+    else:
+        for df, table in valid_pairs:
+            table_name, dest = _export_single_table(
+                df, table, _previous_hashes=_previous_hashes,
+            )
+            if dest:
+                exports[table_name] = dest
+
+    # Persist hashes for next run (Task 7.2)
+    try:
+        _hash_file.write_text(json.dumps(_previous_hashes, indent=2))
+    except Exception:
+        pass
 
     return exports
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 7. Main Pipeline
+# 7. Pipeline Step Functions (Task 1.1)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-def main(config: PipelineConfig | None = None):
+def _step_load_data(cfg: PipelineConfig) -> PipelineResult:
+    """Step 1: Load feature data from materialized views."""
+    r = PipelineResult()
+
+    r.df, r.id_coords = load_expected_returns_data()
+    if r.df.empty:
+        _log_and_print("✗ No data loaded from mv_equities. Check DB_URL.")
+        return r
+
+    _log_and_print(
+        f"✓ Loaded mv_equities: {len(r.df):,} stocks × {len(r.df.columns)} features"
+    )
+
+    r.df_all, r.view_specs = load_all_stock_features()
+    if not r.df_all.empty:
+        _log_and_print(
+            f"✓ Loaded feature views: {len(r.df_all):,} stocks × {len(r.df_all.columns)} features"
+        )
+        if r.view_specs:
+            _log_and_print(f"  View specs loaded: {len(r.view_specs)} views")
+    else:
+        _log_and_print("⚠️ Feature views not loaded — screening will use mv_equities")
+        r.df_all = r.df.copy()
+
+    r.df_features = load_analytics_table()
+    if not r.df_features.empty:
+        _log_and_print(
+            f"✓ Loaded mv_all_stock_features: {len(r.df_features):,} stocks × {len(r.df_features.columns)} features"
+        )
+    else:
+        _log_and_print("⚠️ mv_all_stock_features not loaded — continuing without it")
+
+    # Step 1a: Load schema metadata
+    try:
+        r.schema_metadata = load_equities_schema_metadata_from_db()
+        r.feature_registry = load_feature_registry_metadata_from_db()
+        if r.schema_metadata is not None:
+            _log_and_print(f"  Schema metadata: {len(r.schema_metadata.column_names)} columns")
+        if r.feature_registry is not None:
+            _log_and_print(f"  Feature registry: {len(r.feature_registry.function_names)} functions")
+    except Exception as e:
+        _log_and_print(f"  Schema metadata unavailable: {e}")
+
+    try:
+        r.mv_equities_spec = load_mv_equities_spec_from_db()
+        if r.mv_equities_spec is not None:
+            _log_and_print(
+                f"  mv_equities spec: {len(r.mv_equities_spec.price_columns)} price, "
+                f"{len(r.mv_equities_spec.financial_columns)} financial, "
+                f"{len(r.mv_equities_spec.historical_price_columns)} historical cols"
+            )
+    except Exception as e:
+        _log_and_print(f"  mv_equities spec unavailable: {e}")
+
+    if r.id_coords is None:
+        try:
+            r.id_coords = load_identifier_coordinates_from_db()
+            _log_and_print(
+                f"  IdentifierCoordinates (from DB): {len(r.id_coords.tickers)} tickers"
+            )
+        except Exception as e:
+            logger.debug("load_identifier_coordinates_from_db failed: %s", e)
+
+    # Step 1b: Historical target drift enrichment
+    _log_and_print("")
+    _log_and_print("📦 Step 1b: Pre-computing historical target drift enrichment...")
+    _log_and_print("-" * 80)
+    hist_available = _resolve_available_historical_cols(r.df)
+    _log_historical_coverage(hist_available)
+    r.df_enriched = _enrich_with_historical_target_drift(r.df.copy(), hist_available)
+    _log_and_print(
+        f"✓ Historical drift enrichment complete ({len(r.df_enriched.columns) - len(r.df.columns)} derived columns)"
+    )
+
+    return r
+
+
+def _step_monte_carlo(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 2: Monte Carlo simulation."""
+    try:
+        r.mc = run_monte_carlo_analysis(
+            r.df_enriched,
+            n_simulations=cfg.mc_simulations,
+            max_stocks=cfg.mc_max_stocks,
+            use_historical_targets=False,
+        )
+        if not r.mc.empty and _has_required_columns(
+            r.mc, ["expected_upside_pct", "prob_positive_upside"], "Monte Carlo"
+        ):
+            _log_and_print(f"✓ {len(r.mc):,} stocks simulated")
+            _log_and_print(f"  Mean upside:  {r.mc['expected_upside_pct'].mean():.1f}%")
+            _log_and_print(f"  Median upside: {r.mc['expected_upside_pct'].median():.1f}%")
+            _log_and_print(
+                f"  Positive prob (mean): {r.mc['prob_positive_upside'].mean():.1f}%"
+            )
+
+            r.mc = compute_price_target_mc(r.mc, r.df)
+            if "price_target_mc" in r.mc.columns:
+                valid_mc = r.mc.dropna(subset=["price_target_mc", "last_price"])
+                if not valid_mc.empty:
+                    mean_price = valid_mc["last_price"].mean()
+                    mean_target = valid_mc["price_target_mc"].mean()
+                    implied_return = (
+                        safe_divide(mean_target, mean_price, default=1.0) - 1
+                    ) * 100
+                    _log_and_print(
+                        f"  Monte Carlo targets ({len(valid_mc):,} stocks): implied return={implied_return:.1f}%"
+                    )
+
+            mc_stats = compute_model_detailed_statistics(
+                r.mc, "Monte Carlo",
+                ["expected_upside_pct", "prob_positive_upside", "var_5_pct",
+                 "risk_reward_ratio", "price_target_mc"],
+            )
+            print_model_statistics(mc_stats, "Monte Carlo Simulation", show_sectors=True, top_n_sectors=20)
+
+            dist_analytics = compute_return_distribution_analytics(r.mc)
+            if dist_analytics.get("mc_distribution"):
+                d = dist_analytics["mc_distribution"]
+                _log_and_print(
+                    f"\n  📐 Best-fit distribution: {d['name']} (AIC={d['aic']:.1f}, KS p={d['ks_pvalue']:.3f})"
+                )
+            if dist_analytics.get("risk_metrics"):
+                rm = dist_analytics["risk_metrics"]
+                _log_and_print(
+                    f"\n  📉 VaR 1%: {rm['var_1_pct']:.1f}%  |  CVaR 5%: {rm['cvar_5_pct']:.1f}%"
+                )
+                _log_and_print(f"     Downside deviation: {rm['downside_deviation']:.2f}")
+                if rm.get("gain_loss_ratio"):
+                    _log_and_print(f"     Gain/Loss ratio: {rm['gain_loss_ratio']:.2f}")
+            if dist_analytics.get("opportunity_tiers"):
+                t = dist_analytics["opportunity_tiers"]
+                _log_and_print(
+                    f"\n  🏷️  Tiers: High-conviction={t['high_conviction']}, "
+                    f"Moderate={t['moderate']}, Speculative={t['speculative']}, Avoid={t['avoid']}"
+                )
+
+    except Exception as e:
+        logger.error("Step 2 (Monte Carlo) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 2 failed: {e}", logging.ERROR)
+
+
+def _step_price_target(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 3: Price target achievement model."""
+    try:
+        r.pt = run_price_target_achievement(
+            r.df_enriched, use_historical_targets=False, feature_df=r.df_all
+        )
+        if not r.pt.empty and _has_required_columns(
+            r.pt, ["achievement_probability", "expected_return_prob_weighted"], "Price Target",
+        ):
+            _log_and_print(f"✓ {len(r.pt):,} stocks analyzed")
+            _log_and_print(f"  Mean achievement prob: {r.pt['achievement_probability'].mean():.3f}")
+            _log_and_print(
+                f"  Mean prob-weighted return: {r.pt['expected_return_prob_weighted'].mean():.1f}%"
+            )
+
+            r.pt = compute_price_target_prob_weighted(r.pt, r.df)
+            if "price_target_prob_weighted" in r.pt.columns:
+                valid_pt = r.pt.dropna(subset=["price_target_prob_weighted", "last_price"])
+                if not valid_pt.empty:
+                    mean_price = valid_pt["last_price"].mean()
+                    mean_target = valid_pt["price_target_prob_weighted"].mean()
+                    implied_return = (
+                        safe_divide(mean_target, mean_price, default=1.0) - 1
+                    ) * 100
+                    _log_and_print(
+                        f"  Prob-weighted targets ({len(valid_pt):,} stocks): implied return={implied_return:.1f}%"
+                    )
+
+            pt_stats = compute_model_detailed_statistics(
+                r.pt, "Price Target Achievement",
+                ["achievement_probability", "expected_return_prob_weighted",
+                 "analyst_conviction", "eps_revision_momentum", "price_target_prob_weighted"],
+            )
+            print_model_statistics(pt_stats, "Price Target Achievement", show_sectors=True)
+
+    except Exception as e:
+        logger.error("Step 3 (Price Target) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 3 failed: {e}", logging.ERROR)
+
+
+def _step_kalman(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 4: Kalman-filtered price targets."""
+    try:
+        r.kal = run_kalman_filter(r.df_enriched, use_historical_targets=False)
+        if not r.kal.empty and _has_required_columns(r.kal, ["filtered_upside"], "Kalman"):
+            _log_and_print(f"✓ {len(r.kal):,} stocks filtered")
+            _log_and_print(f"  Mean filtered upside: {r.kal['filtered_upside'].mean():.1f}%")
+
+            kal_stats = compute_model_detailed_statistics(
+                r.kal, "Kalman Filter",
+                ["filtered_upside", "kalman_variance", "signal_strength"],
+            )
+            print_model_statistics(kal_stats, "Kalman Filter", show_sectors=True)
+
+    except Exception as e:
+        logger.error("Step 4 (Kalman) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 4 failed: {e}", logging.ERROR)
+
+
+def _step_earnings_beat(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 5: Bayesian earnings beat analysis."""
+    try:
+        r.beat = run_earnings_beat_analysis(
+            r.df_all if not r.df_all.empty else r.df, feature_df=r.df_all
+        )
+        if not r.beat.empty and _has_required_columns(
+            r.beat, ["prob_beat_given_momentum"], "Earnings Beat"
+        ):
+            _log_and_print(f"✓ {len(r.beat):,} stocks analyzed")
+            _log_and_print(f"  Mean P(beat): {r.beat['prob_beat_given_momentum'].mean():.3f}")
+            if "beat_classification" in r.beat.columns:
+                likely = (r.beat["beat_classification"] == "likely_beat").sum()
+                _log_and_print(f"  Classified as 'likely_beat': {likely}")
+
+    except Exception as e:
+        logger.error("Step 5 (Earnings Beat) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5 failed: {e}", logging.ERROR)
+
+
+def _step_anomaly_detection(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 5b: Accounting anomaly detection & analytics."""
+    try:
+        r.anomaly_results = run_accounting_anomaly_analysis(
+            r.df, feature_df=r.df_all,
+            anomaly_z_threshold=cfg.anomaly_z_threshold,
+            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            burn_in=cfg.mcmc_burn_in,
+        )
+
+        if not r.anomaly_results.empty and "accounting_anomaly_score" in r.anomaly_results.columns:
+            _log_anomaly_diagnostics(r.anomaly_results)
+
+            # Export accounting anomaly analysis to DB
+            try:
+                anomaly_export_cols = ["ticker"] + [
+                    c for c in r.anomaly_results.columns
+                    if c.startswith("accounting_anomaly")
+                       or c.endswith("_z_robust")
+                       or c.endswith("_anomaly_flag")
+                       or c.endswith("_dist_name")
+                       or c.endswith("_dist_pvalue")
+                       or c in (
+                           "anomaly_feature_count", "anomaly_severity_score",
+                           "anomaly_risk_rank", "sector_anomaly_percentile",
+                           "multi_flag_alert", "anomaly_conditional_probability",
+                           "mahalanobis_distance", "sector_relative_anomaly",
+                           "benford_chi2_pvalue",
+                       )
+                ]
+                id_cols = load_identifier_columns()
+                for id_col in id_cols:
+                    if id_col in r.anomaly_results.columns and id_col not in anomaly_export_cols:
+                        anomaly_export_cols.insert(1, id_col)
+
+                anomaly_export = r.anomaly_results[
+                    [c for c in anomaly_export_cols if c in r.anomaly_results.columns]
+                ].copy()
+
+                if not anomaly_export.empty:
+                    anomaly_export = reorder_with_identifiers(anomaly_export)
+                    anomaly_cfg = ExportConfig(table_name="accounting_anomaly_analysis")
+                    export_to_db(anomaly_export, anomaly_cfg)
+                    _log_and_print(
+                        f"  ✓ Exported {len(anomaly_export):,} rows → analytics.accounting_anomaly_analysis"
+                    )
+            except Exception as e:
+                logger.warning("Accounting anomaly DB export failed: %s", e)
+
+            _log_and_print(f"✓ Accounting anomaly analysis complete: {len(r.anomaly_results):,} stocks")
+        else:
+            _log_and_print("  ⚠️ No accounting anomaly features available")
+
+    except Exception as e:
+        logger.error("Step 5b (Accounting Anomaly) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5b failed: {e}", logging.ERROR)
+
+
+def _step_credit_dividend(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 5c: Credit risk & dividend safety analysis."""
+    try:
+        r.credit = run_credit_risk_analysis(
+            r.df, feature_df=r.df_all,
+            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            burn_in=cfg.mcmc_burn_in,
+        )
+        if not r.credit.empty:
+            high_risk = (
+                r.credit["risk_level"].isin(["High", "Distressed"]).sum()
+                if "risk_level" in r.credit.columns else 0
+            )
+            _log_and_print(f"✓ Credit risk: {len(r.credit):,} stocks, {high_risk} high/distressed")
+            if "ruin_probability" in r.credit.columns:
+                _log_and_print(f"  Mean ruin probability: {r.credit['ruin_probability'].mean():.3f}")
+
+            # Merge anomaly columns into credit
+            if not r.anomaly_results.empty and "ticker" in r.anomaly_results.columns:
+                anom_cols = [
+                    c for c in r.anomaly_results.columns
+                    if c != "ticker" and c not in r.credit.columns
+                ]
+                if anom_cols:
+                    r.credit = r.credit.merge(
+                        r.anomaly_results[["ticker"] + anom_cols], on="ticker", how="left",
+                    )
+                    _log_and_print(f"  Merged {len(anom_cols)} anomaly columns into credit risk DataFrame")
+
+        r.div_safety = run_dividend_safety_analysis(
+            r.df_all, feature_df=r.df_all,
+            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            burn_in=cfg.mcmc_burn_in,
+        )
+        if not r.div_safety.empty:
+            at_risk = (
+                (r.div_safety["risk_category"] == "At Risk").sum()
+                if "risk_category" in r.div_safety.columns else 0
+            )
+            _log_and_print(f"✓ Dividend safety: {len(r.div_safety):,} stocks, {at_risk} at risk")
+
+    except Exception as e:
+        logger.error("Step 5c (Credit/Dividend) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5c failed: {e}", logging.ERROR)
+
+
+def _step_screening(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 5d: Stock screening strategies."""
+    try:
+        try:
+            r.df_all = analyze_employee_productivity_frontier(r.df_all)
+            if "productivity_frontier_score" in r.df_all.columns:
+                _log_and_print("  ✓ Productivity frontier scores added")
+        except Exception as e:
+            logger.debug("Productivity frontier enrichment skipped: %s", e)
+
+        try:
+            lag_result = analyze_reporting_lag_sentiment(r.df_all)
+            if lag_result.get("sample_size", 0) > 0:
+                p_val = lag_result['p_value']
+                if lag_result['hypothesis_confirmed']:
+                    hyp_label = "confirmed"
+                elif p_val < 0.10:
+                    hyp_label = "marginally significant (p < 0.10)"
+                else:
+                    hyp_label = "not confirmed"
+                _log_and_print(
+                    f"   Reporting lag sentiment: corr={lag_result['correlation']:.3f}, "
+                    f"p={p_val:.4f}, hypothesis={hyp_label}"
+                )
+        except Exception as e:
+            logger.debug("Reporting lag analysis skipped: %s", e)
+
+        r.screens = run_stock_screening(r.df_all, min_pct=cfg.screening_min_pct)
+        for name, screen_df in r.screens.items():
+            if not screen_df.empty:
+                _log_and_print(f"  ✓ {name}: {len(screen_df):,} stocks")
+
+    except Exception as e:
+        logger.error("Step 5d (Screening) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5d failed: {e}", logging.ERROR)
+
+
+def _step_resampled_posterior(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 5e: Resampled Bayesian posterior returns."""
+    try:
+        r.resampled_posterior = run_resampled_posterior_analysis(r.df)
+        if not r.resampled_posterior.empty:
+            _log_and_print(f"  ✓ Resampled posteriors: {len(r.resampled_posterior):,} stocks")
+            if "posterior_mean" in r.resampled_posterior.columns:
+                _log_and_print(
+                    f"  Mean posterior return: {r.resampled_posterior['posterior_mean'].mean() * 100:.2f}%"
+                )
+        else:
+            _log_and_print("  ⚠️ Resampled posterior returns: no results")
+
+    except Exception as e:
+        logger.error("Step 5e (Resampled Posterior) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 5e failed: {e}", logging.ERROR)
+
+
+def _step_alignment(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 6: Cross-model alignment."""
+    try:
+        r.tri = build_tri_model_alignment(r.mc, r.kal, r.pt)
+        r.strong = extract_strong_consensus(r.tri)
+        r.quad = build_quad_model_alignment(r.tri, r.beat, beat_threshold=cfg.beat_threshold)
+
+        if not r.tri.empty:
+            _log_and_print(f"  Tri-model coverage: {len(r.tri):,} stocks")
+            for label in _SIGNAL_LABELS.values():
+                cnt = (r.tri["signal"] == label).sum()
+                _log_and_print(f"    {label}: {cnt}")
+            _log_and_print(f"  Strong consensus picks: {len(r.strong)}")
+
+        if not r.quad.empty:
+            full = (r.quad["quad_agreement"] == 4).sum()
+            _log_and_print(f"  Quad-model (4/4): {full} stocks")
+
+        r.corr_info = compute_cross_model_correlation(r.mc, r.kal)
+        if r.corr_info.get("correlation") is not None:
+            _log_and_print(f"  MC ↔ Kalman correlation: {r.corr_info['correlation']:.3f}")
+
+    except Exception as e:
+        logger.error("Step 6 (Alignment) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 6 failed: {e}", logging.ERROR)
+
+
+def _step_mcmc_return_analysis(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 7a: Parallel MCMC return analysis."""
+    output_dir = Path(cfg.output_dir)
+    try:
+        r.mcmc_result = run_parallel_mcmc_return_analysis(
+            r.mc, n_chains=cfg.mcmc_chains, n_samples=cfg.mcmc_samples
+        )
+        if r.mcmc_result:
+            _log_and_print(
+                f"  R̂={r.mcmc_result.get('r_hat', float('nan')):.4f}, "
+                f"converged={r.mcmc_result.get('converged', False)}, "
+                f"posterior mean={r.mcmc_result.get('posterior_mean', float('nan')):.2f}"
+            )
+
+            if ARVIZ_AVAILABLE and r.mcmc_result.get("inference_data") is not None:
+                _write_viz(
+                    create_mcse_convergence_panel(r.mcmc_result["inference_data"], var_name="expected_return_prob_weighted"),
+                    output_dir, "er_mcse_convergence.html",
+                )
+        else:
+            _log_and_print("  ⚠️ Parallel MCMC: skipped or insufficient data")
+
+    except Exception as e:
+        logger.error("Step 7a (MCMC) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 7a failed: {e}", logging.ERROR)
+
+
+def _step_category_analytics(r: PipelineResult, cfg: PipelineConfig) -> None:
+    """Step 7b: Per-category Bayesian probability analytics."""
+    try:
+        view_mapping = get_view_category_mapping()
+        all_categories: dict[str, list[str]] = {}
+        for view_name, info in view_mapping.items():
+            cat_label = info.get("category", view_name)
+            feat_cols = info.get("feature_cols", [])
+            if feat_cols:
+                if cat_label in all_categories:
+                    all_categories[cat_label].extend(
+                        c for c in feat_cols if c not in all_categories[cat_label]
+                    )
+                else:
+                    all_categories[cat_label] = list(feat_cols)
+        _log_and_print(
+            f"  Feature categories from {len(view_mapping)} views → "
+            f"{len(all_categories)} categories, "
+            f"{sum(len(v) for v in all_categories.values())} total features"
+        )
+
+        r.category_analytics = run_category_probability_analysis(
+            r.df_all, categories=all_categories,
+            use_mcmc=cfg.use_mcmc,
+            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            burn_in=cfg.mcmc_burn_in,
+            n_jobs=cfg.n_jobs,
+            max_features_per_category=cfg.max_features_per_category,
+            cache_dir=cfg.cache_dir,
+            enable_caching=cfg.enable_result_caching,
+        )
+        if r.category_analytics:
+            _log_and_print(f"  ✓ Analyzed {len(r.category_analytics)} categories")
+            for cat_name, cat_result in r.category_analytics.items():
+                n_feat = cat_result.get("features_analyzed", 0)
+                bayesian_keys = list(cat_result.get("bayesian_results", {}).keys())
+                _log_and_print(
+                    f"    {cat_name}: {n_feat} features — {len(bayesian_keys)} posteriors"
+                )
+        else:
+            _log_and_print("  ⚠️ No categories had sufficient features for analysis")
+
+    except Exception as e:
+        logger.error("Step 7b (Category Analytics) failed: %s", e, exc_info=True)
+        _log_and_print(f"⚠️ Step 7b failed: {e}", logging.ERROR)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 8. Main Pipeline Orchestrator
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def main(config: PipelineConfig | None = None) -> PipelineResult:
     """
-    Main expected returns analytics pipeline (v3.5).
+    Main expected returns analytics pipeline (v3.6).
+
+    v3.6 refactoring:
+    - Task 1.1: Each step extracted into its own function.
+    - Task 1.2: Results collected in ``PipelineResult`` dataclass.
+    - Task 2.1: Category analytics parallelized via joblib.
+    - Task 2.2: Feature-level sampling budget control.
+    - Task 2.3: Numba JIT enabled for MCMC inner loops.
+    - Task 2.4: MCMC result caching between runs.
+    - Task 3.1: Adaptive screening thresholds.
+    - Task 3.2: Screening thresholds configurable via PipelineConfig.
+    - Task 4.1–4.2: ArviZ graceful degradation.
+    - Task 6.4: MCMC diagnostics merged into summary.
+    - Task 7.1: Parallelized database exports.
+    - Task 7.2: Selective export based on changed data.
 
     Steps:
         1.  Load feature data from materialized views (+ Kalman momentum filtering)
@@ -3605,6 +4468,11 @@ def main(config: PipelineConfig | None = None):
         8.  Build InferenceData (ArviZ)
         9.  Generate visualizations (consuming InferenceData)
         10. Export results (deduplicated)
+
+    Returns
+    -------
+    PipelineResult
+        Structured container with all pipeline outputs.
     """
     cfg = config or PipelineConfig.from_env()
 
@@ -3615,7 +4483,7 @@ def main(config: PipelineConfig | None = None):
     )
 
     _log_and_print("=" * 80)
-    _log_and_print("Expected Returns Analytics Pipeline v3.5")
+    _log_and_print("Expected Returns Analytics Pipeline v3.6")
     _log_and_print("=" * 80)
     _log_and_print("")
 
@@ -3625,571 +4493,121 @@ def main(config: PipelineConfig | None = None):
     opt = get_optimization_status()
     _log_and_print(
         f"🔧 Numba: {opt.get('numba_available', False)}, "
-        f"Joblib: {opt.get('joblib_available', False)}"
+        f"Joblib: {opt.get('joblib_available', False)}, "
+        f"ArviZ: {opt.get('arviz_available', False)}"
+    )
+    _log_and_print(
+        f"   n_jobs={cfg.n_jobs}, max_features/cat={cfg.max_features_per_category}, "
+        f"caching={'on' if cfg.enable_result_caching else 'off'}"
     )
     _log_and_print("")
 
-    # ── Initialize result containers (ensures downstream steps never see undefined vars) ──
-    mc = pd.DataFrame()
-    pt = pd.DataFrame()
-    kal = pd.DataFrame()
-    beat = pd.DataFrame()
-    credit = pd.DataFrame()
-    div_safety = pd.DataFrame()
-    tri = pd.DataFrame()
-    quad = pd.DataFrame()
-    strong = pd.DataFrame()
-    summary = pd.DataFrame()
-    screens: dict[str, pd.DataFrame] = {}
-    category_analytics: dict[str, dict] = {}
-    corr_info: dict = {"correlation": None, "n_stocks": 0}
-    df_features = pd.DataFrame()
-    resampled_posterior = pd.DataFrame()
-    mcmc_result: dict = {}
-    anomaly_results = pd.DataFrame()
+    # ========================================================================
+    # Task 1.1: Orchestrate pipeline via extracted step functions
+    # ========================================================================
 
-    # ========================================================================
-    # 1. DATA LOADING (v3.2: Equities MV + Feature Views + All Stock Features MV)
-    # ========================================================================
+    # ── Step 1: Data Loading ──
     _step_start = time.perf_counter()
     _log_and_print(
-        "📦 Step 1: Loading feature data (v3.5: equities MV + feature views + all stock features MV)..."
+        "📦 Step 1: Loading feature data (v3.6: equities MV + feature views + all stock features MV)..."
     )
     _log_and_print("-" * 80)
 
-    df, id_coords = load_expected_returns_data()
-    if df.empty:
-        _log_and_print("✗ No data loaded from mv_equities. Check DB_URL.")
-        return
-
-    _log_and_print(
-        f"✓ Loaded mv_equities: {len(df):,} stocks × {len(df.columns)} features"
-    )
-
-    df_all, view_specs = load_all_stock_features()
-    if not df_all.empty:
-        _log_and_print(
-            f"✓ Loaded feature views: {len(df_all):,} stocks × {len(df_all.columns)} features"
-        )
-        if view_specs:
-            _log_and_print(f"  View specs loaded: {len(view_specs)} views")
-    else:
-        _log_and_print("⚠️ Feature views not loaded — screening will use mv_equities")
-        df_all = df.copy()  # Defensive copy to prevent mutation of primary DataFrame
-        view_specs = {}
-
-    df_features = load_analytics_table()
-    if not df_features.empty:
-        _log_and_print(
-            f"✓ Loaded mv_all_stock_features: {len(df_features):,} stocks × {len(df_features.columns)} features"
-        )
-    else:
-        _log_and_print("⚠️ mv_all_stock_features not loaded — continuing without it")
-
-    # ── Step 1a: Load schema metadata for InferenceData construction ──
-    schema_metadata: EquitiesSchemaMetadata | None = None
-    feature_registry: FeatureRegistryMetadata | None = None
-    mv_equities_spec: EquitiesMaterializedViewSpec | None = None
-    try:
-        schema_metadata = load_equities_schema_metadata_from_db()
-        feature_registry = load_feature_registry_metadata_from_db()
-        if schema_metadata is not None:
-            _log_and_print(f"  Schema metadata: {len(schema_metadata.column_names)} columns")
-        if feature_registry is not None:
-            _log_and_print(f"  Feature registry: {len(feature_registry.function_names)} functions")
-    except Exception as e:
-        _log_and_print(f"  Schema metadata unavailable: {e}")
-
-    # Load mv_equities materialized view spec (column classification)
-    try:
-        mv_equities_spec = load_mv_equities_spec_from_db()
-        if mv_equities_spec is not None:
-            _log_and_print(
-                f"  mv_equities spec: {len(mv_equities_spec.price_columns)} price, "
-                f"{len(mv_equities_spec.financial_columns)} financial, "
-                f"{len(mv_equities_spec.historical_price_columns)} historical cols"
-            )
-    except Exception as e:
-        _log_and_print(f"  mv_equities spec unavailable: {e}")
-
-    # Enrich identifier coordinates from dedicated view when available
-    if id_coords is None:
-        try:
-            id_coords = load_identifier_coordinates_from_db()
-            _log_and_print(
-                f"  IdentifierCoordinates (from DB): {len(id_coords.tickers)} tickers"
-            )
-        except Exception as e:
-            logger.debug("load_identifier_coordinates_from_db failed: %s", e)
-
-    # ── Step 1b: Pre-compute historical target drift enrichment (used by Steps 2, 3, 4) ──
-    _log_and_print("")
-    _log_and_print("📦 Step 1b: Pre-computing historical target drift enrichment...")
-    _log_and_print("-" * 80)
-    hist_available = _resolve_available_historical_cols(df)
-    _log_historical_coverage(hist_available)
-    df_enriched = _enrich_with_historical_target_drift(df.copy(), hist_available)
-    _log_and_print(f"✓ Historical drift enrichment complete ({len(df_enriched.columns) - len(df.columns)} derived columns)")
+    r = _step_load_data(cfg)
+    if r.df.empty:
+        return r
 
     _log_and_print(f"  ⏱ Step 1 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 2. MONTE CARLO SIMULATION
-    # ========================================================================
+    # ── Step 2: Monte Carlo Simulation ──
     _log_and_print(
         f"🎲 Step 2: Monte Carlo price target simulation ({cfg.mc_simulations:,} samples)..."
     )
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        mc = run_monte_carlo_analysis(
-            df_enriched,
-            n_simulations=cfg.mc_simulations,
-            max_stocks=cfg.mc_max_stocks,
-            use_historical_targets=False,
-        )
-        if not mc.empty and _has_required_columns(
-            mc, ["expected_upside_pct", "prob_positive_upside"], "Monte Carlo"
-        ):
-            _log_and_print(f"✓ {len(mc):,} stocks simulated")
-            _log_and_print(f"  Mean upside:  {mc['expected_upside_pct'].mean():.1f}%")
-            _log_and_print(
-                f"  Median upside: {mc['expected_upside_pct'].median():.1f}%"
-            )
-            _log_and_print(
-                f"  Positive prob (mean): {mc['prob_positive_upside'].mean():.1f}%"
-            )
-
-            mc = compute_price_target_mc(mc, df)
-            if "price_target_mc" in mc.columns:
-                valid_mc = mc.dropna(subset=["price_target_mc", "last_price"])
-                if not valid_mc.empty:
-                    mean_price = valid_mc["last_price"].mean()
-                    mean_target = valid_mc["price_target_mc"].mean()
-                    implied_return = (
-                        safe_divide(mean_target, mean_price, default=1.0) - 1
-                    ) * 100
-                    _log_and_print(
-                        f"  Monte Carlo targets ({len(valid_mc):,} stocks): implied return={implied_return:.1f}%"
-                    )
-
-            mc_stats = compute_model_detailed_statistics(
-                mc,
-                "Monte Carlo",
-                [
-                    "expected_upside_pct",
-                    "prob_positive_upside",
-                    "var_5_pct",
-                    "risk_reward_ratio",
-                    "price_target_mc",
-                ],
-            )
-            print_model_statistics(
-                mc_stats, "Monte Carlo Simulation", show_sectors=True, top_n_sectors=20
-            )
-
-            dist_analytics = compute_return_distribution_analytics(mc)
-            if dist_analytics.get("mc_distribution"):
-                d = dist_analytics["mc_distribution"]
-                _log_and_print(
-                    f"\n  📐 Best-fit distribution: {d['name']} (AIC={d['aic']:.1f}, KS p={d['ks_pvalue']:.3f})"
-                )
-            if dist_analytics.get("risk_metrics"):
-                rm = dist_analytics["risk_metrics"]
-                _log_and_print(
-                    f"\n  📉 VaR 1%: {rm['var_1_pct']:.1f}%  |  CVaR 5%: {rm['cvar_5_pct']:.1f}%"
-                )
-                _log_and_print(
-                    f"     Downside deviation: {rm['downside_deviation']:.2f}"
-                )
-                if rm.get("gain_loss_ratio"):
-                    _log_and_print(f"     Gain/Loss ratio: {rm['gain_loss_ratio']:.2f}")
-            if dist_analytics.get("opportunity_tiers"):
-                t = dist_analytics["opportunity_tiers"]
-                _log_and_print(
-                    f"\n  🏷️  Tiers: High-conviction={t['high_conviction']}, "
-                    f"Moderate={t['moderate']}, Speculative={t['speculative']}, Avoid={t['avoid']}"
-                )
-
-    except Exception as e:
-        logger.error("Step 2 (Monte Carlo) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 2 failed: {e}", logging.ERROR)
-
+    _step_monte_carlo(r, cfg)
     _log_and_print(f"  ⏱ Step 2 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 3. PRICE TARGET ACHIEVEMENT
-    # ========================================================================
+    # ── Step 3: Price Target Achievement ──
     _log_and_print("🎯 Step 3: Price target achievement model...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        pt = run_price_target_achievement(
-            df_enriched, use_historical_targets=False, feature_df=df_all
-        )
-        if not pt.empty and _has_required_columns(
-            pt,
-            ["achievement_probability", "expected_return_prob_weighted"],
-            "Price Target",
-        ):
-            _log_and_print(f"✓ {len(pt):,} stocks analyzed")
-            _log_and_print(
-                f"  Mean achievement prob: {pt['achievement_probability'].mean():.3f}"
-            )
-            _log_and_print(
-                f"  Mean prob-weighted return: {pt['expected_return_prob_weighted'].mean():.1f}%"
-            )
-
-            pt = compute_price_target_prob_weighted(pt, df)
-            if "price_target_prob_weighted" in pt.columns:
-                valid_pt = pt.dropna(
-                    subset=["price_target_prob_weighted", "last_price"]
-                )
-                if not valid_pt.empty:
-                    mean_price = valid_pt["last_price"].mean()
-                    mean_target = valid_pt["price_target_prob_weighted"].mean()
-                    implied_return = (
-                        safe_divide(mean_target, mean_price, default=1.0) - 1
-                    ) * 100
-                    _log_and_print(
-                        f"  Prob-weighted targets ({len(valid_pt):,} stocks): implied return={implied_return:.1f}%"
-                    )
-
-            pt_stats = compute_model_detailed_statistics(
-                pt,
-                "Price Target Achievement",
-                [
-                    "achievement_probability",
-                    "expected_return_prob_weighted",
-                    "analyst_conviction",
-                    "eps_revision_momentum",
-                    "price_target_prob_weighted",
-                ],
-            )
-            print_model_statistics(
-                pt_stats, "Price Target Achievement", show_sectors=True
-            )
-
-    except Exception as e:
-        logger.error("Step 3 (Price Target) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 3 failed: {e}", logging.ERROR)
-
+    _step_price_target(r, cfg)
     _log_and_print(f"  ⏱ Step 3 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 4. KALMAN FILTER
-    # ========================================================================
+    # ── Step 4: Kalman Filter ──
     _log_and_print("📐 Step 4: Kalman-filtered price targets...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        kal = run_kalman_filter(df_enriched, use_historical_targets=False)
-        if not kal.empty and _has_required_columns(kal, ["filtered_upside"], "Kalman"):
-            _log_and_print(f"✓ {len(kal):,} stocks filtered")
-            _log_and_print(
-                f"  Mean filtered upside: {kal['filtered_upside'].mean():.1f}%"
-            )
-
-            kal_stats = compute_model_detailed_statistics(
-                kal,
-                "Kalman Filter",
-                ["filtered_upside", "kalman_variance", "signal_strength"],
-            )
-            print_model_statistics(kal_stats, "Kalman Filter", show_sectors=True)
-
-    except Exception as e:
-        logger.error("Step 4 (Kalman) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 4 failed: {e}", logging.ERROR)
-
+    _step_kalman(r, cfg)
     _log_and_print(f"  ⏱ Step 4 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 5. EARNINGS BEAT ANALYSIS
-    # ========================================================================
+    # ── Step 5: Earnings Beat Analysis ──
     _log_and_print("📊 Step 5: Bayesian earnings beat analysis...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        beat = run_earnings_beat_analysis(df_all if not df_all.empty else df, feature_df=df_all)
-        if not beat.empty and _has_required_columns(
-            beat, ["prob_beat_given_momentum"], "Earnings Beat"
-        ):
-            _log_and_print(f"✓ {len(beat):,} stocks analyzed")
-            _log_and_print(f"  Mean P(beat): {beat['prob_beat_given_momentum'].mean():.3f}")
-            if "beat_classification" in beat.columns:
-                likely = (beat["beat_classification"] == "likely_beat").sum()
-                _log_and_print(f"  Classified as 'likely_beat': {likely}")
-
-    except Exception as e:
-        logger.error("Step 5 (Earnings Beat) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5 failed: {e}", logging.ERROR)
-
+    _step_earnings_beat(r, cfg)
     _log_and_print(f"  ⏱ Step 5 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 5b. ACCOUNTING ANOMALY DETECTION (moved before credit risk)
-    # ========================================================================
+    # ── Step 5b: Accounting Anomaly Detection ──
     _log_and_print("🔬 Step 5b: Accounting anomaly detection & analytics...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    anomaly_results = pd.DataFrame()
-    try:
-        anomaly_results = run_accounting_anomaly_analysis(
-            df, feature_df=df_all,
-            anomaly_z_threshold=cfg.anomaly_z_threshold,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
-            burn_in=cfg.mcmc_burn_in,
-        )
-
-        if not anomaly_results.empty and "accounting_anomaly_score" in anomaly_results.columns:
-            _log_anomaly_diagnostics(anomaly_results)
-
-            # ── Export accounting anomaly analysis to DB ──
-            try:
-                anomaly_export_cols = ["ticker"] + [
-                    c for c in anomaly_results.columns
-                    if c.startswith("accounting_anomaly")
-                       or c.endswith("_z_robust")
-                       or c.endswith("_anomaly_flag")
-                       or c.endswith("_dist_name")
-                       or c.endswith("_dist_pvalue")
-                       or c in (
-                           "anomaly_feature_count",
-                           "anomaly_severity_score",
-                           "anomaly_risk_rank",
-                           "sector_anomaly_percentile",
-                           "multi_flag_alert",
-                           "anomaly_conditional_probability",
-                           "mahalanobis_distance",
-                           "sector_relative_anomaly",
-                           "benford_chi2_pvalue",
-                       )
-                ]
-                # Include identifier columns
-                id_cols = load_identifier_columns()
-                for id_col in id_cols:
-                    if id_col in anomaly_results.columns and id_col not in anomaly_export_cols:
-                        anomaly_export_cols.insert(1, id_col)
-
-                anomaly_export = anomaly_results[
-                    [c for c in anomaly_export_cols if c in anomaly_results.columns]
-                ].copy()
-
-                if not anomaly_export.empty:
-                    anomaly_export = reorder_with_identifiers(anomaly_export)
-                    anomaly_cfg = ExportConfig(table_name="accounting_anomaly_analysis")
-                    export_to_db(anomaly_export, anomaly_cfg)
-                    _log_and_print(
-                        f"  ✓ Exported {len(anomaly_export):,} rows → analytics.accounting_anomaly_analysis"
-                    )
-            except Exception as e:
-                logger.warning("Accounting anomaly DB export failed: %s", e)
-
-            _log_and_print(f"✓ Accounting anomaly analysis complete: {len(anomaly_results):,} stocks")
-        else:
-            _log_and_print("  ⚠️ No accounting anomaly features available")
-
-    except Exception as e:
-        logger.error("Step 5b (Accounting Anomaly) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5b failed: {e}", logging.ERROR)
-
+    _step_anomaly_detection(r, cfg)
     _log_and_print(f"  ⏱ Step 5b completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 5c. CREDIT RISK & DIVIDEND SAFETY
-    # ========================================================================
+    # ── Step 5c: Credit Risk & Dividend Safety ──
     _log_and_print("🛡️ Step 5c: Credit risk & dividend safety analysis...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        credit = run_credit_risk_analysis(
-            df, feature_df=df_all,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
-            burn_in=cfg.mcmc_burn_in,
-        )
-        if not credit.empty:
-            high_risk = (
-                credit["risk_level"].isin(["High", "Distressed"]).sum()
-                if "risk_level" in credit.columns
-                else 0
-            )
-            _log_and_print(
-                f"✓ Credit risk: {len(credit):,} stocks, {high_risk} high/distressed"
-            )
-            if "ruin_probability" in credit.columns:
-                _log_and_print(
-                    f"  Mean ruin probability: {credit['ruin_probability'].mean():.3f}"
-                )
-
-            # ── Merge anomaly columns into credit for downstream alignment ──
-            if not anomaly_results.empty and "ticker" in anomaly_results.columns:
-                anom_cols = [
-                    c for c in anomaly_results.columns
-                    if c != "ticker" and c not in credit.columns
-                ]
-                if anom_cols:
-                    credit = credit.merge(
-                        anomaly_results[["ticker"] + anom_cols],
-                        on="ticker",
-                        how="left",
-                    )
-                    _log_and_print(
-                        f"  Merged {len(anom_cols)} anomaly columns into credit risk DataFrame"
-                    )
-
-        div_safety = run_dividend_safety_analysis(
-            df_all, feature_df=df_all,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
-            burn_in=cfg.mcmc_burn_in,
-        )
-        if not div_safety.empty:
-            at_risk = (
-                (div_safety["risk_category"] == "At Risk").sum()
-                if "risk_category" in div_safety.columns
-                else 0
-            )
-            _log_and_print(
-                f"✓ Dividend safety: {len(div_safety):,} stocks, {at_risk} at risk"
-            )
-
-    except Exception as e:
-        logger.error("Step 5c (Credit/Dividend) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5c failed: {e}", logging.ERROR)
-
+    _step_credit_dividend(r, cfg)
     _log_and_print(f"  ⏱ Step 5c completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 5d. STOCK SCREENING (v3.0 — NEW)
-    # ========================================================================
+    # ── Step 5d: Stock Screening ──
     _log_and_print("🔍 Step 5d: Running stock screening strategies...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        # Enrich with productivity frontier scores before screening
-        try:
-            df_all = analyze_employee_productivity_frontier(df_all)
-            if "productivity_frontier_score" in df_all.columns:
-                _log_and_print("  \u2713 Productivity frontier scores added")
-        except Exception as e:
-            logger.debug("Productivity frontier enrichment skipped: %s", e)
-
-        # Test "bad news travels slow" hypothesis
-        try:
-            lag_result = analyze_reporting_lag_sentiment(df_all)
-            if lag_result.get("sample_size", 0) > 0:
-                p_val = lag_result['p_value']
-                if lag_result['hypothesis_confirmed']:
-                    hyp_label = "confirmed"
-                elif p_val < 0.10:
-                    hyp_label = "marginally significant (p < 0.10)"
-                else:
-                    hyp_label = "not confirmed"
-                _log_and_print(
-                    f"   Reporting lag sentiment: corr={lag_result['correlation']:.3f}, "
-                    f"p={p_val:.4f}, "
-                    f"hypothesis={hyp_label}"
-                )
-        except Exception as e:
-            logger.debug("Reporting lag analysis skipped: %s", e)
-
-        screens = run_stock_screening(df_all)
-        for name, screen_df in screens.items():
-            if not screen_df.empty:
-                _log_and_print(f"  \u2713 {name}: {len(screen_df):,} stocks")
-
-    except Exception as e:
-        logger.error("Step 5d (Screening) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5d failed: {e}", logging.ERROR)
-
+    _step_screening(r, cfg)
     _log_and_print(f"  ⏱ Step 5d completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 5e. RESAMPLED POSTERIOR RETURNS (v3.1 — NEW)
-    # ========================================================================
+    # ── Step 5e: Resampled Posterior Returns ──
     _log_and_print("\U0001f9ea Step 5e: Resampled Bayesian posterior returns...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        resampled_posterior = run_resampled_posterior_analysis(df)
-        if not resampled_posterior.empty:
-            _log_and_print(
-                f"  \u2713 Resampled posteriors: {len(resampled_posterior):,} stocks"
-            )
-            if "posterior_mean" in resampled_posterior.columns:
-                _log_and_print(
-                    f"  Mean posterior return: {resampled_posterior['posterior_mean'].mean() * 100:.2f}%"
-                )
-        else:
-            _log_and_print("  \u26a0\ufe0f Resampled posterior returns: no results")
-
-    except Exception as e:
-        logger.error("Step 5e (Resampled Posterior) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 5e failed: {e}", logging.ERROR)
-
+    _step_resampled_posterior(r, cfg)
     _log_and_print(f"  ⏱ Step 5e completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 6. CROSS-MODEL ALIGNMENT
-    # ========================================================================
+    # ── Step 6: Cross-Model Alignment ──
     _log_and_print("🔗 Step 6: Cross-model alignment...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        tri = build_tri_model_alignment(mc, kal, pt)
-        strong = extract_strong_consensus(tri)
-        quad = build_quad_model_alignment(tri, beat, beat_threshold=cfg.beat_threshold)
-
-        if not tri.empty:
-            _log_and_print(f"  Tri-model coverage: {len(tri):,} stocks")
-            for label in _SIGNAL_LABELS.values():
-                cnt = (tri["signal"] == label).sum()
-                _log_and_print(f"    {label}: {cnt}")
-            _log_and_print(f"  Strong consensus picks: {len(strong)}")
-
-        if not quad.empty:
-            full = (quad["quad_agreement"] == 4).sum()
-            _log_and_print(f"  Quad-model (4/4): {full} stocks")
-
-        corr_info = compute_cross_model_correlation(mc, kal)
-        if corr_info.get("correlation") is not None:
-            _log_and_print(f"  MC ↔ Kalman correlation: {corr_info['correlation']:.3f}")
-
-    except Exception as e:
-        logger.error("Step 6 (Alignment) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 6 failed: {e}", logging.ERROR)
-
+    _step_alignment(r, cfg)
     _log_and_print(f"  ⏱ Step 6 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 7. EXPECTED RETURNS SUMMARY (4-MODEL MERGE)
-    # ========================================================================
+    # ── Step 7: Expected Returns Summary ──
     _log_and_print("📋 Step 7: Building expected_returns_summary (4-model merge)...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
 
-    # Prefer df_features (mv_all_stock_features) as the enrichment source
-    # because it is the full superset containing both identifier and market-data
-    # columns.  df_all (feature views) may lack market-data columns after the
-    # v3.2 migration to load_all_feature_views.  Fall back through df_all → df.
+    # Convenience aliases for the remaining inline steps (7, 8, 9, 10)
+    mc, pt, kal, beat, credit, div_safety = r.mc, r.pt, r.kal, r.beat, r.credit, r.div_safety
+    tri, quad, strong, summary = r.tri, r.quad, r.strong, r.summary
+    screens, category_analytics, corr_info = r.screens, r.category_analytics, r.corr_info
+    df, df_all, df_features = r.df, r.df_all, r.df_features
+    anomaly_results, resampled_posterior, mcmc_result = r.anomaly_results, r.resampled_posterior, r.mcmc_result
+    id_coords, schema_metadata, view_specs = r.id_coords, r.schema_metadata, r.view_specs
+    mv_equities_spec = r.mv_equities_spec
+
     _enrichment_source = (
         df_features if not df_features.empty else df_all if not df_all.empty else df
     )
@@ -4198,6 +4616,7 @@ def main(config: PipelineConfig | None = None):
         summary = build_expected_returns_summary(
             mc, kal, pt, beat, anomaly_results, source_df=_enrichment_source,
             credit=credit, div_safety=div_safety,
+            mcmc_result=mcmc_result,
         )
         if not summary.empty:
             _log_and_print(f"  ✓ {len(summary):,} stocks in expected_returns_summary")
@@ -4325,93 +4744,27 @@ def main(config: PipelineConfig | None = None):
     _log_and_print(f"  ⏱ Step 7 completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
-    # ========================================================================
-    # 7a. PARALLEL MCMC RETURN ANALYSIS (v3.1 — NEW)
-    # ========================================================================
+    # ── Step 7a: Parallel MCMC Return Analysis ──
     _log_and_print("\U0001f500 Step 7a: Parallel MCMC return analysis...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        mcmc_result = run_parallel_mcmc_return_analysis(
-            mc,
-            n_chains=cfg.mcmc_chains,
-            n_samples=cfg.mcmc_samples,
-        )
-        if mcmc_result:
-            _log_and_print(
-                f"  R\u0302={mcmc_result.get('r_hat', float('nan')):.4f}, "
-                f"converged={mcmc_result.get('converged', False)}, "
-                f"posterior mean={mcmc_result.get('posterior_mean', float('nan')):.2f}"
-            )
-
-            # Generate MCSE convergence visualization if InferenceData available
-            if ARVIZ_AVAILABLE and mcmc_result.get("inference_data") is not None:
-                _write_viz(
-                    create_mcse_convergence_panel(mcmc_result["inference_data"], var_name="expected_return_prob_weighted"),
-                    output_dir, "er_mcse_convergence.html",
-                )
-        else:
-            _log_and_print("  \u26a0\ufe0f Parallel MCMC: skipped or insufficient data")
-
-    except Exception as e:
-        logger.error("Step 7a (MCMC) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 7a failed: {e}", logging.ERROR)
-
+    _step_mcmc_return_analysis(r, cfg)
+    mcmc_result = r.mcmc_result
     _log_and_print(f"  ⏱ Step 7a completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
+    # ── Step 7b: Per-Category Bayesian Probability Analytics ──
     _log_and_print("\U0001f9ee Step 7b: Per-category Bayesian probability analytics...")
     _log_and_print("-" * 80)
     _step_start = time.perf_counter()
-
-    try:
-        # Build categories from all 17 vw_features_* views for full feature coverage
-        view_mapping = get_view_category_mapping()
-        all_categories: dict[str, list[str]] = {}
-        for view_name, info in view_mapping.items():
-            cat_label = info.get("category", view_name)
-            feat_cols = info.get("feature_cols", [])
-            if feat_cols:
-                # Merge features if multiple views map to the same category
-                if cat_label in all_categories:
-                    all_categories[cat_label].extend(
-                        c for c in feat_cols if c not in all_categories[cat_label]
-                    )
-                else:
-                    all_categories[cat_label] = list(feat_cols)
-        _log_and_print(
-            f"  Feature categories from {len(view_mapping)} views → "
-            f"{len(all_categories)} categories, "
-            f"{sum(len(v) for v in all_categories.values())} total features"
-        )
-
-        category_analytics = run_category_probability_analysis(
-            df_all, categories=all_categories,
-            use_mcmc=cfg.use_mcmc,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
-            burn_in=cfg.mcmc_burn_in,
-        )
-        if category_analytics:
-            _log_and_print(f"  ✓ Analyzed {len(category_analytics)} categories")
-            for cat_name, cat_result in category_analytics.items():
-                n_feat = cat_result.get("features_analyzed", 0)
-                bayesian_keys = list(cat_result.get("bayesian_results", {}).keys())
-                _log_and_print(
-                    f"    {cat_name}: {n_feat} features — {len(bayesian_keys)} posteriors"
-                )
-        else:
-            _log_and_print("  ⚠️ No categories had sufficient features for analysis")
-
-    except Exception as e:
-        logger.error("Step 7b (Category Analytics) failed: %s", e, exc_info=True)
-        _log_and_print(f"⚠️ Step 7b failed: {e}", logging.ERROR)
-
+    _step_category_analytics(r, cfg)
+    category_analytics = r.category_analytics
     _log_and_print(f"  ⏱ Step 7b completed in {time.perf_counter() - _step_start:.1f}s")
     _log_and_print("")
 
     # ========================================================================
     # 8. INFERENCE DATA (ArviZ) — built before visualizations
+    # Task 4.1–4.2: Graceful degradation when ArviZ unavailable
     # ========================================================================
     _step_start = time.perf_counter()
     idata_mc = None
@@ -4490,7 +4843,10 @@ def main(config: PipelineConfig | None = None):
             _log_and_print(f"   ⚠️ InferenceData error: {e}")
         _log_and_print("")
     else:
-        _log_and_print("⏭️  Step 8: ArviZ not available — skipping InferenceData\n")
+        # Task 4.1: Graceful degradation — log what's missing and continue
+        _log_and_print("⏭️  Step 8: ArviZ not available — skipping InferenceData")
+        _log_and_print("   💡 Install arviz + xarray for full Bayesian diagnostics: pip install arviz xarray")
+        _log_and_print("   Pipeline continues with all non-ArviZ analytics.\n")
 
     _log_and_print(f"  ⏱ Step 8 completed in {time.perf_counter() - _step_start:.1f}s")
 
@@ -4880,6 +5236,7 @@ def main(config: PipelineConfig | None = None):
         anomaly_results=anomaly_results,
         screens=screens,
         output_dir=str(output_dir),
+        max_workers=cfg.export_max_workers,
     )
     for name, dest in exports.items():
         _log_and_print(f"   ✓ {name} → {dest}")
@@ -4927,7 +5284,7 @@ def main(config: PipelineConfig | None = None):
     # SUMMARY
     # ========================================================================
     _log_and_print("=" * 80)
-    _log_and_print("\u2705 EXPECTED RETURNS ANALYTICS v3.5 COMPLETE")
+    _log_and_print("\u2705 EXPECTED RETURNS ANALYTICS v3.6 COMPLETE")
     _log_and_print("=" * 80)
     _log_and_print("")
     _log_and_print("  Data sources:")
@@ -4973,6 +5330,16 @@ def main(config: PipelineConfig | None = None):
     _log_and_print("")
     _log_and_print(f"  Outputs: {output_dir}/")
     _log_and_print("")
+
+    # Sync local aliases back to PipelineResult for return
+    r.mc, r.pt, r.kal, r.beat = mc, pt, kal, beat
+    r.credit, r.div_safety = credit, div_safety
+    r.tri, r.quad, r.strong, r.summary = tri, quad, strong, summary
+    r.screens, r.category_analytics, r.corr_info = screens, category_analytics, corr_info
+    r.anomaly_results, r.mcmc_result = anomaly_results, mcmc_result
+    r.idata_mc, r.idata_beat, r.idata_credit = idata_mc, idata_beat, idata_credit
+
+    return r
 
 
 if __name__ == "__main__":

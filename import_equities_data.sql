@@ -1216,7 +1216,8 @@ CREATE TEMP TABLE screening_staging
     "Total Operating Expenses (-1FY)"                  TEXT, -- alias: total_operating_expenses_1fy
     "Total Operating Expenses (-2FY)"                  TEXT, -- alias: total_operating_expenses_2fy
     "Total Operating Expenses (-3FY)"                  TEXT, -- alias: total_operating_expenses_3fy
-    "Total Operating Expenses (-4FY)"                  TEXT -- alias: total_operating_expenses_4fy
+    "Total Operating Expenses (-4FY)"                  TEXT, -- alias: total_operating_expenses_4fy
+    "Target % (Avg)"                                   TEXT -- alias: target_avg
 );
 -- ===================================================================
 -- DATA IMPORT EXECUTION
@@ -1916,6 +1917,8 @@ INSERT INTO equities ("Ticker", -- alias: ticker
                       "Total Operating Expenses (-2FY)", -- alias: total_operating_expenses_2fy
                       "Total Operating Expenses (-3FY)", -- alias: total_operating_expenses_3fy
                       "Total Operating Expenses (-4FY)", -- alias: total_operating_expenses_4fy
+                      "Target % (Avg)"                 , -- alias: target_avg
+
                       "Fiscal Month", -- alias: fiscal_month
                       "Fiscal Quarter", -- alias: fiscal_quarter
                       "Fiscal Year", -- alias: fiscal_year
@@ -2731,6 +2734,9 @@ SELECT NULLIF(TRIM(s."Ticker"), '')                                             
                 0)                                                               AS total_operating_expenses_3fy,
        COALESCE(text_to_numeric_safe(s."Total Operating Expenses (-4FY)"),
                 0)                                                               AS total_operating_expenses_4fy,
+    COALESCE(text_to_numeric_safe(s."Target % (Avg)"),
+                0)                                                               AS target_avg,
+
        report_fiscal.fiscal_month                                                AS fiscal_month,
        report_fiscal.fiscal_quarter                                              AS fiscal_quarter,
        report_fiscal.fiscal_year                                                 AS fiscal_year,

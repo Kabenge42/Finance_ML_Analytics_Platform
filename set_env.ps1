@@ -28,7 +28,13 @@ $env:RANDOM_SEED = "42"
 $env:GEIB_DASHBOARD = 'true'
 
 # Performance settings
-$env:N_JOBS = "4"
+$env:N_JOBS = "-1"
+
+# PyTensor / PyMC Configuration
+# Disable C backend to avoid MinGW/MSVC ABI mismatch and libgcc 15 linking issues.
+# PyTensor will use its pure-Python VM (functionally identical, ~2-3x slower for large MCMC).
+# Setting cxx= (empty) disables C compilation entirely.
+$env:PYTENSOR_FLAGS = "device=cpu,floatX=float64,cxx="
 
 # Logging configuration
 $env:LOG_LEVEL = "INFO"
@@ -51,5 +57,6 @@ Write-Host "LOG_LEVEL: $env:LOG_LEVEL"
 Write-Host "TF_CPP_MIN_LOG_LEVEL: $env:TF_CPP_MIN_LOG_LEVEL"
 Write-Host "MODEL_VERSION: $env:MODEL_VERSION"
 Write-Host "CACHE_DIR: $env:CACHE_DIR"
+Write-Host "PYTENSOR_FLAGS: $env:PYTENSOR_FLAGS"
 
 

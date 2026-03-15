@@ -7062,7 +7062,7 @@ def update_monte_carlo(*args):
     range_values = filter_data.get("ranges", {})
 
     num_simulations, loss_ratio_slider, weighting, target_return, signal_filter = args[
-        num_filters:
+        1:
     ]
 
     # Unpack RangeSlider value (returns a list)
@@ -8470,7 +8470,7 @@ def update_beta_capm(*args):
     range_values = filter_data.get("ranges", {})
 
     risk_free_rate_slider, market_return, size_encoding, capm_confidence_level = args[
-        num_filters:
+        1:
     ]
 
     # Unpack RangeSlider value (returns a list)
@@ -9238,7 +9238,7 @@ def update_ef_stock_options(*args):
         filter_data = args[0] or {}
         filter_values = filter_data.get("filters", {})
         range_values = filter_data.get("ranges", {})
-        current_selection = args[num_filters]  # State value
+        current_selection = args[1]  # State value
         filtered_df = apply_global_filters(df, filter_values, range_values)
 
         if filtered_df.empty or "market_cap" not in filtered_df.columns:
@@ -9313,15 +9313,14 @@ def update_cascading_sector_filters(selected_sectors):
 
 @app.callback(
     Output("global-filter-store", "data"),
-    [Input("global-filter-store", "data")]
+    [Input(f["id"], "value") for f in FILTER_CONFIG]
     + [Input(s["id"], "value") for s in RANGE_SLIDER_CONFIG],
 )
 def update_global_filter_store(*args):
     """Update the global filter store whenever any filter changes."""
-    filter_data = args[0] or {}
-    filter_values = filter_data.get("filters", {})
-    range_values = filter_data.get("ranges", {})
-    range_values = collect_range_slider_values(*args[1:])
+    num_dropdowns = len(FILTER_CONFIG)
+    filter_values = collect_filter_values(*args[:num_dropdowns])
+    range_values = collect_range_slider_values(*args[num_dropdowns:])
     return {"filters": filter_values, "ranges": range_values}
 
 
@@ -9347,7 +9346,11 @@ def update_screening_explorer(selected_strategy, *filter_args):
         title="No data", template="plotly_dark"
     )
 
-    filter_values = collect_filter_values(*filter_args)
+    filter_data = filter_args[0] if filter_args else {}
+    if not isinstance(filter_data, dict):
+        filter_data = {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
     filtered_df = apply_global_filters(df, filter_values, range_values)
 
     if filtered_df.empty:
@@ -9421,16 +9424,18 @@ def update_screening_explorer(selected_strategy, *filter_args):
     Input("screening-download-btn", "n_clicks"),
     [
         State("screening-strategy-dropdown", "value"),
-    ]
-    + [State(f["id"], "value") for f in FILTER_CONFIG],
+        State("global-filter-store", "data"),
+    ],
     prevent_initial_call=True,
 )
-def download_screening_results(n_clicks, selected_strategy, *filter_args):
+def download_screening_results(n_clicks, selected_strategy, filter_data):
     """Download selected screening results as CSV."""
     if not n_clicks:
         return dash.no_update
 
-    filter_values = collect_filter_values(*filter_args)
+    filter_data = filter_data or {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
     filtered_df = apply_global_filters(df, filter_values, range_values)
 
     if filtered_df.empty:
@@ -9466,7 +9471,11 @@ def download_screening_results(n_clicks, selected_strategy, *filter_args):
 )
 def update_resampled_posterior_scatter(*filter_args):
     """Generate resampled posterior distribution scatter plot."""
-    filter_values = collect_filter_values(*filter_args)
+    filter_data = filter_args[0] if filter_args else {}
+    if not isinstance(filter_data, dict):
+        filter_data = {}
+    filter_values = filter_data.get("filters", {})
+    range_values = filter_data.get("ranges", {})
     filtered_df = apply_global_filters(df, filter_values, range_values)
 
     if filtered_df.empty or "resampled_posterior_mean" not in filtered_df.columns:

@@ -24,7 +24,7 @@ import pandas as pd
 try:
     from numba import jit, prange
 
-    NUMBA_AVAILABLE = False
+    NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
 
@@ -662,10 +662,17 @@ def get_optimization_status() -> dict:
     except ImportError:
         _arviz = False
 
+    try:
+        import joblib as _jl  # noqa: F401
+        _joblib = True
+    except ImportError:
+        _joblib = False
+
     return {
         "numba_available": NUMBA_AVAILABLE,
+        "joblib_available": _joblib,
         "arviz_available": _arviz,
         "db_cache_size": len(_db_cache),
         "stats_cache_size": len(_stats_cache),
-        "parallel_available": True,  # joblib is always available
+        "parallel_available": _joblib,
     }

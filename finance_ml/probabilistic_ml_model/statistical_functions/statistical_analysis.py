@@ -2208,9 +2208,7 @@ def detect_accounting_anomalies(
         "eps_adjustment_ratio",
         "exceptional_items_to_ebitda",
         "restructuring_intensity",
-        "merger_impact_ratio",
         "goodwill_change_rate",
-        "goodwill_impairment_frequency"
         # ── EPS adjustment features ──
         "eps_adj_ltm",
         "eps_adjustment_ratio_comp",
@@ -2236,6 +2234,7 @@ def detect_accounting_anomalies(
         "gaap_revision_1y",
         # ── Earnings quality & discontinuities ──
         "discontinued_ops_impact",
+        "earnings_quality_warning",
         "revision_quality_divergence",
         # ── Surprise & growth acceleration ──
         "eps_growth_accel",

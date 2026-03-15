@@ -106,6 +106,7 @@ SELECT
     e."Price Target - Median (QTD Ago)"                  AS price_target_median_qtd_ago,
     e."Price Target - Median (YTD Ago)"                  AS price_target_median_ytd_ago,
     e."Price Target - Median (1Y Ago)"                   AS price_target_median_1y_ago,
+    e."Target % (Avg)"                                   AS target_avg,
 
     -- INCOME STATEMENT
     e."Total Revenues (FQ)"                              AS total_revenues_fq,
