@@ -2938,3 +2938,4 @@ def validate_viz_column_coverage(
         if missing:
             issues[func_name] = missing
     return issues
+

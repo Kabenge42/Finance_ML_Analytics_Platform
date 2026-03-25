@@ -525,7 +525,7 @@ class AccountingAnomalyProbabilityModel:
             from finance_ml.analytics.statistical_analysis import parallel_mcmc_chains
 
             mcmc_convergence = parallel_mcmc_chains(
-                anomaly_scores, n_chains=4, n_samples=self.n_mcmc_samples
+                anomaly_scores, n_chains=8, n_samples=self.n_mcmc_samples
             )
             r_hat = mcmc_convergence.get("r_hat", 2.0)
             result["anomaly_mcmc_r_hat"] = r_hat
@@ -3294,7 +3294,7 @@ class PriceTargetAchievementModel:
         # Task 4.3: Parallel MCMC with Gelman-Rubin
         try:
             mcmc_result = parallel_mcmc_chains(
-                returns_data, n_chains=4, n_samples=self.n_mcmc_samples
+                returns_data, n_chains=8, n_samples=self.n_mcmc_samples
             )
             result_df["mcmc_gelman_rubin"] = mcmc_result.get("r_hat", np.nan)
         except Exception as e:
@@ -3964,7 +3964,7 @@ class ResampledBeatProbabilityModel:
         momentum_weight: float = 0.3,
         volatility_weight: float = 0.2,
         n_posterior_samples: int = 4000,
-        n_chains: int = 4,
+        n_chains: int = 8,
         random_seed: int = 42,
     ):
         self.base_model = base_model or EarningsBeatProbabilityModel()

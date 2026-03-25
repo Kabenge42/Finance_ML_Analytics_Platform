@@ -1229,7 +1229,7 @@ def main():
                             bayesian_results,
                             df,
                             n_posterior_samples=4000,
-                            n_chains=4,
+                            n_chains=8,
                         )
                         beat_summary = summarize_inference_data(idata_beat)
                         print(

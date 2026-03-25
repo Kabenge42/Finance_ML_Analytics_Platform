@@ -383,7 +383,7 @@ The current `apply_enhanced_imputation_strategy_6step` already applies:
     * Confirm all KNN columns are numeric and not constant within sector.
     * For zero‑imputation columns, confirm they are count/ratio/flag metrics with natural zero.
 
-3. **Configurable column sets via `FinanceMLConfig`**:
+3. **Configurable column sets via `PMLConfig`**:
 
     * Expose `config.imputation.zero_impute_cols`, `config.imputation.knn_cols`, etc., allowing experiment control.
 
@@ -669,7 +669,7 @@ Steps:
      within `sector`, `country` within `region`), followed by global
      most‑frequent or constant strategies.
    - Configuration is defined in `get_categorical_imputation_config()` and
-     may be overridden via `FinanceMLConfig`.
+     may be overridden via `PMLConfig`.
 
 6. **Datetime Imputation and Formatting (Temporal Readiness)**
    - Convert all date columns to `datetime64[ns]` and impute missing values

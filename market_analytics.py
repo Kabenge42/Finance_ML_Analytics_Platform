@@ -1817,7 +1817,7 @@ def main():
                     ruin_df,
                     df,
                     n_posterior_samples=2000,
-                    n_chains=4,
+                    n_chains=8,
                 )
                 ruin_summary = summarize_inference_data(idata_ruin)
                 print(
@@ -1925,7 +1925,7 @@ def main():
         roe_data = df["roe"].dropna().values
         if len(roe_data) > 100:
             print("   Running parallel MCMC chains with Gelman-Rubin diagnostic...")
-            mcmc_result = parallel_mcmc_chains(roe_data, n_chains=4, n_samples=5000)
+            mcmc_result = parallel_mcmc_chains(roe_data, n_chains=8, n_samples=5000)
             print(
                 f"   ✓ R-hat: {mcmc_result['r_hat']:.4f} "
                 f"({'Converged ✓' if mcmc_result['converged'] else 'Not converged ✗'})"
@@ -2070,7 +2070,7 @@ def main():
                             probability_results,
                             df,
                             n_posterior_samples=4000,
-                            n_chains=4,
+                            n_chains=8,
                         )
                         beat_summary = summarize_inference_data(idata_beat)
                         print(f"   ✓ InferenceData (beat prob): {beat_summary.get('groups', [])}")
@@ -2183,7 +2183,7 @@ def main():
                         credit_results,
                         df,
                         n_posterior_samples=4000,
-                        n_chains=4,
+                        n_chains=8,
                     )
                     credit_summary = summarize_inference_data(idata_credit)
                     print(

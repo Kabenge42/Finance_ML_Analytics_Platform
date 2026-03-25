@@ -587,10 +587,10 @@ class ExportConfig:
 
     Examples
     --------
-    >>> cfg = ExportConfig(table_name="feature_statistics")
-    >>> export_to_db(df, cfg)
-    >>> export_to_csv(df, cfg)
-    >>> export_to_json(df, cfg)
+    >>> export_cfg = ExportConfig(table_name="feature_statistics")
+    >>> export_to_db(df,export_cfg)
+    >>> export_to_csv(df, export_cfg)
+    >>> export_to_json(df, export_cfg)
     """
 
     table_name: str = ""
@@ -602,12 +602,8 @@ class ExportConfig:
     include_index: bool = False
 
 
-def export_to_db(
-    df: pd.DataFrame,
-    config: ExportConfig | None = None,
-    table_name: str | None = None,
-    if_exists: str = "replace",
-) -> int | None:
+def export_to_db(df: pd.DataFrame, config: ExportConfig | None = None, table_name: str | None = None,
+                 if_exists: str = "replace") -> int | None:
     """
     Export DataFrame to the PostgreSQL analytics schema.
 
@@ -632,13 +628,13 @@ def export_to_db(
     int or None
         Number of rows affected.
     """
-    cfg = config or ExportConfig()
-    resolved_table = table_name or cfg.table_name
+    export_cfg = config or ExportConfig()
+    resolved_table = table_name or export_cfg.table_name
     if not resolved_table:
         raise ValueError(
             "table_name must be provided either directly or via ExportConfig."
         )
-    resolved_if_exists = if_exists if table_name else cfg.if_exists
+    resolved_if_exists = if_exists if table_name else export_cfg.if_exists
 
     return export_to_analytics_db(df, resolved_table, if_exists=resolved_if_exists)
 
@@ -668,18 +664,18 @@ def export_to_csv(
     Path
         Path to the written CSV file.
     """
-    cfg = config or ExportConfig()
-    resolved_name = table_name or cfg.table_name
+    export_cfg = config or ExportConfig()
+    resolved_name = table_name or export_cfg.table_name
     if not resolved_name:
         raise ValueError(
             "table_name must be provided either directly or via ExportConfig."
         )
-    resolved_dir = Path(output_dir or cfg.output_dir)
+    resolved_dir = Path(output_dir or export_cfg.output_dir)
 
     resolved_dir.mkdir(parents=True, exist_ok=True)
     file_path = resolved_dir / f"{resolved_name}.csv"
 
-    df.to_csv(file_path, sep=cfg.csv_sep, index=cfg.include_index)
+    df.to_csv(file_path, sep=export_cfg.csv_sep, index=export_cfg.include_index)
     logging.info("Exported %d rows to %s", len(df), file_path)
     return file_path
 
@@ -711,19 +707,19 @@ def export_to_json(
     Path
         Path to the written JSON file.
     """
-    cfg = config or ExportConfig()
-    resolved_name = table_name or cfg.table_name
+    export_cfg = config or ExportConfig()
+    resolved_name = table_name or export_cfg.table_name
     if not resolved_name:
         raise ValueError(
             "table_name must be provided either directly or via ExportConfig."
         )
-    resolved_dir = Path(output_dir or cfg.output_dir)
+    resolved_dir = Path(output_dir or export_cfg.output_dir)
 
     resolved_dir.mkdir(parents=True, exist_ok=True)
     file_path = resolved_dir / f"{resolved_name}.json"
 
     df.to_json(
-        file_path, orient=cfg.orient, indent=cfg.json_indent, default_handler=str
+        file_path, orient=export_cfg.orient, indent=export_cfg.json_indent, default_handler=str
     )
     logging.info("Exported %d rows to %s", len(df), file_path)
     return file_path

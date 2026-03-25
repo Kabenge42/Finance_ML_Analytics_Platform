@@ -1956,7 +1956,7 @@ def parallel_mcmc_chains(
 
     Examples
     --------
-    >>> result = parallel_mcmc_chains(data, n_chains=4)
+    >>> result = parallel_mcmc_chains(data, n_chains=8)
     >>> if result['converged']:
     ...     print(f"Posterior mean: {result['combined_samples'].mean():.2f}")
     """

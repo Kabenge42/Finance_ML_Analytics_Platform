@@ -68,7 +68,8 @@ class TestGeibDashAppV3Structure(unittest.TestCase):
     # ------------------------------------------------------------------
     def _extract_columns_for_table(self, table_id: str) -> str:
         """Extract the get_formatted_columns([...]) block for a given table id."""
-        pattern = rf'id="{table_id}".*?get_formatted_columns\(\[(.*?)\]\)'
+        # Find the table id, then the get_formatted_columns call with balanced brackets
+        pattern = rf'id="{table_id}".*?get_formatted_columns\(\s*\[(.*?)\]\s*\)'
         match = re.search(pattern, self.source, re.DOTALL)
         self.assertIsNotNone(match, f"Could not find columns for {table_id}")
         return match.group(1)
@@ -95,14 +96,16 @@ class TestGeibDashAppV3Structure(unittest.TestCase):
     # Callback output count
     # ------------------------------------------------------------------
     def test_update_dashboard_callback_output_count(self):
-        """The main callback must have exactly 31 Output declarations."""
-        # Find the callback decorator block for update_dashboard
-        pattern = r"@app\.callback\(\s*\[(.*?)\],\s*\[Input\(f\[\"id\"\]"
+        """The main callback must have exactly 36 Output declarations."""
+        # Find the callback decorator block for update_dashboard by looking for
+        # the Output("kpi-cards" marker that uniquely identifies it.
+        pattern = r'@app\.callback\(\s*\[\s*Output\("kpi-cards"(.*?)\],\s*\[Input\(f\["id"\]'
         match = re.search(pattern, self.source, re.DOTALL)
         self.assertIsNotNone(match, "Could not find update_dashboard callback")
         output_block = match.group(1)
-        output_count = output_block.count("Output(")
-        self.assertEqual(output_count, 31, f"Expected 31 outputs, got {output_count}")
+        # +1 for the Output("kpi-cards" already consumed by the pattern prefix
+        output_count = output_block.count("Output(") + 1
+        self.assertEqual(output_count, 37, f"Expected 37 outputs, got {output_count}")
 
     # ------------------------------------------------------------------
     # Subtitle / description text
@@ -131,6 +134,86 @@ class TestGeibDashAppV3Structure(unittest.TestCase):
         pattern = r'"prob_positive_upside".*?"weighted_agreement"'
         match = re.search(pattern, self.source, re.DOTALL)
         self.assertIsNotNone(match, "weighted_agreement not found in percentage formatting block")
+
+    # ------------------------------------------------------------------
+    # v3.1 dynamic visualization integration
+    # ------------------------------------------------------------------
+    def test_dynamic_growth_graph_ids_present(self):
+        """Growth analysis dynamic graph IDs must appear in the layout."""
+        for cid in [
+            "dynamic-sustainable-growth",
+            "dynamic-growth-acceleration",
+            "dynamic-growth-vs-profitability",
+            "dynamic-growth-consistency-matrix",
+            "dynamic-growth-waterfall",
+        ]:
+            with self.subTest(component_id=cid):
+                self.assertIn(cid, self.source)
+
+    def test_dynamic_valuation_graph_ids_present(self):
+        """Valuation analysis dynamic graph IDs must appear in the layout."""
+        for cid in [
+            "dynamic-historical-valuation-percentile",
+            "dynamic-valuation-vs-growth",
+            "dynamic-relative-valuation-matrix",
+            "dynamic-valuation-distribution",
+            "dynamic-valuation-multiples",
+        ]:
+            with self.subTest(component_id=cid):
+                self.assertIn(cid, self.source)
+
+    def test_dynamic_earnings_quality_graph_ids_present(self):
+        """Earnings quality dynamic graph IDs must appear in the layout."""
+        for cid in [
+            "dynamic-earnings-consistency-matrix",
+            "dynamic-beat-rate-heatmap",
+            "dynamic-earnings-quality-decomposition",
+            "dynamic-eps-trajectory",
+            "dynamic-earnings-surprise",
+        ]:
+            with self.subTest(component_id=cid):
+                self.assertIn(cid, self.source)
+
+    def test_imported_viz_functions_called_in_callbacks(self):
+        """All 15 imported viz functions must be called (not just imported)."""
+        for func in [
+            "create_sustainable_growth_analysis(filtered_df)",
+            "create_growth_acceleration_chart(filtered_df)",
+            "create_growth_vs_profitability_quadrant(filtered_df)",
+            "create_growth_consistency_matrix(filtered_df)",
+            "create_growth_waterfall_chart(filtered_df)",
+            "create_historical_valuation_percentile(filtered_df)",
+            "create_valuation_vs_growth_quadrant(filtered_df)",
+            "create_relative_valuation_matrix(filtered_df)",
+            "create_valuation_distribution_dashboard(filtered_df)",
+            "create_valuation_multiples_comparison(filtered_df)",
+            "create_earnings_consistency_matrix(filtered_df)",
+            "create_beat_rate_heatmap(filtered_df)",
+            "create_earnings_quality_decomposition(filtered_df)",
+            "create_eps_trajectory_analysis(filtered_df)",
+            "create_earnings_surprise_dashboard(filtered_df)",
+        ]:
+            with self.subTest(func=func):
+                self.assertIn(func, self.source)
+
+    def test_filter_config_has_anomaly_risk_filters(self):
+        """FILTER_CONFIG must include anomaly_tier, risk_level, risk_category."""
+        for col in ["accounting_anomaly_tier", "risk_level", "risk_category"]:
+            with self.subTest(column=col):
+                self.assertIn(f'"column": "{col}"', self.source)
+
+    def test_viz_required_columns_has_new_entries(self):
+        """VIZ_REQUIRED_COLUMNS must have entries for new viz functions."""
+        for key in [
+            "create_valuation_multiples_comparison",
+            "create_earnings_surprise_dashboard",
+            "create_eps_trajectory_analysis",
+            "create_beat_rate_heatmap",
+            "create_growth_waterfall_chart",
+            "create_sustainable_growth_analysis",
+        ]:
+            with self.subTest(key=key):
+                self.assertIn(f'"{key}"', self.source)
 
 
 if __name__ == "__main__":

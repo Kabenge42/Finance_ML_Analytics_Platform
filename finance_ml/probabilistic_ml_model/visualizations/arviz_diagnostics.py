@@ -151,7 +151,7 @@ def create_productivity_frontier_posterior(
         labels=[f"Q{i + 1}" for i in range(n_quantiles)],
     )
 
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
     for q_label, group in df.groupby("prod_quintile", observed=True):
@@ -308,7 +308,7 @@ def create_resampled_sector_forest(
     if merged.empty or "posterior_mean" not in merged.columns:
         return None
 
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
     for sector, group in merged.groupby(sector_col):
@@ -452,7 +452,7 @@ def create_agreement_posterior_by_sector(
     if "agreement_score" not in summary.columns or sector_col not in summary.columns:
         return None
 
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
 
@@ -748,7 +748,7 @@ def build_category_analytics_idata(
         return {}
 
     category_idatas: dict[str, az.InferenceData] = {}
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
 
     for cat_name, cat_result in category_analytics.items():

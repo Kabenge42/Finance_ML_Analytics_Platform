@@ -67,13 +67,8 @@ class TestBayesianTechnicalResampler(unittest.TestCase):
     def setUp(self):
         from finance_ml.analytics.statistical_analysis import BayesianTechnicalResampler
 
-        self.resampler = BayesianTechnicalResampler(
-            prior_return_mean=0.08,
-            prior_return_std=0.20,
-            n_posterior_samples=200,
-            n_chains=2,
-            random_seed=42,
-        )
+        self.resampler = BayesianTechnicalResampler(prior_return_mean=0.08, prior_return_std=0.20,
+                                                    n_posterior_samples=200, n_chains=2, random_seed=42)
         self.df = _make_equities_df(n=10)
 
     def test_init_defaults(self):
@@ -227,11 +222,7 @@ class TestBayesianTechnicalResamplerInferenceData(unittest.TestCase):
     def setUp(self):
         from finance_ml.analytics.statistical_analysis import BayesianTechnicalResampler
 
-        self.resampler = BayesianTechnicalResampler(
-            n_posterior_samples=100,
-            n_chains=2,
-            random_seed=42,
-        )
+        self.resampler = BayesianTechnicalResampler(n_posterior_samples=100, n_chains=2, random_seed=42)
         self.df = _make_equities_df(n=5)
 
     def test_build_inference_data_not_none(self):
@@ -316,12 +307,7 @@ class TestResampledPosteriorReturns(unittest.TestCase):
         from finance_ml.analytics.statistical_analysis import resampled_posterior_returns
 
         df = _make_equities_df(n=5)
-        result_df, idata = resampled_posterior_returns(
-            df,
-            freq="1ME",
-            n_posterior_samples=100,
-            n_chains=2,
-        )
+        result_df, idata = resampled_posterior_returns(df, freq="1ME", n_posterior_samples=100, n_chains=2)
         self.assertIsInstance(result_df, pd.DataFrame)
         self.assertFalse(result_df.empty)
         self.assertIsNotNone(idata)
@@ -576,12 +562,7 @@ class TestIntegrationFullWorkflow(unittest.TestCase):
         from finance_ml.analytics.inference_schema import summarize_inference_data
 
         df = _make_equities_df(n=8)
-        result_df, idata = resampled_posterior_returns(
-            df,
-            freq="1ME",
-            n_posterior_samples=100,
-            n_chains=2,
-        )
+        result_df, idata = resampled_posterior_returns(df, freq="1ME", n_posterior_samples=100, n_chains=2)
 
         # Verify result_df
         self.assertFalse(result_df.empty)

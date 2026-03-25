@@ -214,7 +214,7 @@ def create_tri_model_agreement_histogram(tri: pd.DataFrame) -> go.Figure:
         template=PLOTLY_TEMPLATE,
         height=420,
     )
-    fig.update_layout(showlegend=False)
+    fig.update_layout(showlegend=True)
     return fig
 
 
@@ -402,7 +402,7 @@ def create_var_analysis(mc: pd.DataFrame) -> go.Figure:
         title="Value-at-Risk (5%) Analysis",
         template=PLOTLY_TEMPLATE,
         height=800,
-        showlegend=False,
+        showlegend=True,
     )
     fig.update_xaxes(title_text="VaR 5% (%)", row=1, col=1)
     fig.update_xaxes(title_text="VaR 5% (%)", row=2, col=1)
@@ -557,7 +557,7 @@ def create_model_dispersion_dashboard(summary: pd.DataFrame) -> go.Figure:
         title="Cross-Model Dispersion & Agreement Dashboard",
         template=PLOTLY_TEMPLATE,
         height=900,
-        showlegend=False,
+        showlegend=True,
     )
     return fig
 
@@ -742,7 +742,7 @@ def create_price_target_drift_dashboard(
     else:
         pt_cols = [c for c in mv_equities_df.columns if c.startswith("price_target")]
         hist_price_cols = [
-            c for c in mv_equities_df.columns if c.startswith("close_") and "_ago" in c
+            c for c in mv_equities_df.columns if c.startswith("price_") and "_ago" in c
         ]
 
     if not pt_cols:
@@ -798,7 +798,7 @@ def create_price_target_drift_dashboard(
     if hist_price_cols:
         # Find current price column
         current_price_col = next(
-            (c for c in mv_equities_df.columns if c in ["close", "price", "current_price"]), None
+            (c for c in mv_equities_df.columns if c in ["last_price", "price_"]), None
         )
 
         if current_price_col and current_price_col in mv_equities_df.columns:

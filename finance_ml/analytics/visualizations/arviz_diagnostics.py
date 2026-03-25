@@ -61,7 +61,7 @@ def build_screening_inference_data(
     screens: dict[str, pd.DataFrame],
     return_col: str = "expected_upside_pct",
     n_bootstrap: int = 4_000,
-    n_chains: int = 4,
+    n_chains: int = 8,
 ) -> "az.InferenceData":
     """
     Build InferenceData with posterior-like bootstrap distributions
@@ -151,7 +151,7 @@ def create_productivity_frontier_posterior(
         labels=[f"Q{i + 1}" for i in range(n_quantiles)],
     )
 
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
     for q_label, group in df.groupby("prod_quintile", observed=True):
@@ -187,7 +187,7 @@ def create_productivity_frontier_posterior(
 
 def build_resampled_posterior_idata(
     resampled_df: pd.DataFrame,
-    n_chains: int = 4,
+    n_chains: int = 8,
     n_draws: int = 4_000,
 ) -> "az.InferenceData":
     """
@@ -287,11 +287,11 @@ def create_resampled_posterior_diagnostics(
 def create_resampled_sector_forest(
     resampled_df: pd.DataFrame,
     df_source: pd.DataFrame,
-    sector_col: str = "sector",
-    top_n: int = 15,
+    sector_col: str = "Industry",
+    top_n: int = 25,
 ):
     """
-    Forest plot of sector-level resampled posterior return distributions
+    Forest plot of Industry-level resampled posterior return distributions
     with 94% HDI intervals — directly addresses the negative mean concern
     by showing which sectors drive the negative aggregate.
     """
@@ -308,7 +308,7 @@ def create_resampled_sector_forest(
     if merged.empty or "posterior_mean" not in merged.columns:
         return None
 
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
     for sector, group in merged.groupby(sector_col):
@@ -358,7 +358,7 @@ def build_alignment_inference_data(
         "Price Target": "expected_return_prob_weighted",
     }
 
-    n_chains, n_draws = 4, 5_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
     for model_name, col in model_cols.items():
@@ -441,18 +441,18 @@ def create_model_alignment_arviz_panel(
 
 def create_agreement_posterior_by_sector(
     summary: pd.DataFrame,
-    sector_col: str = "sector",
+    sector_col: str = "industry",
 ):
     """
-    ArviZ-style forest plot of agreement_score posterior by sector.
-    Reveals which sectors have genuine consensus vs noisy alignment.
+    ArviZ-style forest plot of agreement_score posterior by industry.
+    Reveals which industries have genuine consensus vs noisy alignment.
     """
     if not ARVIZ_AVAILABLE:
         return None
     if "agreement_score" not in summary.columns or sector_col not in summary.columns:
         return None
 
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
 
@@ -477,7 +477,7 @@ def create_agreement_posterior_by_sector(
         idata, kind="forestplot", combined=True,
         hdi_prob=0.94, figsize=(12, max(8, len(posterior_dict) * 0.5)),
     )
-    axes[0].set_title("Model Agreement Score by Sector (94% HDI)")
+    axes[0].set_title("Model Agreement Score by Industry (94% HDI)")
     axes[0].axvline(3.0, color="green", linestyle="--", alpha=0.5, label="Strong Bullish threshold")
     return axes[0].get_figure()
 
@@ -493,7 +493,7 @@ def create_hierarchical_shrinkage_diagnostic(
     sector_col: str = "industry",
 ):
     """
-    ArviZ plot showing raw sector means vs hierarchical posterior means
+    ArviZ plot showing raw industry means vs hierarchical posterior means
     with shrinkage arrows and HDI intervals.
     """
     if not ARVIZ_AVAILABLE:
@@ -505,8 +505,8 @@ def create_hierarchical_shrinkage_diagnostic(
     if not isinstance(hier, dict):
         return None
 
-    sectors_data = hier.get("sectors", hier)
-    n_chains, n_draws = 4, 5_000
+    sectors_data = hier.get("industries", hier)
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
     raw_means: dict[str, float] = {}
@@ -558,14 +558,14 @@ def create_multi_level_mcmc_comparison(
 ):
     """
     ArviZ density plot comparing posterior distributions across
-    hierarchical category levels (region, sector, size_class, style_class).
+    hierarchical category levels (region, country, unit, sector, industry, exchange, size_class, style_class).
     """
     if not ARVIZ_AVAILABLE:
         return None
     import matplotlib.pyplot as plt
 
-    levels = levels or ["region", "sector", "size_class", "style_class"]
-    n_chains, n_draws = 4, 5_000
+    levels = levels or ["region", "country", "unit", "sector", "industry", "exchange", "size_class", "style_class"]
+    n_chains, n_draws = 8, 10_000
     rng = np.random.default_rng(42)
     level_idatas = []
     level_labels = []
@@ -598,16 +598,16 @@ def create_multi_level_mcmc_comparison(
 
     fig, axes_arr = plt.subplots(
         len(level_idatas), 1,
-        figsize=(14, 5 * len(level_idatas)),
+        figsize=(28, 10 * len(level_idatas)),
         squeeze=False,
     )
     for i, (idata, label) in enumerate(zip(level_idatas, level_labels)):
         az.plot_forest(
             idata, kind="ridgeplot", combined=True,
             hdi_prob=0.94, ridgeplot_overlap=0.6,
-            ax=axes_arr[i, 0],
+            ax=axes_arr[i],
         )
-        axes_arr[i, 0].set_title(f"Posterior Returns by {label.replace('_', ' ').title()}")
+        axes_arr[i].set_title(f"Posterior Returns by {label.replace('_', ' ').title()}")
 
     fig.tight_layout()
     return fig
@@ -748,7 +748,7 @@ def build_category_analytics_idata(
         return {}
 
     category_idatas: dict[str, az.InferenceData] = {}
-    n_chains, n_draws = 4, 4_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
 
     for cat_name, cat_result in category_analytics.items():
@@ -860,7 +860,7 @@ def create_cross_category_summary(
     if not ARVIZ_AVAILABLE:
         return None
 
-    n_chains, n_draws = 4, 5_000
+    n_chains, n_draws = 8, 4_000
     rng = np.random.default_rng(42)
     posterior_dict: dict[str, tuple] = {}
 

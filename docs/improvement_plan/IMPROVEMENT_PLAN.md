@@ -648,7 +648,7 @@ Finance_ML_Analytics_Platform/
 - `create_region_sector_heatmap()`: Region-sector analysis
 
 #### `finance_ml.config` (200+ lines)
-- `FinanceMLConfig`: Configuration dataclass
+- `PMLConfig`: Configuration dataclass
 - `load_config()`: Load from environment/JSON/YAML
 - `get_config()`, `set_config()`, `reset_config()`: Global config management
 

@@ -8,23 +8,31 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/data" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/.venv" />
-      <excludeFolder url="file://$MODULE_DIR$/.venv1" />
+      <sourceFolder url="file://$MODULE_DIR$/public" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/archive" />
       <excludeFolder url="file://$MODULE_DIR$/backups" />
-      <excludeFolder url="file://$MODULE_DIR$/.venv13" />
-      <excludeFolder url="file://$MODULE_DIR$/.idea/stylesheetLinters" />
-      <excludeFolder url="file://$MODULE_DIR$/finance_ml/ml_workflow/archive" />
-      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
-      <excludeFolder url="file://$MODULE_DIR$/.idea/queries" />
-      <excludeFolder url="file://$MODULE_DIR$/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/finance_ml/etl" />
+      <excludeFolder url="file://$MODULE_DIR$/finance_ml/features" />
+      <excludeFolder url="file://$MODULE_DIR$/finance_ml/ml_workflow" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/calibration" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/catalog" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/charts" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/classification" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/dashboards" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/eda" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/evaluation" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/features" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/governance" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/plots" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/portfolio" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/reporting" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/safety_rails" />
+      <excludeFolder url="file://$MODULE_DIR$/outputs/uncertainty" />
     </content>
-    <content url="file://$MODULE_DIR$/data" />
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.14 (Finance_Analytics_Platform)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="Python 3.14 interpreter library" level="application" />
+    <orderEntry type="module" module-name="PML_Finance_Project" />
   </component>
   <component name="TemplatesService">
     <option name="templateFileTypes">

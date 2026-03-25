@@ -3151,7 +3151,7 @@ class PriceTargetAchievementModel:
         # Task 4.3: Parallel MCMC with Gelman-Rubin
         try:
             mcmc_result = parallel_mcmc_chains(
-                returns_data, n_chains=4, n_samples=self.n_mcmc_samples
+                returns_data, n_chains=8, n_samples=self.n_mcmc_samples
             )
             result_df["mcmc_gelman_rubin"] = mcmc_result.get("r_hat", np.nan)
         except Exception as e:

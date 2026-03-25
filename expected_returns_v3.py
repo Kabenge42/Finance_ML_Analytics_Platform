@@ -439,7 +439,7 @@ class PipelineConfig:
 
     mc_simulations: int = 50_000
     mc_max_stocks: int = 10_000
-    mcmc_chains: int = 6
+    mcmc_chains: int = 8
     mcmc_samples: int = 50_000
     beat_threshold: float = 0.6
     output_dir: str = "outputs/analytics"
@@ -448,19 +448,21 @@ class PipelineConfig:
     # v3.5: MCMC-specific settings surfaced for per-model configuration
     mcmc_burn_in: int = 2000
     use_mcmc: bool = True
-    use_student_t: bool = False
+    use_student_t: bool = True
     anomaly_z_threshold: float | None = None
     # v3.6: Screening threshold configuration (Task 3.2)
-    screening_min_pct: float = 1.0  # Minimum % of universe for adaptive fallback
-    screening_quality_roe_min: float = 15.0
+    screening_min_pct: float = 0.01  # Minimum % of universe for adaptive fallback
+    screening_quality_roe_min: float = 0.15
     screening_quality_piotroski_min: float = 6.0
-    screening_dividend_yield_min: float = 2.0
-    screening_dividend_coverage_min: float = 1.2
+    screening_dividend_yield_min: float = 0.02
+    screening_dividend_coverage_min: float = 1.0
     # v3.6: Performance tuning (Task 2.1–2.4)
     n_jobs: int = -1  # Joblib parallelism (-1 = all cores)
-    max_features_per_category: int = 100  # Sampling budget control (Task 2.2)
-    enable_result_caching: bool = True  # MCMC result caching (Task 2.4)
-    cache_dir: str = ".cache/pipeline"
+    max_features_per_category: int = 50  # Sampling budget control (Task 2.2)
+    enable_result_caching: bool = True  # General pipeline result caching (Task 2.4)
+    enable_mcmc_caching: bool = True  # MCMC-specific result caching
+    cache_dir: str = ".cache"
+    cache_ttl_hours: float = 24.0  # Cache time-to-live in hours
     # v3.6: Export parallelism (Task 7.1)
     export_max_workers: int = 4
 
@@ -470,28 +472,78 @@ class PipelineConfig:
         return cls(
             mc_simulations=int(os.environ.get("ER_MC_SIMULATIONS", 50_000)),
             mc_max_stocks=int(os.environ.get("ER_MC_MAX_STOCKS", 10_000)),
-            mcmc_chains=int(os.environ.get("ER_MCMC_CHAINS", 6)),
+            mcmc_chains=int(os.environ.get("ER_MCMC_CHAINS", 8)),
             mcmc_samples=int(os.environ.get("ER_MCMC_SAMPLES", 50_000)),
             output_dir=os.environ.get("ER_OUTPUT_DIR", "outputs/analytics"),
-            log_file=os.environ.get(
-                "ER_LOG_FILE", "logs/expected_returns_pipeline.log"
-            ),
+            log_file=os.environ.get("ER_LOG_FILE", "logs/expected_returns_pipeline.log"),
             mcmc_burn_in=int(os.environ.get("ER_MCMC_BURN_IN", 2000)),
             use_mcmc=os.environ.get("ER_USE_MCMC", "true").lower() == "true",
-            use_student_t=os.environ.get("ER_USE_STUDENT_T", "false").lower() == "true",
+            use_student_t=os.environ.get("ER_USE_STUDENT_T", "true").lower() == "true",
             # v3.6: Screening thresholds from env
-            screening_min_pct=float(os.environ.get("ER_SCREENING_MIN_PCT", 1.0)),
-            screening_quality_roe_min=float(os.environ.get("ER_SCREENING_QUALITY_ROE_MIN", 15.0)),
-            screening_quality_piotroski_min=float(os.environ.get("ER_SCREENING_QUALITY_PIOTROSKI_MIN", 6.0)),
-            screening_dividend_yield_min=float(os.environ.get("ER_SCREENING_DIVIDEND_YIELD_MIN", 2.0)),
-            screening_dividend_coverage_min=float(os.environ.get("ER_SCREENING_DIVIDEND_COVERAGE_MIN", 1.2)),
+            screening_min_pct=float(os.environ.get("ER_SCREENING_MIN_PCT", 0.01)),
+            screening_quality_roe_min=float(os.environ.get("ER_SCREENING_QUALITY_ROE_MIN", 0.15)),
+            screening_quality_piotroski_min=float(
+                os.environ.get("ER_SCREENING_QUALITY_PIOTROSKI_MIN", 6.0)
+            ),
+            screening_dividend_yield_min=float(
+                os.environ.get("ER_SCREENING_DIVIDEND_YIELD_MIN", 0.02)
+            ),
+            screening_dividend_coverage_min=float(
+                os.environ.get("ER_SCREENING_DIVIDEND_COVERAGE_MIN", 1.0)
+            ),
             # v3.6: Performance tuning from env
             n_jobs=int(os.environ.get("ER_N_JOBS", os.environ.get("N_JOBS", -1))),
             max_features_per_category=int(os.environ.get("ER_MAX_FEATURES_PER_CATEGORY", 100)),
             enable_result_caching=os.environ.get("ER_ENABLE_CACHING", "true").lower() == "true",
-            cache_dir=os.environ.get("ER_CACHE_DIR", os.environ.get("CACHE_DIR", ".cache/pipeline")),
+            enable_mcmc_caching=os.environ.get("ER_ENABLE_MCMC_CACHING", "true").lower() == "true",
+            cache_dir=os.environ.get("ER_CACHE_DIR", os.environ.get("CACHE_DIR", ".cache")),
+            cache_ttl_hours=float(os.environ.get("ER_CACHE_TTL_HOURS", 24.0)),
             export_max_workers=int(os.environ.get("ER_EXPORT_MAX_WORKERS", 4)),
         )
+
+    def clear_cache(self, *, expired_only: bool = True) -> int:
+        """
+        Remove cached result files from the cache directory.
+
+        Parameters
+        ----------
+        expired_only : bool, default True
+            If True, only remove files older than ``cache_ttl_hours``.
+            If False, remove all ``.pkl`` files in the cache directory.
+
+        Returns
+        -------
+        int
+            Number of files removed.
+        """
+        cache_path = Path(self.cache_dir)
+        if not cache_path.exists():
+            return 0
+
+        removed = 0
+        for pkl_file in cache_path.glob("*.pkl"):
+            try:
+                if expired_only:
+                    age_hours = (time.time() - pkl_file.stat().st_mtime) / 3600
+                    if age_hours <= self.cache_ttl_hours:
+                        continue
+                pkl_file.unlink()
+                removed += 1
+            except OSError as e:
+                logger.debug("Could not remove cache file %s: %s", pkl_file, e)
+
+        logger.info(
+            "Cache cleanup (%s): removed %d files from %s",
+            "expired only" if expired_only else "full purge",
+            removed,
+            cache_path,
+        )
+        return removed
+
+    @property
+    def caching_enabled(self) -> bool:
+        """True if any form of result caching is active."""
+        return self.enable_result_caching or self.enable_mcmc_caching
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -554,17 +606,21 @@ def _get_cache_path(cache_dir: str, key: str, params: dict) -> Path:
     return Path(cache_dir) / f"{cache_hash}.pkl"
 
 
-def _load_cached_result(cache_path: Path) -> Any | None:
-    """Load a cached result if it exists and is recent (< 24h)."""
+def _load_cached_result(cache_path: Path, ttl_hours: float = 24.0) -> Any | None:
+    """Load a cached result if it exists and is recent (< ttl_hours)."""
     if not cache_path.exists():
         return None
     try:
         age_hours = (time.time() - cache_path.stat().st_mtime) / 3600
-        if age_hours > 24:
+        if age_hours > ttl_hours:
+            logger.debug("Cache expired (%.1fh > %.1fh): %s", age_hours, ttl_hours, cache_path.name)
             return None
         import pickle
+
         with open(cache_path, "rb") as f:
-            return pickle.load(f)
+            result = pickle.load(f)
+        logger.debug("Cache hit (%.1fh old): %s", age_hours, cache_path.name)
+        return result
     except Exception:
         return None
 
@@ -574,6 +630,7 @@ def _save_cached_result(cache_path: Path, result: Any) -> None:
     try:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         import pickle
+
         with open(cache_path, "wb") as f:
             pickle.dump(result, f, protocol=pickle.HIGHEST_PROTOCOL)
     except Exception as e:
@@ -633,6 +690,9 @@ def _write_viz(
         fig.write_html(dest)
     else:
         fig.savefig(dest, dpi=dpi, bbox_inches="tight")
+        import matplotlib.pyplot as _plt
+
+        _plt.close(fig)
     _log_and_print(f"   ✓ {filename}")
 
 
@@ -1590,16 +1650,32 @@ def run_price_target_achievement(
     # If the primary DataFrame (mv_equities) lacks them, merge from the
     # feature views superset to avoid the model falling back to neutral defaults.
     _SENTIMENT_COLS = [
-        "upside_potential",
+        "analyst_bullish_pct",
+        "analyst_bearish_pct",
+        "analyst_neutral_pct",
         "analyst_conviction",
+        "upside_potential",
+        "price_target_spread_pct",
+        "price_target_revision_1m",
+        "price_target_revision_3m",
         "eps_revision_momentum",
         "analyst_rating_normalized",
-        "price_target_spread_pct",
+        "analyst_coverage_quality",
+        "pt_momentum_1w",
         "pt_momentum_1m",
-        "pt_consensus_convergence",
+        "pt_momentum_3m",
+        "pt_momentum_6m",
+        "pt_momentum_1y",
+        "pt_median_momentum_1m",
+        "pt_median_momentum_3m",
         "pt_acceleration_short",
+        "pt_acceleration_long",
+        "pt_consensus_convergence",
+        "analyst_coverage_change_1m",
+        "analyst_coverage_change_3m",
+        "analyst_coverage_change_1y",
+        "pt_vs_price_momentum",
         "analyst_coverage_trend",
-        "analyst_bullish_pct",
     ]
     if feature_df is not None and "ticker" in feature_df.columns:
         missing_sentiment = [
@@ -1619,8 +1695,42 @@ def run_price_target_achievement(
 
     # NEW: Enrich with risk/financial health columns for PriceTargetAchievementModel (v3.4)
     _PT_RISK_COLS = [
-        "beta_1y", "beta_stability_score", "distress_risk_score",
-        "balance_sheet_strength", "debt_maturity_risk",
+        "beta_stability_score",
+        "distress_risk_score",
+        "combined_distress_score",
+        "balance_sheet_strength",
+        "debt_maturity_risk",
+        "liquidity_stress_score",
+        "working_capital_trend",
+        "cash_runway_months",
+        "wc_deteriorating_flag",
+        "retained_earnings_growth",
+        "accumulated_deficit_flag",
+        "adequate_cash_buffer",
+        "goodwill_change_rate",
+        "restructuring_intensity",
+        "exceptional_items_frequency",
+        "merger_impact_ratio",
+        "non_operating_income_share",
+        "asset_sale_boost",
+        "accounting_quality_score",
+        "has_goodwill_impairment_ltm",
+        "goodwill_impairment_frequency",
+        "asset_writedown_frequency",
+        "restructuring_frequency",
+        "exceptional_items_total_ltm",
+        "exceptional_items_to_ebitda",
+        "quality_issues_count_5y",
+        "accounting_quality_score",
+        "has_goodwill_impairment",
+        "has_asset_writedown",
+        "has_restructuring",
+        "goodwill_to_assets_pct",
+        "intangible_intensity",
+        "altman_z_score",
+        "altman_z_trend",
+        "exceptional_items_to_ebitda_comp",
+        "accounting_quality_score_comp"
     ]
     if feature_df is not None and "ticker" in feature_df.columns:
         missing_risk = [c for c in _PT_RISK_COLS if c not in pt_df.columns and c in feature_df.columns]
@@ -2388,7 +2498,7 @@ def run_category_probability_analysis(
     n_jobs: int = 1,
     max_features_per_category: int = 0,
     cache_dir: str = "",
-    enable_caching: bool = False,
+    enable_caching: bool = True,
 ) -> dict[str, dict]:
     """
     Run per-category Bayesian probability analytics.
@@ -2514,7 +2624,7 @@ def _adaptive_screen_fallback(
     df_all: pd.DataFrame,
     screen_result: pd.DataFrame,
     screen_name: str,
-    min_pct: float = 1.0,
+    min_pct: float = 0.01,
     fallback_percentile: float = 90.0,
 ) -> pd.DataFrame:
     """
@@ -2580,7 +2690,7 @@ def _adaptive_screen_fallback(
 def run_stock_screening(
     df_all: pd.DataFrame,
     *,
-    min_pct: float = 1.0,
+    min_pct: float = 0.01,
 ) -> dict[str, pd.DataFrame]:
     """
     Run all stock screening strategies on the full feature set.
@@ -2827,6 +2937,7 @@ def build_tri_model_alignment(
             + [
                 "ticker",
                 "expected_upside_pct",
+                "pt_spread",
                 "price_target_mc",
                 "prob_positive_upside",
                 "var_5_pct",
@@ -2849,11 +2960,14 @@ def build_tri_model_alignment(
                     "ticker",
                     "expected_return_prob_weighted",
                     "achievement_probability",
+                    "mh_achievement_probability",
                     "price_target_prob_weighted",
                     "confidence_level",
                     "analyst_conviction",
                     "eps_revision_momentum",
                     "analyst_rating_normalized",
+                    "upside_potential",
+                    "price_target_spread_pct",
                 ]
             ],
             on="ticker",
@@ -2974,6 +3088,7 @@ def build_expected_returns_summary(
                 "ticker",
                 "expected_upside_pct",
                 "price_target_mc",
+                "pt_spread",
                 "prob_positive_upside",
                 "var_5_pct",
                 "risk_reward_ratio",
@@ -2994,6 +3109,8 @@ def build_expected_returns_summary(
             pt[
                 [
                     "ticker",
+                    "upside_potential",
+                    "price_target_spread_pct",
                     "expected_return_prob_weighted",
                     "price_target_prob_weighted",
                     "achievement_probability",
@@ -3031,6 +3148,7 @@ def build_expected_returns_summary(
                     "prediction_confidence",
                     "model_confidence",
                     "map_estimate",
+                    "pre_earnings_window",
                 ]
             ],
             on="ticker",
@@ -3040,39 +3158,37 @@ def build_expected_returns_summary(
 
     # Merge anomaly results (accounting anomaly detection columns)
     _ANOMALY_COLS = [
-       " gross_profit_margin_pct_fy",
-        "gross_profit_margin_pct_ltm",
-        "buyback_yield_ltm",
-        "div_yield_1fyind",
-        "div_yield_ttm",
-        "div_yield_ntm",
-        "div_yield_5yavgltm",
-        "revenues_est_yoy_pct_fy1e",
-        "price_chg_pct_1m",
-        "price_chg_pct_3m",
-        "one_day_pct",
-        "eps_est_avg_rev_pct_fy1e_1w",
-        "eps_est_avg_rev_pct_fy1e_1m",
-        "eps_est_avg_rev_pct_fy1e_3m",
-        "eps_est_avg_rev_pct_fy1e_6m",
-        "eps_est_avg_rev_pct_fy1e_1y",
-        "div_yield_2fyind",
-        "div_yield_3fyind",
-        "div_yield_4fyind",
-        "div_yield_5fyind",
-        "eps_gaap_est_avg_rev_pct_fy1e_1m",
-        "eps_gaap_est_avg_rev_pct_fy1e_3m",
-        "eps_gaap_est_avg_rev_pct_fy1e_6m",
-        "eps_gaap_est_avg_rev_pct_fy1e_1y",
-        "dividend_streak",
-        "price_target_count",
-        "analyst_rating",
-        "num_strong_sell_ratings",
-        "num_strong_buys_ratings",
-        "num_hold_ratings",
-        "num_buys_ratings",
-        "num_sell_ratings",
-        "num_no_opinion_ratings",
+        "exceptional_items_frequency_z_robust",
+        "gaap_adj_eps_gap_pct_z_robust",
+        "asset_sale_boost_z_robust",
+        "ebitda_adjustment_ratio_z_robust",
+        "eps_adjustment_ratio_z_robust",
+        "exceptional_items_to_ebitda_z_robust",
+        "restructuring_intensity_z_robust",
+        "goodwill_change_rate_z_robust",
+        "eps_adjustment_ratio_comp_z_robust",
+        "eps_adjustment_spread_ltm_z_robust",
+        "eps_adjustment_spread_fy_z_robust",
+        "eps_adjustment_pct_z_robust",
+        "net_income_adjustment_ratio_ltm_z_robust",
+        "net_income_adjustment_ratio_fy_z_robust",
+        "net_income_adjustment_pct_z_robust",
+        "ebitda_adjustment_pct_ltm_z_robust",
+        "ebitda_adjustment_pct_fy_z_robust",
+        "ebit_adjustment_pct_ltm_z_robust",
+        "ebit_adjustment_pct_fy_z_robust",
+        "forward_eps_gaap_adj_spread_z_robust",
+        "gaap_vs_norm_revision_spread_z_robust",
+        "gaap_revision_momentum_z_robust",
+        "gaap_revision_1m_z_robust",
+        "gaap_revision_3m_z_robust",
+        "gaap_revision_6m_z_robust",
+        "gaap_revision_1y_z_robust",
+        "discontinued_ops_impact_z_robust",
+        "revision_quality_divergence_z_robust",
+        "eps_growth_accel_z_robust",
+        "eps_surprise_pct_z_robust",
+        "revenue_surprise_pct_z_robust",
         "accounting_anomaly_score",
         "sector_relative_anomaly",
         "anomaly_feature_count",
@@ -3083,7 +3199,8 @@ def build_expected_returns_summary(
         "sector_posterior_mean",
         "multi_flag_alert",
         "anomaly_conditional_probability",
-        "mh_anomaly_probability"
+        "mh_anomaly_probability",
+        "mahalanobis_distance",
     ]
     if (
             anomaly_results is not None
@@ -3122,6 +3239,11 @@ def build_expected_returns_summary(
         "balance_sheet_strength",
         "wc_efficiency_score",
         "distress_risk_score",
+        "sector_z_posterior_mean",
+        "sector_adjusted_distress",
+        "mcmc_distress_probability",
+        "mcmc_ci_lower",
+        "mcmc_ci_upper",
     ]
     if (
             credit is not None
@@ -3153,6 +3275,7 @@ def build_expected_returns_summary(
         "sustainable_flag",
         "safety_score",
         "risk_category",
+        "sector_fcf_posterior_mean",
     ]
     if (
             div_safety is not None
@@ -3476,7 +3599,7 @@ def compute_sector_return_analytics(
 
     return (
         pd.DataFrame(results)
-        .sort_values("mc_mean", ascending=False, na_position="last")
+        .sort_values("pct_full_consensus", ascending=False, na_position="last")
         .reset_index(drop=True)
     )
 
@@ -3739,7 +3862,7 @@ def compute_return_distribution_analytics(
 
 def run_parallel_mcmc_return_analysis(
     mc: pd.DataFrame,
-    n_chains: int = 4,
+    n_chains: int = 8,
     n_samples: int = 10_000,
 ) -> dict:
     """
@@ -3779,7 +3902,7 @@ def run_resampled_posterior_analysis(
     distributions, providing a fifth model signal for cross-model alignment.
     """
     try:
-        result_df, idata = resampled_posterior_returns(df, freq=freq, n_posterior_samples=4000, n_chains=4)
+        result_df, idata = resampled_posterior_returns(df, freq=freq, n_posterior_samples=4000, n_chains=8)
         if not result_df.empty:
             logger.info(
                 "Resampled posterior returns: %d stocks, mean posterior=%.2f%%",
@@ -3831,8 +3954,8 @@ def _export_single_table(
             _previous_hashes[table] = current_hash
 
         reordered_df = reorder_with_identifiers(df)
-        cfg = ExportConfig(table_name=table)
-        export_to_db(reordered_df, cfg)
+        export_cfg = ExportConfig(table_name=table)
+        export_to_db(reordered_df, export_cfg)
         logger.info("Exported %d rows → analytics.%s", len(df), table)
         return table, f"analytics.{table}"
     except Exception as e:
@@ -4173,7 +4296,7 @@ def _step_anomaly_detection(r: PipelineResult, cfg: PipelineConfig) -> None:
         r.anomaly_results = run_accounting_anomaly_analysis(
             r.df, feature_df=r.df_all,
             anomaly_z_threshold=cfg.anomaly_z_threshold,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            n_mcmc_samples=cfg.mcmc_burn_in * 8,
             burn_in=cfg.mcmc_burn_in,
         )
 
@@ -4230,7 +4353,7 @@ def _step_credit_dividend(r: PipelineResult, cfg: PipelineConfig) -> None:
     try:
         r.credit = run_credit_risk_analysis(
             r.df, feature_df=r.df_all,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            n_mcmc_samples=cfg.mcmc_burn_in * 8,
             burn_in=cfg.mcmc_burn_in,
         )
         if not r.credit.empty:
@@ -4256,7 +4379,7 @@ def _step_credit_dividend(r: PipelineResult, cfg: PipelineConfig) -> None:
 
         r.div_safety = run_dividend_safety_analysis(
             r.df_all, feature_df=r.df_all,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
+            n_mcmc_samples=cfg.mcmc_burn_in * 8,
             burn_in=cfg.mcmc_burn_in,
         )
         if not r.div_safety.empty:
@@ -4401,15 +4524,18 @@ def _step_category_analytics(r: PipelineResult, cfg: PipelineConfig) -> None:
             f"{sum(len(v) for v in all_categories.values())} total features"
         )
 
+        n_mcmc = max(cfg.mcmc_burn_in * 8, 1600)
+        burn_in = max(cfg.mcmc_burn_in, 200)
         r.category_analytics = run_category_probability_analysis(
-            r.df_all, categories=all_categories,
+            r.df_all,
+            categories=all_categories,
             use_mcmc=cfg.use_mcmc,
-            n_mcmc_samples=cfg.mcmc_burn_in * 5,
-            burn_in=cfg.mcmc_burn_in,
+            n_mcmc_samples=n_mcmc,
+            burn_in=burn_in,
             n_jobs=cfg.n_jobs,
             max_features_per_category=cfg.max_features_per_category,
             cache_dir=cfg.cache_dir,
-            enable_caching=cfg.enable_result_caching,
+            enable_caching=cfg.enable_result_caching or cfg.enable_mcmc_caching,
         )
         if r.category_analytics:
             _log_and_print(f"  ✓ Analyzed {len(r.category_analytics)} categories")
@@ -4476,11 +4602,7 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
     """
     cfg = config or PipelineConfig.from_env()
 
-    configure_logging(
-        level=cfg.log_level,
-        log_file=cfg.log_file,
-        console=True,
-    )
+    configure_logging(level=cfg.log_level, log_file=cfg.log_file)
 
     _log_and_print("=" * 80)
     _log_and_print("Expected Returns Analytics Pipeline v3.6")
@@ -4498,9 +4620,15 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
     )
     _log_and_print(
         f"   n_jobs={cfg.n_jobs}, max_features/cat={cfg.max_features_per_category}, "
-        f"caching={'on' if cfg.enable_result_caching else 'off'}"
+        f"caching={'on' if cfg.caching_enabled else 'off'}"
+        f"{f' (TTL={cfg.cache_ttl_hours}h)' if cfg.caching_enabled else ''}"
     )
-    _log_and_print("")
+
+    # Cleanup expired cache files on startup
+    if cfg.caching_enabled:
+        expired_removed = cfg.clear_cache(expired_only=True)
+        if expired_removed > 0:
+            _log_and_print(f"   🧹 Cleaned {expired_removed} expired cache files")
 
     # ========================================================================
     # Task 1.1: Orchestrate pipeline via extracted step functions
@@ -4688,17 +4816,23 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
                                         f"(shrinkage={sectors_data[s].get('shrinkage', 0):.2f})"
                                     )
                         # Multi-level hierarchical MCMC across all category columns
-                        multi_hier = hierarchical_mcmc_multi_level(summary, "expected_upside_pct", group_cols=[
-                            "region",
-                            "country",
-                            "trading_country",
-                            "exchange",
-                            "unit",
-                            "sector",
-                            "industry",
-                            "style_class",
-                            "size_class",
-                        ], min_group_size=20, shrinkage_strength=10.0)
+                        multi_hier = hierarchical_mcmc_multi_level(
+                            summary,
+                            "expected_upside_pct",
+                            group_cols=[
+                                "region",
+                                "country",
+                                "trading_country",
+                                "exchange",
+                                "unit",
+                                "sector",
+                                "industry",
+                                "style_class",
+                                "size_class",
+                            ],
+                            min_group_size=5,
+                            shrinkage_strength=10.0,
+                        )
                         if multi_hier and "cross_level_summary" in multi_hier:
                             xls = multi_hier["cross_level_summary"]
                             if isinstance(xls, pd.DataFrame) and not xls.empty:
@@ -4710,7 +4844,7 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
                                 )
                                 for level in xls["level"].unique():
                                     level_df = xls[xls["level"] == level]
-                                    top = level_df.nlargest(n=50, columns="posterior_mean")
+                                    top = level_df.nlargest(n=100, columns="posterior_mean")
                                     for _, row in top.iterrows():
                                         _log_and_print(
                                             f"     [{level}] {row['group']}: "
@@ -4721,7 +4855,7 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
                     except Exception as e:
                         logger.debug("Hierarchical MCMC skipped: %s", e)
 
-                top_sectors = sector_analytics.head(50)
+                top_sectors = sector_analytics.head(100)
                 group_col = (
                     "industry" if "industry" in sector_analytics.columns else "sector"
                 )
@@ -4792,7 +4926,7 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
                     beat,
                     df_all,
                     n_posterior_samples=4000,
-                    n_chains=4,
+                    n_chains=8,
                 )
                 beat_summary = summarize_inference_data(idata_beat)
                 _log_and_print(
@@ -4863,6 +4997,9 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
             "altman_z_score",
             "piotroski_f_score",
             "distress_risk_score",
+            "distress_probability",
+            "survival_probability",
+            "ruin_probability",
         ],
         "create_beneish_mscore_analysis": [
             "beneish_m_score",
@@ -4990,7 +5127,7 @@ def main(config: PipelineConfig | None = None) -> PipelineResult:
         if not df.empty:
             _write_viz(create_beneish_mscore_analysis(df), output_dir, "er_beneish_mscore.html")
 
-        if not df.empty and "combined_distress_risk_score" in df.columns:
+        if not df.empty and "distress_probability" in df.columns:
             _write_viz(create_risk_tier_sunburst(df), output_dir, "er_risk_tier_sunburst.html")
 
         if not anomaly_results.empty and "accounting_anomaly_score" in anomaly_results.columns:

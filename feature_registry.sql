@@ -1,5 +1,5 @@
 -- =============================================================================
--- SQL Feature Registry for Finance ML Analytics Platform
+-- SQL Feature Registry for PML Finance Project
 -- Phase 9.3 Feature Engineering - PostgreSQL Implementation (OPTIMIZED)
 -- =============================================================================
 -- OPTIMIZATIONS APPLIED:
@@ -16,7 +16,7 @@
 
 -- Safe division helper (avoids division by zero)
 CREATE OR REPLACE FUNCTION safe_divide(
-    numerator   NUMERIC,
+    numerator NUMERIC,
     denominator NUMERIC
 )
     RETURNS NUMERIC
@@ -2203,9 +2203,9 @@ BEGIN
                p.piotroski_f_score,
                d.dilution_score,
                q.quality_momentum_score
-        FROM public.calc_piotroski_f_score(p_isin)                      p
+        FROM public.calc_piotroski_f_score(p_isin) p
                  JOIN public.calc_shareholder_dilution_features(p_isin) d ON p.isin = d.isin
-                 JOIN public.calc_quality_momentum_composite(p_isin)    q ON p.isin = q.isin;
+                 JOIN public.calc_quality_momentum_composite(p_isin) q ON p.isin = q.isin;
 END;
 $$;
 
@@ -4015,16 +4015,16 @@ SELECT "ISIN",
        "Volatility (3M)",
        "Volatility (6M)",
        "Volatility (1Y)",
-       "Volatility (3M)" - "Volatility (1M)",
-       "Volatility (1Y)" - "Volatility (6M)",
-       public.safe_divide("Volatility (3M)", "Volatility (1Y)"),
-       "Volatility (6M)" - ("Volatility (3M)" + "Volatility (1Y)") / 2.0,
+       "Volatility (3M)" - "Volatility (1M)"                             AS vol_term_spread_short,
+       "Volatility (1Y)" - "Volatility (6M)"                             AS vol_term_spread_long,
+       public.safe_divide("Volatility (3M)", "Volatility (1Y)")          AS vol_ratio_3m_1y,
+       "Volatility (6M)" - ("Volatility (3M)" + "Volatility (1Y)") / 2.0 AS vol_hump,
        "Beta (1Y)",
        "Beta (2Y)",
        "Beta (5Y)",
-       public.calc_change_ratio("Beta (1Y)", "Beta (5Y)"),
-       "Beta (2Y)" - ("Beta (1Y)" + "Beta (5Y)") / 2.0,
-       public.safe_divide("Volatility (1M)", "Volatility (1Y)")
+       public.calc_change_ratio("Beta (1Y)", "Beta (5Y)")                AS beta_term_structure,
+       "Beta (2Y)" - ("Beta (1Y)" + "Beta (5Y)") / 2.0                   AS beta_convexity,
+       public.safe_divide("Volatility (1M)", "Volatility (1Y)")          AS realized_vs_implied_proxy
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4056,18 +4056,18 @@ $$
 SELECT "ISIN",
        "P/E (NTM)",
        "P/E (EST FY1)",
-       public.calc_change_ratio("P/E (NTM)", "P/E (LTM)"),
-       "EPS GAAP - Est Avg (NTM)" - "EPS Norm - Est Avg (NTM)",
-       "EPS GAAP - Est Avg (FY1E)" - "EPS Norm - Est Avg (FY1E)",
+       public.calc_change_ratio("P/E (NTM)", "P/E (LTM)")                       AS pe_forward_discount,
+       "EPS GAAP - Est Avg (NTM)" - "EPS Norm - Est Avg (NTM)"                  AS eps_gaap_vs_norm_ntm,
+       "EPS GAAP - Est Avg (FY1E)" - "EPS Norm - Est Avg (FY1E)"                AS eps_gaap_vs_norm_fy1e,
        ("EPS GAAP - Est Avg (FY1E)" - "EPS Norm - Est Avg (FY1E)") -
-       ("EPS/Adj. (LTM)" - "Net EPS - Basic (LTM)"),
+       ("EPS/Adj. (LTM)" - "Net EPS - Basic (LTM)")                             AS forward_adjustment_trend,
        "EBITDA - Est Avg (NTM)",
        "EBITDA - Est Avg (FY1E)",
        "EV/EBITDA (EST FY1)",
-       public.calc_change_ratio("EBITDA - Est Avg (FY1E)", "EBITDA (LTM)"),
+       public.calc_change_ratio("EBITDA - Est Avg (FY1E)", "EBITDA (LTM)")      AS ebitda_forward_growth,
        ("EPS Est Avg Rev % (FY1E - 3M)" - "EPS GAAP Est Avg Rev % (FY1E - 3M)") -
-       ("EPS Est Avg Rev % (FY1E - 1M)" - "EPS GAAP Est Avg Rev % (FY1E - 1M)"),
-       public.calc_change_ratio("P/E (NTM)", "P/E (3YAVGLTM)")
+       ("EPS Est Avg Rev % (FY1E - 1M)" - "EPS GAAP Est Avg Rev % (FY1E - 1M)") AS earnings_revision_divergence,
+       public.calc_change_ratio("P/E (NTM)", "P/E (3YAVGLTM)")                  AS forward_pe_vs_sector_proxy
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4096,20 +4096,22 @@ SELECT "ISIN",
            WHEN "Price Target (1Y Ago)" > 0 AND "Last Price" >= "Price Target (1Y Ago)" THEN 1.0
            WHEN "Price Target (1Y Ago)" > 0 THEN
                public.safe_divide("Last Price", "Price Target (1Y Ago)")
-           END,
-       ABS("Last Price" - "Price Target (1Y Ago)") / NULLIF(ABS("Price Target (1Y Ago)"), 0),
-       ("Price Target (1Y Ago)" - "Last Price") / NULLIF(ABS("Price Target (1Y Ago)"), 0),
+           END                                                                               AS pt_achievement_1y,
+       ABS("Last Price" - "Price Target (1Y Ago)") / NULLIF(ABS("Price Target (1Y Ago)"), 0) AS pt_accuracy_1y,
+       ("Price Target (1Y Ago)" - "Last Price") / NULLIF(ABS("Price Target (1Y Ago)"), 0)    AS pt_optimism_bias,
        CASE
            WHEN "Last Price" BETWEEN "Price Target - Low (1Y Ago)" AND "Price Target - High (1Y Ago)"
                THEN 1.0
            ELSE 0.0
-           END,
-       ("Price Target" - "Price Target - Median") / NULLIF("Price Target - Median", 0),
+           END                                                                               AS pt_range_hit_rate,
+       ("Price Target" - "Price Target - Median") /
+       NULLIF("Price Target - Median", 0)                                                    AS pt_median_vs_mean_spread,
        (("Price Target - High" - "Price Target - Low") / NULLIF("Price Target - Median", 0)) -
-       (("Price Target - High (1Y Ago)" - "Price Target - Low (1Y Ago)") / NULLIF("Price Target - Median (1Y Ago)", 0)),
+       (("Price Target - High (1Y Ago)" - "Price Target - Low (1Y Ago)") /
+        NULLIF("Price Target - Median (1Y Ago)", 0))                                         AS pt_high_low_convergence_1y,
        public.safe_divide("Price Target - #",
                           ("Price Target - # (1Y Ago)" + "Price Target - # (6M Ago)" + "Price Target - # (3M Ago)") /
-                          3.0)
+                          3.0)                                                               AS analyst_count_stability
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4140,16 +4142,17 @@ SELECT "ISIN",
        "Div Yield (-3FYInd)",
        "Div Yield (-4FYInd)",
        "Div Yield (-5FYInd)",
-       ("Div Yield (Ind)" - "Div Yield (-3FYInd)") / 3.0,
+       ("Div Yield (Ind)" - "Div Yield (-3FYInd)") / 3.0 AS div_yield_trend_3y,
        GREATEST("Div Yield (Ind)", "Div Yield (-1FYInd)", "Div Yield (-2FYInd)",
                 "Div Yield (-3FYInd)", "Div Yield (-4FYInd)") -
        LEAST("Div Yield (Ind)", "Div Yield (-1FYInd)", "Div Yield (-2FYInd)",
-             "Div Yield (-3FYInd)", "Div Yield (-4FYInd)"),
+             "Div Yield (-3FYInd)",
+             "Div Yield (-4FYInd)")                      AS div_yield_volatility,
        CASE
            WHEN "Div Yield (Ind)" < "Div Yield (-1FYInd)"
                AND "Div Yield (-1FYInd)" < "Div Yield (-2FYInd)"
                AND "Div Yield (-2FYInd)" < "Div Yield (-3FYInd)" THEN 1
-           ELSE 0 END,
+           ELSE 0 END                                    AS div_yield_declining_flag,
        (COALESCE("Div Yield (Ind)", 0) + COALESCE("Div Yield (-1FYInd)", 0) +
         COALESCE("Div Yield (-2FYInd)", 0) + COALESCE("Div Yield (-3FYInd)", 0) +
         COALESCE("Div Yield (-4FYInd)", 0)) /
@@ -4157,7 +4160,8 @@ SELECT "ISIN",
                CASE WHEN "Div Yield (-1FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
                CASE WHEN "Div Yield (-2FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
                CASE WHEN "Div Yield (-3FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
-               CASE WHEN "Div Yield (-4FYInd)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 0),
+               CASE WHEN "Div Yield (-4FYInd)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC,
+              0)                                         AS div_yield_mean_5y,
        public.calc_change_ratio("Div Yield (Ind)",
                                 (COALESCE("Div Yield (Ind)", 0) + COALESCE("Div Yield (-1FYInd)", 0) +
                                  COALESCE("Div Yield (-2FYInd)", 0) + COALESCE("Div Yield (-3FYInd)", 0) +
@@ -4166,7 +4170,8 @@ SELECT "ISIN",
                                         CASE WHEN "Div Yield (-1FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
                                         CASE WHEN "Div Yield (-2FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
                                         CASE WHEN "Div Yield (-3FYInd)" IS NOT NULL THEN 1 ELSE 0 END +
-                                        CASE WHEN "Div Yield (-4FYInd)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 0))
+                                        CASE WHEN "Div Yield (-4FYInd)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC,
+                                       0))               AS div_yield_vs_5y_mean
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4196,14 +4201,14 @@ $$
 SELECT "ISIN",
        "Market Cap",
        "Market Cap (Country R)",
-       LN(GREATEST("Market Cap", 1)),
+       LN(GREATEST("Market Cap", 1))                                                           AS log_market_cap,
        "Volume (Shrs)",
        "Rel. Volume",
        "Shrs Out",
-       public.safe_divide("Volume (Shrs)", "Shrs Out"),
+       public.safe_divide("Volume (Shrs)", "Shrs Out")                                         AS daily_turnover_ratio,
        "Size Class",
        "Style Class",
-       "Volume (Shrs)" * COALESCE("Rel. Volume", 1) / NULLIF(LN(GREATEST("Market Cap", 1)), 0)
+       "Volume (Shrs)" * COALESCE("Rel. Volume", 1) / NULLIF(LN(GREATEST("Market Cap", 1)), 0) AS liquidity_score
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4234,24 +4239,26 @@ SELECT "ISIN",
        "Interest And Investment Income (FQ)",
        "Interest And Investment Income (FY)",
        public.calc_change_ratio("Interest And Investment Income (FQ)",
-                                "Interest And Investment Income (-1FQFQ)"),
+                                "Interest And Investment Income (-1FQFQ)")                AS inv_income_qoq_growth,
        public.calc_change_ratio("Interest And Investment Income (FY)",
-                                "Interest And Investment Income (-1FY)"),
-       public.safe_divide("Interest And Investment Income (LTM)", "Total Revenues (LTM)"),
+                                "Interest And Investment Income (-1FY)")                  AS inv_income_yoy_growth,
+       public.safe_divide("Interest And Investment Income (LTM)", "Total Revenues (LTM)") AS inv_income_to_revenue,
        CASE
            WHEN "Interest And Investment Income (-3FY)" > 0 AND "Interest And Investment Income (FY)" > 0
                THEN (POWER(public.safe_divide("Interest And Investment Income (FY)",
                                               "Interest And Investment Income (-3FY)"), 1.0 / 3.0) - 1) * 100
-           END,
+           END                                                                            AS inv_income_trend_3y,
        (CASE WHEN "Interest And Investment Income (FQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Interest And Investment Income (-1FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Interest And Investment Income (-2FQFQ)" > 0 THEN 1 ELSE 0 END +
         CASE WHEN "Interest And Investment Income (-3FQFQ)" > 0 THEN 1 ELSE 0 END +
-        CASE WHEN "Interest And Investment Income (-4FQFQ)" > 0 THEN 1 ELSE 0 END)::INTEGER,
+        CASE
+            WHEN "Interest And Investment Income (-4FQFQ)" > 0 THEN 1
+            ELSE 0 END)::INTEGER                                                          AS inv_income_positive_quarters,
        CASE
            WHEN public.safe_divide("Interest And Investment Income (LTM)", "Total Revenues (LTM)") > 0.2
                THEN 1
-           ELSE 0 END
+           ELSE 0 END                                                                     AS financial_company_proxy
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4278,8 +4285,9 @@ $$
 SELECT "ISIN",
        "Effective Tax Rate - (Ratio) (LTM)",
        "Effective Tax Rate - (Ratio) (FY)",
-       "Effective Tax Rate - (Ratio) (FY)" - "Effective Tax Rate - (Ratio) (-1FY)",
-       "Effective Tax Rate - (Ratio) (FQ)" - "Effective Tax Rate - (Ratio) (-1FQFQ)",
+       "Effective Tax Rate - (Ratio) (FY)" - "Effective Tax Rate - (Ratio) (-1FY)" AS tax_rate_yoy_change,
+       "Effective Tax Rate - (Ratio) (FQ)" -
+       "Effective Tax Rate - (Ratio) (-1FQFQ)"                                     AS tax_rate_qoq_change,
        -- Stability: range across available quarterly periods (lower = more stable)
        GREATEST(
                COALESCE("Effective Tax Rate - (Ratio) (FQ)", 0),
@@ -4291,8 +4299,8 @@ SELECT "ISIN",
                COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0),
                COALESCE("Effective Tax Rate - (Ratio) (-2FQFQ)", 0),
                COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)
-           ),
-       CASE WHEN "Effective Tax Rate - (Ratio) (LTM)" < 0.10 THEN 1 ELSE 0 END,
+           )                                                                       AS tax_rate_stability,
+       CASE WHEN "Effective Tax Rate - (Ratio) (LTM)" < 0.10 THEN 1 ELSE 0 END     AS low_tax_flag,
        -- Trend across 4 quarters (FQ vs avg of prior 3)
        "Effective Tax Rate - (Ratio) (FQ)" -
        (COALESCE("Effective Tax Rate - (Ratio) (-1FQFQ)", 0) +
@@ -4300,7 +4308,8 @@ SELECT "ISIN",
         COALESCE("Effective Tax Rate - (Ratio) (-3FQFQ)", 0)) /
        NULLIF((CASE WHEN "Effective Tax Rate - (Ratio) (-1FQFQ)" IS NOT NULL THEN 1 ELSE 0 END +
                CASE WHEN "Effective Tax Rate - (Ratio) (-2FQFQ)" IS NOT NULL THEN 1 ELSE 0 END +
-               CASE WHEN "Effective Tax Rate - (Ratio) (-3FQFQ)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 0)
+               CASE WHEN "Effective Tax Rate - (Ratio) (-3FQFQ)" IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC,
+              0)                                                                   AS tax_rate_trend_4q
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4331,19 +4340,21 @@ SELECT "ISIN",
        "Total Operating Expenses (LTM)",
        "Total Operating Expenses (FY)",
        public.calc_change_ratio("Total Operating Expenses (FQ)",
-                                "Total Operating Expenses (-1FQFQ)"),
+                                "Total Operating Expenses (-1FQFQ)")             AS opex_qoq_growth,
        public.calc_change_ratio("Total Operating Expenses (FY)",
-                                "Total Operating Expenses (-1FY)"),
+                                "Total Operating Expenses (-1FY)")               AS opex_yoy_growth,
        -- Change in opex/revenue ratio (FY vs -1FY)
        (public.safe_divide("Total Operating Expenses (FY)"::NUMERIC, "Total Revenues (FY)"::NUMERIC) -
-        public.safe_divide("Total Operating Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)) * 100,
+        public.safe_divide("Total Operating Expenses (-1FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC)) *
+       100                                                                       AS opex_vs_revenue_trend,
        public.calc_change_ratio("Selling General & Admin Expenses/Total (FQ)",
-                                "Selling General & Admin Expenses/Total (-1FY)"),
+                                "Selling General & Admin Expenses/Total (-1FY)") AS sga_qoq_growth,
        public.calc_change_ratio("Selling General & Admin Expenses/Total (FY)",
-                                "Selling General & Admin Expenses/Total (-1FY)"),
+                                "Selling General & Admin Expenses/Total (-1FY)") AS sga_yoy_growth,
        -- Operating leverage: revenue growth minus opex growth
        public.calc_change_ratio("Total Revenues (FY)"::NUMERIC, "Total Revenues (-1FY)"::NUMERIC) -
-       public.calc_change_ratio("Total Operating Expenses (FY)"::NUMERIC, "Total Operating Expenses (-1FY)"::NUMERIC)
+       public.calc_change_ratio("Total Operating Expenses (FY)"::NUMERIC,
+                                "Total Operating Expenses (-1FY)"::NUMERIC)      AS operating_leverage_score
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4378,9 +4389,9 @@ SELECT "ISIN",
            WHEN "FCF - Est Avg (FY1E)" > 0 AND "FCF - Est Avg (FY5E)" > 0
                THEN (POWER(public.safe_divide("FCF - Est Avg (FY5E)",
                                               "FCF - Est Avg (FY1E)"), 0.25) - 1) * 100
-           END,
+           END                                                                  AS fcf_est_cagr_5y,
        -- Linear trend: (FY5E - FY1E) / FY1E
-       public.calc_change_ratio("FCF - Est Avg (FY5E)", "FCF - Est Avg (FY1E)")
+       public.calc_change_ratio("FCF - Est Avg (FY5E)", "FCF - Est Avg (FY1E)") AS fcf_est_trend
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4412,13 +4423,15 @@ SELECT "ISIN",
         CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-1FY)", 0)) > 0 THEN 1 ELSE 0 END +
         CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-2FY)", 0)) > 0 THEN 1 ELSE 0 END +
         CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-3FY)", 0)) > 0 THEN 1 ELSE 0 END +
-        CASE WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-4FY)", 0)) > 0 THEN 1 ELSE 0 END)::INTEGER,
+        CASE
+            WHEN ABS(COALESCE("Gain (Loss) On Sale Of Assets (-4FY)", 0)) > 0 THEN 1
+            ELSE 0 END)::INTEGER                                     AS asset_sale_frequency,
        -- Trend: FQ vs average of prior quarters
        "Gain (Loss) On Sale Of Assets (FQ)" -
        (COALESCE("Gain (Loss) On Sale Of Assets (-1FQFQ)", 0) +
         COALESCE("Gain (Loss) On Sale Of Assets (-2FQFQ)", 0) +
         COALESCE("Gain (Loss) On Sale Of Assets (-3FQFQ)", 0) +
-        COALESCE("Gain (Loss) On Sale Of Assets (-4FQFQ)", 0)) / 4.0
+        COALESCE("Gain (Loss) On Sale Of Assets (-4FQFQ)", 0)) / 4.0 AS asset_sale_trend
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4440,8 +4453,8 @@ AS
 $$
 SELECT "ISIN",
        "Shrs Out (-1FY)",
-       public.calc_change_ratio("Shrs Out", "Shrs Out (-1FY)"),
-       CASE WHEN "Shrs Out" < "Shrs Out (-1FY)" THEN 1 ELSE 0 END
+       public.calc_change_ratio("Shrs Out", "Shrs Out (-1FY)")    AS shares_yoy_change_pct,
+       CASE WHEN "Shrs Out" < "Shrs Out (-1FY)" THEN 1 ELSE 0 END AS net_buyback_flag
 FROM postgres.public.equities
 WHERE p_isin IS NULL
    OR "ISIN" = p_isin;
@@ -4550,11 +4563,11 @@ SELECT id.*,
        tb.tbv_yoy_growth,
        tb.tbv_vs_calculated
 
-FROM vw_identifier_columns                              id
-         LEFT JOIN calc_valuation_features()            vf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_valuation_features() vf USING (isin)
          LEFT JOIN calc_valuation_timeseries_features() vts USING (isin)
          LEFT JOIN calc_extended_valuation_timeseries() evt USING (isin)
-         LEFT JOIN calc_tangible_book_features()        tb USING (isin);
+         LEFT JOIN calc_tangible_book_features() tb USING (isin);
 
 COMMENT ON VIEW vw_features_valuation_ratios IS
     'Valuation metrics including P/E, P/B, EV/EBITDA, tangible book value, and timeseries analysis.
@@ -4602,8 +4615,8 @@ SELECT id.*,
        ltm.multi_year_high_flag,
        ltm.secular_trend_flag
 
-FROM vw_identifier_columns                            id
-         LEFT JOIN calc_momentum_features()           mf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_momentum_features() mf USING (isin)
          LEFT JOIN calc_long_term_momentum_features() ltm USING (isin);
 
 COMMENT ON VIEW vw_features_momentum IS
@@ -4636,7 +4649,7 @@ SELECT id.*,
        ta.volatility_compression,
        ta.volatility_term_structure
 
-FROM vw_identifier_columns                            id
+FROM vw_identifier_columns id
          LEFT JOIN calc_technical_analysis_features() ta USING (isin);
 
 COMMENT ON VIEW vw_features_technical_analysis IS
@@ -4748,11 +4761,11 @@ SELECT id.*,
        gpt.gp_positive_quarters,
        gpt.gp_margin_expansion
 
-FROM vw_identifier_columns                          id
-         LEFT JOIN calc_profitability_features()    pf USING (isin)
-         LEFT JOIN calc_margin_trends()             mt USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_profitability_features() pf USING (isin)
+         LEFT JOIN calc_margin_trends() mt USING (isin)
          LEFT JOIN calc_ebit_ebitda_comprehensive() eec USING (isin)
-         LEFT JOIN calc_gross_profit_temporal()     gpt USING (isin);
+         LEFT JOIN calc_gross_profit_temporal() gpt USING (isin);
 
 COMMENT ON VIEW vw_features_profitability IS
     'Profitability metrics including ROE, ROA, margins, EBIT/EBITDA comprehensive analysis.
@@ -4874,13 +4887,13 @@ SELECT id.*,
        grf.gaap_positive_revision_flag,
        grf.revision_quality_divergence
 
-FROM vw_identifier_columns                        id
-         LEFT JOIN calc_earnings_features()       ef USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_earnings_features() ef USING (isin)
          LEFT JOIN calc_eps_trajectory_features() etf USING (isin)
-         LEFT JOIN calc_eps_comprehensive()       ec USING (isin)
+         LEFT JOIN calc_eps_comprehensive() ec USING (isin)
          LEFT JOIN calc_eps_continuing_features() ecf USING (isin)
          LEFT JOIN calc_gaap_adjusted_analytics() gaa USING (isin)
-         LEFT JOIN calc_gaap_revision_features()  grf USING (isin);
+         LEFT JOIN calc_gaap_revision_features() grf USING (isin);
 
 COMMENT ON VIEW vw_features_earnings IS
     'Earnings metrics including EPS analysis, GAAP adjustments, and revision trends.
@@ -4989,12 +5002,12 @@ SELECT id.*,
        trt.revenue_fq_vs_avg,
        trt.revenue_momentum
 
-FROM vw_identifier_columns                           id
-         LEFT JOIN calc_growth_features()            gf USING (isin)
-         LEFT JOIN calc_revenue_forecast_features()  rff USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_growth_features() gf USING (isin)
+         LEFT JOIN calc_revenue_forecast_features() rff USING (isin)
          LEFT JOIN calc_revenue_estimate_consensus() rec USING (isin)
          LEFT JOIN calc_revenue_quarterly_features() rqf USING (isin)
-         LEFT JOIN calc_total_revenues_temporal()    trt USING (isin);
+         LEFT JOIN calc_total_revenues_temporal() trt USING (isin);
 
 COMMENT ON VIEW vw_features_growth IS
     'Growth metrics including revenue, EBITDA, FCF growth rates and forecasts.
@@ -5092,11 +5105,11 @@ SELECT id.*,
        qfc.quality_issues_count_5y,
        qfc.accounting_quality_score    AS accounting_quality_score_comp
 
-FROM vw_identifier_columns                               id
-         LEFT JOIN calc_quality_features()               qf USING (isin)
-         LEFT JOIN calc_beta_risk_features()             br USING (isin)
-         LEFT JOIN calc_financial_distress_features()    fdf USING (isin)
-         LEFT JOIN calc_accounting_quality_features()    aqf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_quality_features() qf USING (isin)
+         LEFT JOIN calc_beta_risk_features() br USING (isin)
+         LEFT JOIN calc_financial_distress_features() fdf USING (isin)
+         LEFT JOIN calc_accounting_quality_features() aqf USING (isin)
          LEFT JOIN calc_quality_features_comprehensive() qfc USING (isin);
 
 COMMENT ON VIEW vw_features_quality_risk IS
@@ -5226,12 +5239,12 @@ SELECT id.*,
        wcd.negative_wc_flag,
        wcd.wc_improvement_flag AS wc_improvement_flag_deep
 
-FROM vw_identifier_columns                              id
-         LEFT JOIN calc_leverage_features()             lf USING (isin)
-         LEFT JOIN calc_efficiency_ratios()             er USING (isin)
-         LEFT JOIN calc_balance_sheet_dynamics()        bsd USING (isin)
-         LEFT JOIN calc_working_capital_temporal()      wct USING (isin)
-         LEFT JOIN calc_total_debt_temporal()           tdt USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_leverage_features() lf USING (isin)
+         LEFT JOIN calc_efficiency_ratios() er USING (isin)
+         LEFT JOIN calc_balance_sheet_dynamics() bsd USING (isin)
+         LEFT JOIN calc_working_capital_temporal() wct USING (isin)
+         LEFT JOIN calc_total_debt_temporal() tdt USING (isin)
          LEFT JOIN calc_working_capital_deep_features() wcd USING (isin);
 
 COMMENT ON VIEW vw_features_leverage_liquidity IS
@@ -5291,8 +5304,8 @@ SELECT id.*,
        ptd.pt_vs_price_momentum,
        ptd.analyst_coverage_trend
 
-FROM vw_identifier_columns                      id
-         LEFT JOIN calc_sentiment_features()    sf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_sentiment_features() sf USING (isin)
          LEFT JOIN calc_price_target_dynamics() ptd USING (isin);
 
 COMMENT ON VIEW vw_features_analyst_sentiment IS
@@ -5352,9 +5365,9 @@ SELECT id.*,
        dyc.high_yield_flag,
        dyc.sustainable_dividend_flag
 
-FROM vw_identifier_columns                             id
-         LEFT JOIN calc_dividend_features()            df USING (isin)
-         LEFT JOIN calc_dividend_timing()              dt USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_dividend_features() df USING (isin)
+         LEFT JOIN calc_dividend_timing() dt USING (isin)
          LEFT JOIN calc_dividend_yield_comprehensive() dyc USING (isin);
 
 COMMENT ON VIEW vw_features_dividends IS
@@ -5399,7 +5412,7 @@ SELECT id.*,
        ed.rapid_hiring_flag,
        ed.sustainable_growth_flag
 
-FROM vw_identifier_columns                    id
+FROM vw_identifier_columns id
          LEFT JOIN calc_employment_features() ef USING (isin)
          LEFT JOIN calc_employment_dynamics() ed USING (isin);
 
@@ -5534,12 +5547,12 @@ SELECT id.*,
        fge.fcf_est_vs_historical,
        fge.fcf_est_capex_implied_ratio
 
-FROM vw_identifier_columns                           id
-         LEFT JOIN calc_cashflow_features()          cf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_cashflow_features() cf USING (isin)
          LEFT JOIN calc_enhanced_cashflow_features() ecf USING (isin)
          LEFT JOIN calc_cashflow_temporal_features() ctf USING (isin)
-         LEFT JOIN calc_cashflow_comprehensive()     cc USING (isin)
-         LEFT JOIN calc_fcf_growth_estimates()       fge USING (isin);
+         LEFT JOIN calc_cashflow_comprehensive() cc USING (isin)
+         LEFT JOIN calc_fcf_growth_estimates() fge USING (isin);
 
 COMMENT ON VIEW vw_features_cashflow IS
     'Cash flow metrics including CFO, FCF, CapEx analysis, and cash flow quality.
@@ -5581,8 +5594,8 @@ SELECT id.*,
        fcf.reporting_freshness_score,
        fcf.fiscal_quarter_progress
 
-FROM vw_identifier_columns                         id
-         LEFT JOIN calc_temporal_features()        tf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_temporal_features() tf USING (isin)
          LEFT JOIN calc_fiscal_calendar_features() fcf USING (isin);
 
 COMMENT ON VIEW vw_features_temporal IS
@@ -5673,10 +5686,10 @@ SELECT id.*,
        gtf.impairment_risk_score,
        gtf.goodwill_concentration
 
-FROM vw_identifier_columns                            id
-         LEFT JOIN calc_total_assets_temporal()       tat USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_total_assets_temporal() tat USING (isin)
          LEFT JOIN calc_inventory_temporal_features() itf USING (isin)
-         LEFT JOIN calc_goodwill_temporal_features()  gtf USING (isin);
+         LEFT JOIN calc_goodwill_temporal_features() gtf USING (isin);
 
 COMMENT ON VIEW vw_features_balance_sheet IS
     'Balance sheet temporal analysis including assets, inventory, and goodwill trends.
@@ -5755,9 +5768,9 @@ SELECT id.*,
        iif.interest_expense_to_revenue,
        iif.net_interest_margin_proxy
 
-FROM vw_identifier_columns                         id
-         LEFT JOIN calc_cost_structure_features()  csf USING (isin)
-         LEFT JOIN calc_rnd_temporal_features()    rtf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_cost_structure_features() csf USING (isin)
+         LEFT JOIN calc_rnd_temporal_features() rtf USING (isin)
          LEFT JOIN calc_interest_income_features() iif USING (isin);
 
 COMMENT ON VIEW vw_features_cost_structure IS
@@ -5818,9 +5831,9 @@ SELECT id.*,
        nic.net_income_vs_5y_avg,
        nic.normalized_ni_vs_5y_avg
 
-FROM vw_identifier_columns                         id
-         LEFT JOIN calc_composite_scores()         cs USING (isin)
-         LEFT JOIN calc_eps_trajectory_features()  etf USING (isin)
+FROM vw_identifier_columns id
+         LEFT JOIN calc_composite_scores() cs USING (isin)
+         LEFT JOIN calc_eps_trajectory_features() etf USING (isin)
          LEFT JOIN calc_net_income_comprehensive() nic USING (isin);
 
 COMMENT ON VIEW vw_features_composite_scores IS
@@ -5851,7 +5864,7 @@ SELECT id.*,
        uif.has_unusual_items_flag,
        uif.earnings_quality_impact
 
-FROM vw_identifier_columns                       id
+FROM vw_identifier_columns id
          LEFT JOIN calc_unusual_items_features() uif USING (isin);
 
 COMMENT ON VIEW vw_features_unusual_items IS
@@ -6908,125 +6921,125 @@ SELECT id.*,
        -- =========================================================================
        CURRENT_TIMESTAMP                   AS feature_calculated_at
 
-FROM vw_identifier_columns                               id
+FROM vw_identifier_columns id
 -- Base equities for reference columns
-         JOIN      postgres.public.equities              e ON id.isin = e."ISIN"
+         JOIN postgres.public.equities e ON id.isin = e."ISIN"
 
 -- Section 1: Valuation Ratios
-         LEFT JOIN calc_valuation_features()             vf ON id.isin = vf.isin
-         LEFT JOIN calc_valuation_timeseries_features()  vts ON id.isin = vts.isin
-         LEFT JOIN calc_extended_valuation_timeseries()  evt ON id.isin = evt.isin
-         LEFT JOIN calc_tangible_book_features()         tb ON id.isin = tb.isin
+         LEFT JOIN calc_valuation_features() vf ON id.isin = vf.isin
+         LEFT JOIN calc_valuation_timeseries_features() vts ON id.isin = vts.isin
+         LEFT JOIN calc_extended_valuation_timeseries() evt ON id.isin = evt.isin
+         LEFT JOIN calc_tangible_book_features() tb ON id.isin = tb.isin
 
 -- Section 2: Momentum
-         LEFT JOIN calc_momentum_features()              mf ON id.isin = mf.isin
-         LEFT JOIN calc_long_term_momentum_features()    ltm ON id.isin = ltm.isin
+         LEFT JOIN calc_momentum_features() mf ON id.isin = mf.isin
+         LEFT JOIN calc_long_term_momentum_features() ltm ON id.isin = ltm.isin
 
 -- Section 3: Technical Analysis
-         LEFT JOIN calc_technical_analysis_features()    ta ON id.isin = ta.isin
+         LEFT JOIN calc_technical_analysis_features() ta ON id.isin = ta.isin
 
 -- Section 4: Profitability
-         LEFT JOIN calc_profitability_features()         pf ON id.isin = pf.isin
-         LEFT JOIN calc_margin_trends()                  mt ON id.isin = mt.isin
-         LEFT JOIN calc_ebit_ebitda_comprehensive()      eec ON id.isin = eec.isin
-         LEFT JOIN calc_gross_profit_temporal()          gpt ON id.isin = gpt.isin
+         LEFT JOIN calc_profitability_features() pf ON id.isin = pf.isin
+         LEFT JOIN calc_margin_trends() mt ON id.isin = mt.isin
+         LEFT JOIN calc_ebit_ebitda_comprehensive() eec ON id.isin = eec.isin
+         LEFT JOIN calc_gross_profit_temporal() gpt ON id.isin = gpt.isin
 
 -- Section 5: Earnings
-         LEFT JOIN calc_earnings_features()              ef ON id.isin = ef.isin
-         LEFT JOIN calc_eps_trajectory_features()        etf ON id.isin = etf.isin
-         LEFT JOIN calc_eps_comprehensive()              ec ON id.isin = ec.isin
-         LEFT JOIN calc_eps_continuing_features()        ecf ON id.isin = ecf.isin
-         LEFT JOIN calc_gaap_adjusted_analytics()        gaa ON id.isin = gaa.isin
-         LEFT JOIN calc_gaap_revision_features()         grf ON id.isin = grf.isin
+         LEFT JOIN calc_earnings_features() ef ON id.isin = ef.isin
+         LEFT JOIN calc_eps_trajectory_features() etf ON id.isin = etf.isin
+         LEFT JOIN calc_eps_comprehensive() ec ON id.isin = ec.isin
+         LEFT JOIN calc_eps_continuing_features() ecf ON id.isin = ecf.isin
+         LEFT JOIN calc_gaap_adjusted_analytics() gaa ON id.isin = gaa.isin
+         LEFT JOIN calc_gaap_revision_features() grf ON id.isin = grf.isin
 
 -- Section 6: Growth
-         LEFT JOIN calc_growth_features()                gf ON id.isin = gf.isin
-         LEFT JOIN calc_revenue_forecast_features()      rff ON id.isin = rff.isin
-         LEFT JOIN calc_revenue_estimate_consensus()     rec ON id.isin = rec.isin
-         LEFT JOIN calc_revenue_quarterly_features()     rqf ON id.isin = rqf.isin
-         LEFT JOIN calc_total_revenues_temporal()        trt ON id.isin = trt.isin
+         LEFT JOIN calc_growth_features() gf ON id.isin = gf.isin
+         LEFT JOIN calc_revenue_forecast_features() rff ON id.isin = rff.isin
+         LEFT JOIN calc_revenue_estimate_consensus() rec ON id.isin = rec.isin
+         LEFT JOIN calc_revenue_quarterly_features() rqf ON id.isin = rqf.isin
+         LEFT JOIN calc_total_revenues_temporal() trt ON id.isin = trt.isin
 
 -- Section 7: Quality & Risk
-         LEFT JOIN calc_quality_features()               qf ON id.isin = qf.isin
-         LEFT JOIN calc_beta_risk_features()             br ON id.isin = br.isin
-         LEFT JOIN calc_financial_distress_features()    fdf ON id.isin = fdf.isin
-         LEFT JOIN calc_accounting_quality_features()    aqf ON id.isin = aqf.isin
+         LEFT JOIN calc_quality_features() qf ON id.isin = qf.isin
+         LEFT JOIN calc_beta_risk_features() br ON id.isin = br.isin
+         LEFT JOIN calc_financial_distress_features() fdf ON id.isin = fdf.isin
+         LEFT JOIN calc_accounting_quality_features() aqf ON id.isin = aqf.isin
          LEFT JOIN calc_quality_features_comprehensive() qfc ON id.isin = qfc.isin
 
 -- Section 8: Leverage & Liquidity
-         LEFT JOIN calc_leverage_features()              lf ON id.isin = lf.isin
-         LEFT JOIN calc_efficiency_ratios()              er ON id.isin = er.isin
-         LEFT JOIN calc_balance_sheet_dynamics()         bsd ON id.isin = bsd.isin
-         LEFT JOIN calc_working_capital_temporal()       wct ON id.isin = wct.isin
-         LEFT JOIN calc_total_debt_temporal()            tdt ON id.isin = tdt.isin
-         LEFT JOIN calc_working_capital_deep_features()  wcd ON id.isin = wcd.isin
+         LEFT JOIN calc_leverage_features() lf ON id.isin = lf.isin
+         LEFT JOIN calc_efficiency_ratios() er ON id.isin = er.isin
+         LEFT JOIN calc_balance_sheet_dynamics() bsd ON id.isin = bsd.isin
+         LEFT JOIN calc_working_capital_temporal() wct ON id.isin = wct.isin
+         LEFT JOIN calc_total_debt_temporal() tdt ON id.isin = tdt.isin
+         LEFT JOIN calc_working_capital_deep_features() wcd ON id.isin = wcd.isin
 
 -- Section 9: Analyst Sentiment
-         LEFT JOIN calc_sentiment_features()             sf ON id.isin = sf.isin
-         LEFT JOIN calc_price_target_dynamics()          ptd ON id.isin = ptd.isin
+         LEFT JOIN calc_sentiment_features() sf ON id.isin = sf.isin
+         LEFT JOIN calc_price_target_dynamics() ptd ON id.isin = ptd.isin
 
 -- Section 10: Dividends
-         LEFT JOIN calc_dividend_features()              df ON id.isin = df.isin
-         LEFT JOIN calc_dividend_timing()                dt ON id.isin = dt.isin
-         LEFT JOIN calc_dividend_yield_comprehensive()   dyc ON id.isin = dyc.isin
+         LEFT JOIN calc_dividend_features() df ON id.isin = df.isin
+         LEFT JOIN calc_dividend_timing() dt ON id.isin = dt.isin
+         LEFT JOIN calc_dividend_yield_comprehensive() dyc ON id.isin = dyc.isin
 
 -- Section 11: Employment
-         LEFT JOIN calc_employment_features()            emf ON id.isin = emf.isin
-         LEFT JOIN calc_employment_dynamics()            ed ON id.isin = ed.isin
+         LEFT JOIN calc_employment_features() emf ON id.isin = emf.isin
+         LEFT JOIN calc_employment_dynamics() ed ON id.isin = ed.isin
 
 -- Section 12: Cash Flow
-         LEFT JOIN calc_cashflow_features()              cf ON id.isin = cf.isin
-         LEFT JOIN calc_enhanced_cashflow_features()     ecff ON id.isin = ecff.isin
-         LEFT JOIN calc_cashflow_temporal_features()     ctf ON id.isin = ctf.isin
-         LEFT JOIN calc_cashflow_comprehensive()         cc ON id.isin = cc.isin
+         LEFT JOIN calc_cashflow_features() cf ON id.isin = cf.isin
+         LEFT JOIN calc_enhanced_cashflow_features() ecff ON id.isin = ecff.isin
+         LEFT JOIN calc_cashflow_temporal_features() ctf ON id.isin = ctf.isin
+         LEFT JOIN calc_cashflow_comprehensive() cc ON id.isin = cc.isin
 
 -- Section 13: Temporal
-         LEFT JOIN calc_temporal_features()              tf ON id.isin = tf.isin
-         LEFT JOIN calc_fiscal_calendar_features()       fcf ON id.isin = fcf.isin
+         LEFT JOIN calc_temporal_features() tf ON id.isin = tf.isin
+         LEFT JOIN calc_fiscal_calendar_features() fcf ON id.isin = fcf.isin
 
 -- Section 14: Balance Sheet
-         LEFT JOIN calc_total_assets_temporal()          tat ON id.isin = tat.isin
-         LEFT JOIN calc_inventory_temporal_features()    itf ON id.isin = itf.isin
-         LEFT JOIN calc_goodwill_temporal_features()     gtf ON id.isin = gtf.isin
+         LEFT JOIN calc_total_assets_temporal() tat ON id.isin = tat.isin
+         LEFT JOIN calc_inventory_temporal_features() itf ON id.isin = itf.isin
+         LEFT JOIN calc_goodwill_temporal_features() gtf ON id.isin = gtf.isin
 
 -- Section 15: Cost Structure
-         LEFT JOIN calc_cost_structure_features()        csf ON id.isin = csf.isin
-         LEFT JOIN calc_rnd_temporal_features()          rtf ON id.isin = rtf.isin
-         LEFT JOIN calc_interest_income_features()       iif ON id.isin = iif.isin
+         LEFT JOIN calc_cost_structure_features() csf ON id.isin = csf.isin
+         LEFT JOIN calc_rnd_temporal_features() rtf ON id.isin = rtf.isin
+         LEFT JOIN calc_interest_income_features() iif ON id.isin = iif.isin
 
 -- Section 16: Composite Scores
-         LEFT JOIN calc_composite_scores()               cs ON id.isin = cs.isin
-         LEFT JOIN calc_net_income_comprehensive()       nic ON id.isin = nic.isin
+         LEFT JOIN calc_composite_scores() cs ON id.isin = cs.isin
+         LEFT JOIN calc_net_income_comprehensive() nic ON id.isin = nic.isin
 
 -- Section 17: Unusual Items
-         LEFT JOIN calc_unusual_items_features()         uif ON id.isin = uif.isin
+         LEFT JOIN calc_unusual_items_features() uif ON id.isin = uif.isin
 
 -- Section 18: Volatility Surface (Enhancement 2 + 3)
-         LEFT JOIN calc_volatility_surface_features()    vsf ON id.isin = vsf.isin
+         LEFT JOIN calc_volatility_surface_features() vsf ON id.isin = vsf.isin
 
 -- Section 19: Tax Rate Features (Enhancement 4)
-         LEFT JOIN calc_tax_rate_features()              txf ON id.isin = txf.isin
+         LEFT JOIN calc_tax_rate_features() txf ON id.isin = txf.isin
 
 -- Section 20: OpEx Temporal (Enhancement 5)
-         LEFT JOIN calc_opex_temporal_features()         otf ON id.isin = otf.isin
+         LEFT JOIN calc_opex_temporal_features() otf ON id.isin = otf.isin
 
 -- Section 21: Asset Sale Features (Enhancement 8)
-         LEFT JOIN calc_asset_sale_features()            asf ON id.isin = asf.isin
+         LEFT JOIN calc_asset_sale_features() asf ON id.isin = asf.isin
 
 -- Section 22: FCF Estimate Curve (Enhancement 9)
-         LEFT JOIN calc_fcf_estimate_features()          fcfe ON id.isin = fcfe.isin
+         LEFT JOIN calc_fcf_estimate_features() fcfe ON id.isin = fcfe.isin
 
 -- Section 23: Dividend History (Enhancement 10)
-         LEFT JOIN calc_dividend_history_features()      dhf ON id.isin = dhf.isin
+         LEFT JOIN calc_dividend_history_features() dhf ON id.isin = dhf.isin
 
 -- Section 24: Investment Income Temporal (Enhancement 11)
-         LEFT JOIN calc_investment_income_temporal()     iit ON id.isin = iit.isin
+         LEFT JOIN calc_investment_income_temporal() iit ON id.isin = iit.isin
 
 -- Section 25: Share Dilution Tracking (Enhancement 12)
-         LEFT JOIN calc_share_dilution_tracking()        sdt ON id.isin = sdt.isin
+         LEFT JOIN calc_share_dilution_tracking() sdt ON id.isin = sdt.isin
 
 -- Section 26: Forward Consensus (Enhancement 7 supplement)
-         LEFT JOIN calc_forward_consensus_features()     fcnf ON id.isin = fcnf.isin;
+         LEFT JOIN calc_forward_consensus_features() fcnf ON id.isin = fcnf.isin;
 
 -- =============================================================================
 -- INDEXES FOR OPTIMIZED QUERYING
@@ -7338,8 +7351,52 @@ VALUES
      'R&D investment trends, intensity, efficiency metrics, ROI proxy, investment flags',
      'engineer_rnd_temporal_features', CURRENT_TIMESTAMP),
 
+    ('calc_volatility_surface_features', 'Momentum & Technical', 15,
+     'Multi-period volatility spreads, beta term structure, convexity, and realized vs implied proxy',
+     'engineer_momentum_features', CURRENT_TIMESTAMP),
+
+    ('calc_forward_consensus_features', 'Analyst Sentiment', 13,
+     'Forward P/E discounts, GAAP vs non-GAAP consensus spreads, EBITDA growth expectations, and revision divergence',
+     'engineer_analyst_quality_features', CURRENT_TIMESTAMP),
+
+    ('calc_price_target_achievement_features', 'Analyst Sentiment', 8,
+     'Historical price target accuracy, optimism bias, range hit rates, and analyst count stability',
+     'engineer_analyst_quality_features', CURRENT_TIMESTAMP),
+
+    ('calc_dividend_history_features', 'Dividend Reliability', 10,
+     'Long-term dividend yield trends, volatility, declining flags, and mean reversion metrics',
+     'engineer_dividend_reliability_features', CURRENT_TIMESTAMP),
+
+    ('calc_size_liquidity_features', 'Momentum & Technical', 11,
+     'Market cap dynamics, log size, relative volume, turnover ratios, and composite liquidity scores',
+     'engineer_momentum_features', CURRENT_TIMESTAMP),
+
+    ('calc_investment_income_temporal', 'Interest Income', 10,
+     'Temporal analysis of interest and investment income, growth rates, revenue contribution, and positive streaks',
+     'engineer_interest_income_features', CURRENT_TIMESTAMP),
+
+    ('calc_tax_rate_features', 'Accounting Quality', 8,
+     'Effective tax rate trends, stability metrics, low tax flags, and quarterly divergence',
+     'engineer_accounting_quality_features', CURRENT_TIMESTAMP),
+
+    ('calc_opex_temporal_features', 'Efficiency Ratios', 10,
+     'Operating expense growth, SG&A trends, opex-to-revenue dynamics, and operating leverage scores',
+     'engineer_cost_structure_features', CURRENT_TIMESTAMP),
+
+    ('calc_fcf_estimate_features', 'Cash Flow', 8,
+     'Forward-looking FCF estimates (FY1E-FY5E), implied CAGRs, and linear growth trends',
+     'engineer_fcf_growth_estimate_features', CURRENT_TIMESTAMP),
+
+    ('calc_asset_sale_features', 'Accounting Quality', 4,
+     'Gains/losses on asset sales, frequency analysis, and temporal trends',
+     'engineer_accounting_quality_features', CURRENT_TIMESTAMP),
+
+    ('calc_share_dilution_tracking', 'Quality & Risk', 4,
+     'Share count changes, YoY dilution/accretion, and net buyback activity flags',
+     'engineer_leverage_ratios', CURRENT_TIMESTAMP),
+
     -- Materialized View (UPDATED feature count)
-    ('mv_all_stock_features', 'Materialized View', 475,
+    ('mv_all_stock_features', 'Materialized View', 575,
      'Unified materialized view containing all calculated features including new temporal analytics',
      'all_features_combined', CURRENT_TIMESTAMP)
 
@@ -7413,9 +7470,275 @@ VALUES
     ('feat_ev_ebitda_vs_3y_avg', 'ev_ebitda_vs_3y_avg', 'Valuation Timeseries', 'calc_valuation_timeseries_features',
      'EV/EBITDA vs 3-year average', ARRAY ['EV/EBITDA (LTM)', 'EV/EBITDA (3YAVGLTM)'], 'EV/EBITDA (LTM)', 'ratio',
      'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- INVESTMENT INCOME TEMPORAL FEATURES
+    ('feat_inv_income_ltm', 'inv_income_ltm', 'Interest Income', 'calc_investment_income_temporal',
+     'Interest and Investment Income (LTM)', ARRAY ['Interest And Investment Income (LTM)'],
+     'Interest And Investment Income (LTM)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_fq', 'inv_income_fq', 'Interest Income', 'calc_investment_income_temporal',
+     'Interest and Investment Income (FQ)', ARRAY ['Interest And Investment Income (FQ)'],
+     'Interest And Investment Income (FQ)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_fy', 'inv_income_fy', 'Interest Income', 'calc_investment_income_temporal',
+     'Interest and Investment Income (FY)', ARRAY ['Interest And Investment Income (FY)'],
+     'Interest And Investment Income (FY)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_qoq_growth', 'inv_income_qoq_growth', 'Interest Income', 'calc_investment_income_temporal',
+     'Interest and Investment Income QoQ growth',
+     ARRAY ['Interest And Investment Income (FQ)', 'Interest And Investment Income (-1FQFQ)'],
+     'Interest And Investment Income (FQ)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_yoy_growth', 'inv_income_yoy_growth', 'Interest Income', 'calc_investment_income_temporal',
+     'Interest and Investment Income YoY growth',
+     ARRAY ['Interest And Investment Income (FY)', 'Interest And Investment Income (-1FY)'],
+     'Interest And Investment Income (FY)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_to_revenue', 'inv_income_to_revenue', 'Interest Income', 'calc_investment_income_temporal',
+     'Interest and Investment Income as % of revenue',
+     ARRAY ['Interest And Investment Income (LTM)', 'Total Revenues (LTM)'], 'Interest And Investment Income (LTM)',
+     'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_trend_3y', 'inv_income_trend_3y', 'Interest Income', 'calc_investment_income_temporal',
+     '3-year CAGR of interest and investment income',
+     ARRAY ['Interest And Investment Income (FY)', 'Interest And Investment Income (-3FY)'],
+     'Interest And Investment Income (FY)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_inv_income_positive_quarters', 'inv_income_positive_quarters', 'Interest Income',
+     'calc_investment_income_temporal', 'Number of positive interest income quarters (last 5)',
+     ARRAY ['Interest And Investment Income (FQ)', 'Interest And Investment Income (-1FQFQ)', 'Interest And Investment Income (-2FQFQ)', 'Interest And Investment Income (-3FQFQ)', 'Interest And Investment Income (-4FQFQ)'],
+     'Interest And Investment Income (FQ)', 'score', 'INTEGER', CURRENT_TIMESTAMP),
+    ('feat_financial_company_proxy', 'financial_company_proxy', 'Interest Income', 'calc_investment_income_temporal',
+     'Financial company proxy flag (income > 20% of revenue)',
+     ARRAY ['Interest And Investment Income (LTM)', 'Total Revenues (LTM)'], 'Interest And Investment Income (LTM)',
+     'flag', 'INTEGER', CURRENT_TIMESTAMP),
+
+    -- TAX RATE FEATURES
+    ('feat_effective_tax_rate_ltm', 'effective_tax_rate_ltm', 'Accounting Quality', 'calc_tax_rate_features',
+     'Effective tax rate (LTM)', ARRAY ['Effective Tax Rate - (Ratio) (LTM)'], 'Effective Tax Rate - (Ratio) (LTM)',
+     'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_effective_tax_rate_fy', 'effective_tax_rate_fy', 'Accounting Quality', 'calc_tax_rate_features',
+     'Effective tax rate (FY)', ARRAY ['Effective Tax Rate - (Ratio) (FY)'], 'Effective Tax Rate - (Ratio) (FY)',
+     'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_tax_rate_yoy_change', 'tax_rate_yoy_change', 'Accounting Quality', 'calc_tax_rate_features',
+     'YoY change in effective tax rate',
+     ARRAY ['Effective Tax Rate - (Ratio) (FY)', 'Effective Tax Rate - (Ratio) (-1FY)'],
+     'Effective Tax Rate - (Ratio) (FY)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_tax_rate_qoq_change', 'tax_rate_qoq_change', 'Accounting Quality', 'calc_tax_rate_features',
+     'QoQ change in effective tax rate',
+     ARRAY ['Effective Tax Rate - (Ratio) (FQ)', 'Effective Tax Rate - (Ratio) (-1FQFQ)'],
+     'Effective Tax Rate - (Ratio) (FQ)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_tax_rate_stability', 'tax_rate_stability', 'Accounting Quality', 'calc_tax_rate_features',
+     'Tax rate stability (quarterly range)',
+     ARRAY ['Effective Tax Rate - (Ratio) (FQ)', 'Effective Tax Rate - (Ratio) (-1FQFQ)', 'Effective Tax Rate - (Ratio) (-2FQFQ)', 'Effective Tax Rate - (Ratio) (-3FQFQ)'],
+     'Effective Tax Rate - (Ratio) (FQ)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_low_tax_flag', 'low_tax_flag', 'Accounting Quality', 'calc_tax_rate_features',
+     'Low tax rate flag (<10%)', ARRAY ['Effective Tax Rate - (Ratio) (LTM)'], 'Effective Tax Rate - (Ratio) (LTM)',
+     'flag', 'INTEGER', CURRENT_TIMESTAMP),
+    ('feat_tax_rate_trend_4q', 'tax_rate_trend_4q', 'Accounting Quality', 'calc_tax_rate_features',
+     'Tax rate trend vs prior 3-quarter average',
+     ARRAY ['Effective Tax Rate - (Ratio) (FQ)', 'Effective Tax Rate - (Ratio) (-1FQFQ)', 'Effective Tax Rate - (Ratio) (-2FQFQ)', 'Effective Tax Rate - (Ratio) (-3FQFQ)'],
+     'Effective Tax Rate - (Ratio) (FQ)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- OPEX TEMPORAL FEATURES
+    ('feat_opex_fq', 'opex_fq', 'Efficiency Ratios', 'calc_opex_temporal_features', 'Total Operating Expenses (FQ)',
+     ARRAY ['Total Operating Expenses (FQ)'], 'Total Operating Expenses (FQ)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_opex_ltm', 'opex_ltm', 'Efficiency Ratios', 'calc_opex_temporal_features', 'Total Operating Expenses (LTM)',
+     ARRAY ['Total Operating Expenses (LTM)'], 'Total Operating Expenses (LTM)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_opex_fy', 'opex_fy', 'Efficiency Ratios', 'calc_opex_temporal_features', 'Total Operating Expenses (FY)',
+     ARRAY ['Total Operating Expenses (FY)'], 'Total Operating Expenses (FY)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_opex_qoq_growth', 'opex_qoq_growth', 'Efficiency Ratios', 'calc_opex_temporal_features',
+     'Operating expense QoQ growth', ARRAY ['Total Operating Expenses (FQ)', 'Total Operating Expenses (-1FQFQ)'],
+     'Total Operating Expenses (FQ)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_opex_yoy_growth', 'opex_yoy_growth', 'Efficiency Ratios', 'calc_opex_temporal_features',
+     'Operating expense YoY growth', ARRAY ['Total Operating Expenses (FY)', 'Total Operating Expenses (-1FY)'],
+     'Total Operating Expenses (FY)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_opex_vs_revenue_trend', 'opex_vs_revenue_trend', 'Efficiency Ratios', 'calc_opex_temporal_features',
+     'Change in opex-to-revenue ratio (FY vs -1FY)',
+     ARRAY ['Total Operating Expenses (FY)', 'Total Revenues (FY)', 'Total Operating Expenses (-1FY)', 'Total Revenues (-1FY)'],
+     'Total Operating Expenses (FY)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_sga_qoq_growth', 'sga_qoq_growth', 'Efficiency Ratios', 'calc_opex_temporal_features',
+     'SG&A expense QoQ growth',
+     ARRAY ['Selling General & Admin Expenses/Total (FQ)', 'Selling General & Admin Expenses/Total (-1FY)'],
+     'Selling General & Admin Expenses/Total (FQ)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_sga_yoy_growth', 'sga_yoy_growth', 'Efficiency Ratios', 'calc_opex_temporal_features',
+     'SG&A expense YoY growth',
+     ARRAY ['Selling General & Admin Expenses/Total (FY)', 'Selling General & Admin Expenses/Total (-1FY)'],
+     'Selling General & Admin Expenses/Total (FY)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_operating_leverage_score', 'operating_leverage_score', 'Efficiency Ratios', 'calc_opex_temporal_features',
+     'Operating leverage score (revenue growth - opex growth)',
+     ARRAY ['Total Revenues (FY)', 'Total Revenues (-1FY)', 'Total Operating Expenses (FY)', 'Total Operating Expenses (-1FY)'],
+     'Total Revenues (FY)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- ASSET SALE FEATURES
+    ('feat_gain_loss_on_sale_of_assets_ltm', 'gain_loss_on_sale_of_assets_ltm', 'Accounting Quality',
+     'calc_asset_sale_features', 'Gains/Losses on asset sales (LTM)', ARRAY ['Gain (Loss) On Sale Of Assets (LTM)'],
+     'Gain (Loss) On Sale Of Assets (LTM)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_asset_sale_frequency', 'asset_sale_frequency', 'Accounting Quality', 'calc_asset_sale_features',
+     'Frequency of asset sales (last 10 periods)',
+     ARRAY ['Gain (Loss) On Sale Of Assets (FQ)', 'Gain (Loss) On Sale Of Assets (-1FQFQ)', 'Gain (Loss) On Sale Of Assets (-2FQFQ)', 'Gain (Loss) On Sale Of Assets (-3FQFQ)', 'Gain (Loss) On Sale Of Assets (-4FQFQ)', 'Gain (Loss) On Sale Of Assets (FY)', 'Gain (Loss) On Sale Of Assets (-1FY)', 'Gain (Loss) On Sale Of Assets (-2FY)', 'Gain (Loss) On Sale Of Assets (-3FY)', 'Gain (Loss) On Sale Of Assets (-4FY)'],
+     'Gain (Loss) On Sale Of Assets (FQ)', 'score', 'INTEGER', CURRENT_TIMESTAMP),
+    ('feat_asset_sale_trend', 'asset_sale_trend', 'Accounting Quality', 'calc_asset_sale_features',
+     'Asset sale trend vs prior average',
+     ARRAY ['Gain (Loss) On Sale Of Assets (FQ)', 'Gain (Loss) On Sale Of Assets (-1FQFQ)', 'Gain (Loss) On Sale Of Assets (-2FQFQ)', 'Gain (Loss) On Sale Of Assets (-3FQFQ)', 'Gain (Loss) On Sale Of Assets (-4FQFQ)'],
+     'Gain (Loss) On Sale Of Assets (FQ)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- SHARE DILUTION TRACKING
+    ('feat_shrs_out_1fy', 'shrs_out_1fy', 'Quality & Risk', 'calc_share_dilution_tracking',
+     'Shares outstanding (1 year ago)', ARRAY ['Shrs Out (-1FY)'], 'Shrs Out (-1FY)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_shares_yoy_change_pct', 'shares_yoy_change_pct', 'Quality & Risk', 'calc_share_dilution_tracking',
+     'YoY percentage change in shares outstanding', ARRAY ['Shrs Out', 'Shrs Out (-1FY)'], 'Shrs Out', 'growth',
+     'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_net_buyback_flag', 'net_buyback_flag', 'Quality & Risk', 'calc_share_dilution_tracking',
+     'Net buyback activity flag', ARRAY ['Shrs Out', 'Shrs Out (-1FY)'], 'Shrs Out', 'flag', 'INTEGER',
+     CURRENT_TIMESTAMP),
+
+    -- FORWARD CONSENSUS FEATURES
+    ('feat_pe_ntm', 'pe_ntm', 'Analyst Sentiment', 'calc_forward_consensus_features', 'Forward P/E (NTM)',
+     ARRAY ['P/E (NTM)'], 'P/E (NTM)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pe_est_fy1', 'pe_est_fy1', 'Analyst Sentiment', 'calc_forward_consensus_features', 'Estimated P/E (FY1)',
+     ARRAY ['P/E (EST FY1)'], 'P/E (EST FY1)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pe_forward_discount_consensus', 'pe_forward_discount', 'Analyst Sentiment',
+     'calc_forward_consensus_features',
+     'Forward P/E discount (NTM vs LTM)', ARRAY ['P/E (NTM)', 'P/E (LTM)'], 'P/E (NTM)', 'ratio', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_eps_gaap_vs_norm_ntm', 'eps_gaap_vs_norm_ntm', 'Analyst Sentiment', 'calc_forward_consensus_features',
+     'GAAP vs Normalized EPS spread (NTM)', ARRAY ['EPS GAAP - Est Avg (NTM)', 'EPS Norm - Est Avg (NTM)'],
+     'EPS GAAP - Est Avg (NTM)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_eps_gaap_vs_norm_fy1e', 'eps_gaap_vs_norm_fy1e', 'Analyst Sentiment', 'calc_forward_consensus_features',
+     'GAAP vs Normalized EPS spread (FY1E)', ARRAY ['EPS GAAP - Est Avg (FY1E)', 'EPS Norm - Est Avg (FY1E)'],
+     'EPS GAAP - Est Avg (FY1E)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_forward_adjustment_trend', 'forward_adjustment_trend', 'Analyst Sentiment',
+     'calc_forward_consensus_features',
+     'Trend in forward EPS adjustments',
+     ARRAY ['EPS GAAP - Est Avg (FY1E)', 'EPS Norm - Est Avg (FY1E)', 'EPS/Adj. (LTM)', 'Net EPS - Basic (LTM)'],
+     'EPS GAAP - Est Avg (FY1E)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_ebitda_est_ntm', 'ebitda_est_ntm', 'Analyst Sentiment', 'calc_forward_consensus_features',
+     'Estimated EBITDA (NTM)', ARRAY ['EBITDA - Est Avg (NTM)'], 'EBITDA - Est Avg (NTM)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_ebitda_est_fy1e', 'ebitda_est_fy1e', 'Analyst Sentiment', 'calc_forward_consensus_features',
+     'Estimated EBITDA (FY1E)', ARRAY ['EBITDA - Est Avg (FY1E)'], 'EBITDA - Est Avg (FY1E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_ev_ebitda_est_fy1', 'ev_ebitda_est_fy1', 'Analyst Sentiment', 'calc_forward_consensus_features',
+     'Estimated EV/EBITDA (FY1)', ARRAY ['EV/EBITDA (EST FY1)'], 'EV/EBITDA (EST FY1)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_ebitda_forward_growth', 'ebitda_forward_growth', 'Analyst Sentiment', 'calc_forward_consensus_features',
+     'Forward EBITDA growth (FY1E vs LTM)', ARRAY ['EBITDA - Est Avg (FY1E)', 'EBITDA (LTM)'],
+     'EBITDA - Est Avg (FY1E)',
+     'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_earnings_revision_divergence', 'earnings_revision_divergence', 'Analyst Sentiment',
+     'calc_forward_consensus_features', 'Divergence between GAAP and non-GAAP revisions (3M vs 1M)',
+     ARRAY ['EPS Est Avg Rev % (FY1E - 3M)', 'EPS GAAP Est Avg Rev % (FY1E - 3M)', 'EPS Est Avg Rev % (FY1E - 1M)', 'EPS GAAP Est Avg Rev % (FY1E - 1M)'],
+     'EPS Est Avg Rev % (FY1E - 3M)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_forward_pe_vs_sector_proxy', 'forward_pe_vs_sector_proxy', 'Analyst Sentiment',
+     'calc_forward_consensus_features', 'Forward P/E vs 3Y average proxy', ARRAY ['P/E (NTM)', 'P/E (3YAVGLTM)'],
+     'P/E (NTM)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- PRICE TARGET ACHIEVEMENT FEATURES
+    ('feat_pt_achievement_1y', 'pt_achievement_1y', 'Analyst Sentiment', 'calc_price_target_achievement_features',
+     'Price target achievement ratio (1Y)', ARRAY ['Price Target (1Y Ago)', 'Last Price'], 'Price Target (1Y Ago)',
+     'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pt_accuracy_1y', 'pt_accuracy_1y', 'Analyst Sentiment', 'calc_price_target_achievement_features',
+     'Price target accuracy (1Y)', ARRAY ['Last Price', 'Price Target (1Y Ago)'], 'Price Target (1Y Ago)', 'ratio',
+     'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pt_optimism_bias', 'pt_optimism_bias', 'Analyst Sentiment', 'calc_price_target_achievement_features',
+     'Analyst optimism bias (1Y)', ARRAY ['Price Target (1Y Ago)', 'Last Price'], 'Price Target (1Y Ago)', 'ratio',
+     'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pt_range_hit_rate', 'pt_range_hit_rate', 'Analyst Sentiment', 'calc_price_target_achievement_features',
+     'Price target range hit rate (1Y)',
+     ARRAY ['Last Price', 'Price Target - Low (1Y Ago)', 'Price Target - High (1Y Ago)'], 'Last Price', 'flag',
+     'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pt_median_vs_mean_spread', 'pt_median_vs_mean_spread', 'Analyst Sentiment',
+     'calc_price_target_achievement_features', 'Price target median vs mean spread',
+     ARRAY ['Price Target', 'Price Target - Median'], 'Price Target - Median', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_pt_high_low_convergence_1y', 'pt_high_low_convergence_1y', 'Analyst Sentiment',
+     'calc_price_target_achievement_features', 'Price target high-low convergence trend (1Y)',
+     ARRAY ['Price Target - High', 'Price Target - Low', 'Price Target - Median', 'Price Target - High (1Y Ago)', 'Price Target - Low (1Y Ago)', 'Price Target - Median (1Y Ago)'],
+     'Price Target - Median', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_analyst_count_stability', 'analyst_count_stability', 'Analyst Sentiment',
+     'calc_price_target_achievement_features', 'Analyst coverage count stability (1Y)',
+     ARRAY ['Price Target - #', 'Price Target - # (1Y Ago)', 'Price Target - # (6M Ago)', 'Price Target - # (3M Ago)'],
+     'Price Target - #', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
     ('feat_p_e_vs_3y_avg', 'p_e_vs_3y_avg', 'Valuation Timeseries', 'calc_valuation_timeseries_features',
      'P/E vs 3-year average', ARRAY ['P/E (LTM)', 'P/E (3YAVGLTM)'], 'P/E (LTM)', 'ratio', 'NUMERIC',
      CURRENT_TIMESTAMP),
+
+    -- DIVIDEND HISTORY FEATURES
+    ('feat_div_yield_2fy', 'div_yield_2fy', 'Dividend Reliability', 'calc_dividend_history_features',
+     'Dividend yield (2 years ago)', ARRAY ['Div Yield (-2FYInd)'], 'Div Yield (-2FYInd)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_div_yield_3fy', 'div_yield_3fy', 'Dividend Reliability', 'calc_dividend_history_features',
+     'Dividend yield (3 years ago)', ARRAY ['Div Yield (-3FYInd)'], 'Div Yield (-3FYInd)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_div_yield_4fy', 'div_yield_4fy', 'Dividend Reliability', 'calc_dividend_history_features',
+     'Dividend yield (4 years ago)', ARRAY ['Div Yield (-4FYInd)'], 'Div Yield (-4FYInd)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_div_yield_5fy', 'div_yield_5fy', 'Dividend Reliability', 'calc_dividend_history_features',
+     'Dividend yield (5 years ago)', ARRAY ['Div Yield (-5FYInd)'], 'Div Yield (-5FYInd)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_div_yield_trend_3y', 'div_yield_trend_3y', 'Dividend Reliability', 'calc_dividend_history_features',
+     '3-year trend in dividend yield', ARRAY ['Div Yield (Ind)', 'Div Yield (-3FYInd)'], 'Div Yield (Ind)', 'growth',
+     'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_div_yield_volatility', 'div_yield_volatility', 'Dividend Reliability', 'calc_dividend_history_features',
+     'Dividend yield volatility (5Y range)',
+     ARRAY ['Div Yield (Ind)', 'Div Yield (-1FYInd)', 'Div Yield (-2FYInd)', 'Div Yield (-3FYInd)', 'Div Yield (-4FYInd)'],
+     'Div Yield (Ind)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_div_yield_declining_flag', 'div_yield_declining_flag', 'Dividend Reliability',
+     'calc_dividend_history_features', 'Declining dividend yield flag (3 consecutive years)',
+     ARRAY ['Div Yield (Ind)', 'Div Yield (-1FYInd)', 'Div Yield (-2FYInd)', 'Div Yield (-3FYInd)'], 'Div Yield (Ind)',
+     'flag', 'INTEGER', CURRENT_TIMESTAMP),
+    ('feat_div_yield_mean_5y', 'div_yield_mean_5y', 'Dividend Reliability', 'calc_dividend_history_features',
+     '5-year mean dividend yield',
+     ARRAY ['Div Yield (Ind)', 'Div Yield (-1FYInd)', 'Div Yield (-2FYInd)', 'Div Yield (-3FYInd)', 'Div Yield (-4FYInd)'],
+     'Div Yield (Ind)', 'score', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_div_yield_vs_5y_mean', 'div_yield_vs_5y_mean', 'Dividend Reliability', 'calc_dividend_history_features',
+     'Current dividend yield vs 5-year mean ratio',
+     ARRAY ['Div Yield (Ind)', 'Div Yield (-1FYInd)', 'Div Yield (-2FYInd)', 'Div Yield (-3FYInd)', 'Div Yield (-4FYInd)'],
+     'Div Yield (Ind)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- SIZE & LIQUIDITY FEATURES
+    ('feat_market_cap_dynamic', 'market_cap', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Market capitalization (dynamic)', ARRAY ['Market Cap'], 'Market Cap', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_market_cap_country_r', 'market_cap_country_r', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Market cap country rank proxy', ARRAY ['Market Cap (Country R)'], 'Market Cap (Country R)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_log_market_cap', 'log_market_cap', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Log of market capitalization', ARRAY ['Market Cap'], 'Market Cap', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_volume_shrs', 'volume_shrs', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Trading volume (shares)',
+     ARRAY ['Volume (Shrs)'], 'Volume (Shrs)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_relative_volume_dynamic', 'relative_volume', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Relative trading volume', ARRAY ['Rel. Volume'], 'Rel. Volume', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_shares_outstanding', 'shares_outstanding', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Shares outstanding', ARRAY ['Shrs Out'], 'Shrs Out', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_daily_turnover_ratio', 'daily_turnover_ratio', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Daily share turnover ratio', ARRAY ['Volume (Shrs)', 'Shrs Out'], 'Volume (Shrs)', 'ratio', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_size_class', 'size_class', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Company size classification', ARRAY ['Size Class'], 'Size Class', 'direct', 'TEXT', CURRENT_TIMESTAMP),
+    ('feat_style_class', 'style_class', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Investment style classification', ARRAY ['Style Class'], 'Style Class', 'direct', 'TEXT', CURRENT_TIMESTAMP),
+    ('feat_liquidity_score', 'liquidity_score', 'Momentum & Technical', 'calc_size_liquidity_features',
+     'Composite liquidity score', ARRAY ['Volume (Shrs)', 'Rel. Volume', 'Market Cap'], 'Volume (Shrs)', 'score',
+     'NUMERIC', CURRENT_TIMESTAMP),
+
+    -- FCF ESTIMATE FEATURES (v2)
+    ('feat_fcf_est_avg_fy1e', 'fcf_est_avg_fy1e', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Consensus FCF estimate FY+1 (v2)', ARRAY ['FCF - Est Avg (FY1E)'], 'FCF - Est Avg (FY1E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_avg_fy2e', 'fcf_est_avg_fy2e', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Consensus FCF estimate FY+2 (v2)', ARRAY ['FCF - Est Avg (FY2E)'], 'FCF - Est Avg (FY2E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_avg_fy3e', 'fcf_est_avg_fy3e', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Consensus FCF estimate FY+3 (v2)', ARRAY ['FCF - Est Avg (FY3E)'], 'FCF - Est Avg (FY3E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_avg_fy4e', 'fcf_est_avg_fy4e', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Consensus FCF estimate FY+4 (v2)', ARRAY ['FCF - Est Avg (FY4E)'], 'FCF - Est Avg (FY4E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_avg_fy5e', 'fcf_est_avg_fy5e', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Consensus FCF estimate FY+5 (v2)', ARRAY ['FCF - Est Avg (FY5E)'], 'FCF - Est Avg (FY5E)', 'direct', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_fcf_est_cagr_5y_implied', 'fcf_est_cagr_5y', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Implied 5-year FCF CAGR (FY5E/FY1E)', ARRAY ['FCF - Est Avg (FY5E)', 'FCF - Est Avg (FY1E)'],
+     'FCF - Est Avg (FY5E)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_fcf_est_trend_linear', 'fcf_est_trend', 'Cash Flow', 'calc_fcf_estimate_features',
+     'Linear FCF estimate trend (FY5E/FY1E ratio)', ARRAY ['FCF - Est Avg (FY5E)', 'FCF - Est Avg (FY1E)'],
+     'FCF - Est Avg (FY5E)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
     ('feat_ev_sales_forward_discount', 'ev_sales_forward_discount', 'Valuation Timeseries',
      'calc_valuation_timeseries_features', 'Forward EV/Sales discount', ARRAY ['EV/Sales (NTM)', 'EV/Sales (LTM)'],
      'EV/Sales (NTM)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
@@ -7516,6 +7839,43 @@ VALUES
      'calc_technical_analysis_features', 'Volatility term structure (3M - 6M)',
      ARRAY ['Volatility (3M)', 'Volatility (6M)'], 'Volatility (3M)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
 
+    -- VOLATILITY SURFACE FEATURES
+    ('feat_vol_1m', 'vol_1m', 'Momentum & Technical', 'calc_volatility_surface_features', '1-month volatility',
+     ARRAY ['Volatility (1M)'], 'Volatility (1M)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_vol_3m', 'vol_3m', 'Momentum & Technical', 'calc_volatility_surface_features', '3-month volatility',
+     ARRAY ['Volatility (3M)'], 'Volatility (3M)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_vol_6m', 'vol_6m', 'Momentum & Technical', 'calc_volatility_surface_features', '6-month volatility',
+     ARRAY ['Volatility (6M)'], 'Volatility (6M)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_vol_1y', 'vol_1y', 'Momentum & Technical', 'calc_volatility_surface_features', '1-year volatility',
+     ARRAY ['Volatility (1Y)'], 'Volatility (1Y)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_vol_term_spread_short', 'vol_term_spread_short', 'Momentum & Technical', 'calc_volatility_surface_features',
+     'Short-term volatility term spread (3M - 1M)', ARRAY ['Volatility (3M)', 'Volatility (1M)'], 'Volatility (3M)',
+     'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_vol_term_spread_long', 'vol_term_spread_long', 'Momentum & Technical', 'calc_volatility_surface_features',
+     'Long-term volatility term spread (1Y - 6M)', ARRAY ['Volatility (1Y)', 'Volatility (6M)'], 'Volatility (1Y)',
+     'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_vol_ratio_3m_1y', 'vol_ratio_3m_1y', 'Momentum & Technical', 'calc_volatility_surface_features',
+     '3M/1Y volatility ratio', ARRAY ['Volatility (3M)', 'Volatility (1Y)'], 'Volatility (3M)', 'ratio', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_vol_hump', 'vol_hump', 'Momentum & Technical', 'calc_volatility_surface_features',
+     'Volatility hump (6M - average of 3M & 1Y)', ARRAY ['Volatility (6M)', 'Volatility (3M)', 'Volatility (1Y)'],
+     'Volatility (6M)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_beta_1y', 'beta_1y', 'Momentum & Technical', 'calc_volatility_surface_features', '1-year beta',
+     ARRAY ['Beta (1Y)'], 'Beta (1Y)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_beta_2y', 'beta_2y', 'Momentum & Technical', 'calc_volatility_surface_features', '2-year beta',
+     ARRAY ['Beta (2Y)'], 'Beta (2Y)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_beta_5y', 'beta_5y', 'Momentum & Technical', 'calc_volatility_surface_features', '5-year beta',
+     ARRAY ['Beta (5Y)'], 'Beta (5Y)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_beta_term_structure', 'beta_term_structure', 'Momentum & Technical', 'calc_volatility_surface_features',
+     'Beta term structure (1Y vs 5Y ratio)', ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'ratio', 'NUMERIC',
+     CURRENT_TIMESTAMP),
+    ('feat_beta_convexity', 'beta_convexity', 'Momentum & Technical', 'calc_volatility_surface_features',
+     'Beta convexity (2Y - average of 1Y & 5Y)', ARRAY ['Beta (2Y)', 'Beta (1Y)', 'Beta (5Y)'], 'Beta (2Y)',
+     'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_realized_vs_implied_proxy', 'realized_vs_implied_proxy', 'Momentum & Technical',
+     'calc_volatility_surface_features', 'Proxy for realized vs implied volatility (1M/1Y ratio)',
+     ARRAY ['Volatility (1M)', 'Volatility (1Y)'], 'Volatility (1M)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+
     -- PROFITABILITY FEATURES
     ('feat_roe', 'roe', 'Profitability', 'calc_profitability_features', 'Return on Equity (LTM)',
      ARRAY ['Return On Equity % (LTM)'], 'Return On Equity % (LTM)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
@@ -7592,6 +7952,17 @@ VALUES
     ('feat_quick_ratio', 'quick_ratio', 'Quality & Risk', 'calc_quality_features', 'Quick Ratio (calculated)',
      ARRAY ['Total Current Assets (LTM)', 'Inventory (LTM)', 'Total Current Liabilities (LTM)'],
      'Total Current Assets (LTM)', 'ratio', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_beta_spread', 'beta_spread', 'Quality & Risk', 'calc_beta_risk_features', 'Beta spread (1Y - 5Y)',
+     ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_beta_trend', 'beta_trend', 'Quality & Risk', 'calc_beta_risk_features', 'Beta trend percentage',
+     ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
+    ('feat_high_beta_flag', 'high_beta_flag', 'Quality & Risk', 'calc_beta_risk_features', 'High beta flag (>1.5)',
+     ARRAY ['Beta (1Y)'], 'Beta (1Y)', 'flag', 'BOOLEAN', CURRENT_TIMESTAMP),
+    ('feat_low_beta_flag', 'low_beta_flag', 'Quality & Risk', 'calc_beta_risk_features', 'Low beta flag (<0.5)',
+     ARRAY ['Beta (1Y)'], 'Beta (1Y)', 'flag', 'BOOLEAN', CURRENT_TIMESTAMP),
+    ('feat_beta_stability_score', 'beta_stability_score', 'Quality & Risk', 'calc_beta_risk_features',
+     'Beta stability score (0-100)', ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'score', 'NUMERIC',
+     CURRENT_TIMESTAMP),
 
     -- FINANCIAL DISTRESS FEATURES
     ('feat_distress_risk_score', 'distress_risk_score', 'Financial Distress', 'calc_financial_distress_features',
@@ -7986,23 +8357,6 @@ VALUES
     ('feat_last_price', 'last_price', 'Market Data', NULL, 'Last traded price', ARRAY ['Last Price'], 'Last Price',
      'direct', 'NUMERIC', CURRENT_TIMESTAMP),
 
-    -- BETA RISK FEATURES
-    ('feat_beta_1y', 'beta_1y', 'Quality & Risk', 'calc_beta_risk_features', 'Beta (1-year)', ARRAY ['Beta (1Y)'],
-     'Beta (1Y)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
-    ('feat_beta_5y', 'beta_5y', 'Quality & Risk', 'calc_beta_risk_features', 'Beta (5-year)', ARRAY ['Beta (5Y)'],
-     'Beta (5Y)', 'direct', 'NUMERIC', CURRENT_TIMESTAMP),
-    ('feat_beta_spread', 'beta_spread', 'Quality & Risk', 'calc_beta_risk_features', 'Beta spread (1Y - 5Y)',
-     ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'difference', 'NUMERIC', CURRENT_TIMESTAMP),
-    ('feat_beta_trend', 'beta_trend', 'Quality & Risk', 'calc_beta_risk_features', 'Beta trend percentage',
-     ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'growth', 'NUMERIC', CURRENT_TIMESTAMP),
-    ('feat_high_beta_flag', 'high_beta_flag', 'Quality & Risk', 'calc_beta_risk_features', 'High beta flag (>1.5)',
-     ARRAY ['Beta (1Y)'], 'Beta (1Y)', 'flag', 'BOOLEAN', CURRENT_TIMESTAMP),
-    ('feat_low_beta_flag', 'low_beta_flag', 'Quality & Risk', 'calc_beta_risk_features', 'Low beta flag (<0.5)',
-     ARRAY ['Beta (1Y)'], 'Beta (1Y)', 'flag', 'BOOLEAN', CURRENT_TIMESTAMP),
-    ('feat_beta_stability_score', 'beta_stability_score', 'Quality & Risk', 'calc_beta_risk_features',
-     'Beta stability score (0-100)', ARRAY ['Beta (1Y)', 'Beta (5Y)'], 'Beta (1Y)', 'score', 'NUMERIC',
-     CURRENT_TIMESTAMP),
-
     -- COST STRUCTURE FEATURES
     ('feat_cogs_to_revenue', 'cogs_to_revenue', 'Efficiency Ratios', 'calc_cost_structure_features',
      'COGS as % of revenue', ARRAY ['Cost Of Revenues (LTM)', 'Total Revenues (LTM)'], 'Cost Of Revenues (LTM)',
@@ -8067,8 +8421,7 @@ ON CONFLICT (feature_key) DO UPDATE SET feature_alias      = EXCLUDED.feature_al
                                         source_columns     = EXCLUDED.source_columns,
                                         primary_source_col = EXCLUDED.primary_source_col,
                                         calculation_type   = EXCLUDED.calculation_type,
-                                        data_type          = EXCLUDED.data_type,
-                                        updated_at         = CURRENT_TIMESTAMP;
+                                        data_type          = EXCLUDED.data_type;
 
 COMMIT;
 
