@@ -75,12 +75,12 @@ expected_returns_v3.py          # Automated expected returns pipeline v3.1 (4528
 
 ```python
 from finance_ml.analytics.data_utils import (
-    load_feature_data_from_db,
-    backfill_feature_columns,
-    compute_metric_statistics,
-    ExportConfig,
-    export_to_db,
-    export_to_csv,
+   load_feature_data_from_db,
+   backfill_feature_columns,
+   compute_metric_statistics,
+   ExportConfig,
+   export_to_db,
+   export_to_csv,
 )
 
 # Load data
@@ -95,7 +95,7 @@ print(f"Mean P/E: {stats['mean']:.2f}")
 
 # Export framework
 config = ExportConfig(db_url="postgresql+psycopg2://...", schema="analytics")
-export_to_db(df, table_name="expected_returns_summary", config=config)
+export_to_db(df, config=config, table_name="expected_returns_summary")
 export_to_csv(df, filename="expected_returns_summary", config=config)
 ```
 

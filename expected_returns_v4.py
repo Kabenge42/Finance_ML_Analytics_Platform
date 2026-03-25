@@ -144,7 +144,7 @@ class PipelineConfig:
     anomaly_z_threshold: float | None = None
 
     # Screening thresholds
-    screening_min_pct: float = 1.0
+    screening_min_pct: float = 0.01
 
     # Performance tuning
     n_jobs: int = -1

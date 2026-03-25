@@ -35,13 +35,9 @@ def model() -> EarningsBeatProbabilityModel:
 @pytest.fixture
 def tech_model() -> EarningsBeatProbabilityModel:
     """Model with a strong tech-sector prior (historically ~70% beat rate)."""
-    return EarningsBeatProbabilityModel(
-        prior_alpha=2.0,
-        prior_beta=2.0,
-        sector_priors={
-            "Information Technology": PriorParameters(3.5, 1.5),
-        },
-    )
+    return EarningsBeatProbabilityModel(prior_alpha=2.0, prior_beta=2.0, sector_priors={
+        "Information Technology": PriorParameters(3.5, 1.5),
+    })
 
 
 @pytest.fixture

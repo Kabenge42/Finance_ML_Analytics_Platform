@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Finance_ML_Analytics_Platform.iml" filepath="$PROJECT_DIR$/.idea/Finance_ML_Analytics_Platform.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../PML_Finance_Project/.idea/PML_Finance_Project.iml" filepath="$PROJECT_DIR$/../PML_Finance_Project/.idea/PML_Finance_Project.iml" />
     </modules>
   </component>
 </project>

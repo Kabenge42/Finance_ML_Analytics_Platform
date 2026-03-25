@@ -563,7 +563,7 @@ def run_accounting_anomaly_analysis(
 def run_stock_screening(
     df_all: pd.DataFrame,
     *,
-    min_pct: float = 1.0,
+    min_pct: float = 0.01,
 ) -> dict[str, pd.DataFrame]:
     """Run all stock screening strategies on the full feature set."""
     from finance_ml.analytics.screening import (
@@ -587,7 +587,7 @@ def run_stock_screening(
 
     def _adaptive_screen_fallback(
         df_all_: pd.DataFrame, screen_result: pd.DataFrame,
-        screen_name: str, min_pct_: float = 1.0, fallback_percentile: float = 90.0,
+        screen_name: str, min_pct_: float = 0.01, fallback_percentile: float = 90.0,
     ) -> pd.DataFrame:
         if not screen_result.empty and 100.0 * len(screen_result) / max(len(df_all_), 1) >= min_pct_:
             return screen_result
@@ -649,7 +649,7 @@ def run_resampled_posterior_analysis(
     from finance_ml.analytics.statistical_analysis import resampled_posterior_returns
 
     try:
-        result_df, idata = resampled_posterior_returns(df, freq=freq, n_posterior_samples=4000, n_chains=4)
+        result_df, idata = resampled_posterior_returns(df, freq=freq, n_posterior_samples=4000, n_chains=8)
         if not result_df.empty:
             logger.info(
                 "Resampled posterior returns: %d stocks, mean posterior=%.2f%%",

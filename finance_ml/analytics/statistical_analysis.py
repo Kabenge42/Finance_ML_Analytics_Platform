@@ -258,7 +258,7 @@ class BayesianTechnicalResampler:
         prior_return_mean: float = 0.05,
         prior_return_std: float = 0.20,
         n_posterior_samples: int = 4000,
-        n_chains: int = 4,
+        n_chains: int = 8,
         random_seed: int = 42,
     ):
         self.prior_return_mean = prior_return_mean
@@ -522,7 +522,7 @@ def resampled_posterior_returns(
         prior_return_mean: float = 0.10,
         prior_return_std: float = 0.20,
         n_posterior_samples: int = 4000,
-        n_chains: int = 4,
+        n_chains: int = 8,
 ) -> tuple[pd.DataFrame, "az.InferenceData | xr.Dataset | None"]:
     """
     Convenience function: compute resampled posterior returns + InferenceData.
@@ -649,7 +649,7 @@ def metropolis_hastings_sampler(
     data: np.ndarray,
     n_samples: int = 10000,
     burn_in: int = 2000,
-    proposal_std: float = 0.5,
+    proposal_std: float = 20,
     prior_mean: float = 0,
     prior_std: float = 10,
     random_seed: int | None = None,
@@ -682,7 +682,7 @@ def metropolis_hastings_sampler(
 
     Examples
     --------
-    >>> samples, acc_rate = metropolis_hastings_sampler(data, n_samples=5000)
+    >>> samples, acc_rate = metropolis_hastings_sampler(data,n_samples=5000)
     >>> print(f"Acceptance rate: {acc_rate:.2%}")
     """
     rng = np.random.default_rng(random_seed)
@@ -833,7 +833,7 @@ def hierarchical_mcmc_by_sector(
     # Computes sector‑level shrinkage toward global mean
     for sector in sectors:
         sector_data = df[df[sector_col] == sector][feature].dropna().values
-        if len(sector_data) < 30:
+        if len(sector_data) < 50:
             continue
 
         # Shrinkage toward global mean based on sample size
@@ -865,8 +865,8 @@ def hierarchical_mcmc_by_sector(
         try:
             idata = az.from_dict(
                 posterior={"sector_mu": np.stack(sector_samples)},
-                coords={"sector": sector_names},
-                dims={"sector_mu": ["sector"]},
+                coords={"industry": sector_names},
+                dims={"sector_mu": ["industry"]},
             )
             result = {"sectors": results, "inference_data": idata}
             return result
@@ -894,8 +894,8 @@ def hierarchical_mcmc_multi_level(
     df: pd.DataFrame,
     feature: str,
     group_cols: list[str] | None = None,
-    n_samples: int = 8000,
-    min_group_size: int = 10,
+    n_samples: int = 10000,
+    min_group_size: int = 5,
     shrinkage_strength: float = 20.0,
 ) -> dict:
     """
@@ -1925,7 +1925,7 @@ def _calculate_tail_dependence(uniform_data: np.ndarray, threshold: float = 0.05
 
 
 def parallel_mcmc_chains(
-    data: np.ndarray, n_chains: int = 4, n_samples: int = 10000, n_jobs: int = -1
+    data: np.ndarray, n_chains: int = 8, n_samples: int = 4000, n_jobs: int = -1
 ) -> dict:
     """
     Run multiple MCMC chains in parallel for better convergence diagnostics.
@@ -1936,7 +1936,7 @@ def parallel_mcmc_chains(
     ----------
     data : np.ndarray
         Input data for sampling
-    n_chains : int, default 4
+    n_chains : int, default 8
         Number of parallel chains
     n_samples : int, default 10000
         Samples per chain
@@ -1956,7 +1956,7 @@ def parallel_mcmc_chains(
 
     Examples
     --------
-    >>> result = parallel_mcmc_chains(data, n_chains=4)
+    >>> result = parallel_mcmc_chains(data, n_chains=8)
     >>> if result['converged']:
     ...     print(f"Posterior mean: {result['combined_samples'].mean():.2f}")
     """
@@ -1969,10 +1969,7 @@ def parallel_mcmc_chains(
 
     def run_single_chain(seed: int) -> np.ndarray:
         """Run a single MCMC chain with given seed."""
-        samples, _ = metropolis_hastings_sampler(
-            data, n_samples=n_samples, burn_in=n_samples // 5,
-            random_seed=seed,
-        )
+        samples, _ = metropolis_hastings_sampler(data, n_samples=n_samples, burn_in=n_samples // 5, random_seed=seed)
         return samples
 
     # Run chains

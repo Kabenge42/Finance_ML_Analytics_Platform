@@ -460,7 +460,7 @@ def build_beat_probability_inference_data(
     beat_results_df: pd.DataFrame,
     observed_df: pd.DataFrame,
     n_posterior_samples: int = 4000,
-    n_chains: int = 4,
+    n_chains: int = 8,
     random_seed: int = 42,
 ) -> "az.InferenceData | xr.Dataset":
     """
@@ -482,7 +482,7 @@ def build_beat_probability_inference_data(
         Source feature DataFrame with observed financial data.
     n_posterior_samples : int, default 4000
         Number of posterior draws per chain.
-    n_chains : int, default 4
+    n_chains : int, default 8
         Number of MCMC chains to simulate.
     random_seed : int, default 42
         Random seed for reproducibility.
@@ -592,7 +592,7 @@ def build_credit_risk_inference_data(
     ruin_results_df: pd.DataFrame,
     observed_df: pd.DataFrame,
     n_posterior_samples: int = 4000,
-    n_chains: int = 4,
+    n_chains: int = 8,
     random_seed: int = 42,
 ) -> "az.InferenceData | xr.Dataset":
     """
@@ -646,6 +646,7 @@ def build_credit_risk_inference_data(
         dims=dims,
     )
 
+
 # =============================================================================
 # 3b. InferenceData Factory — Accounting Anomaly Detection
 # =============================================================================
@@ -674,10 +675,10 @@ def _build_anomaly_constant_data(
 
 
 def build_accounting_anomaly_inference_data(
-        anomaly_df: pd.DataFrame,
-        n_posterior_samples: int = 4000,
-        n_chains: int = 4,
-        random_seed: int = 42,
+    anomaly_df: pd.DataFrame,
+    n_posterior_samples: int = 4000,
+    n_chains: int = 8,
+    random_seed: int = 42,
 ) -> "az.InferenceData | xr.Dataset":
     """
     Build InferenceData for accounting anomaly detection results.
@@ -888,7 +889,7 @@ def build_category_analysis_inference_data(
     category_name: str,
     features: Sequence[str],
     n_posterior_samples: int = 4000,
-    n_chains: int = 4,
+    n_chains: int = 8,
     random_seed: int = 42,
     feature_coords: Optional[FeatureCoordinates] = None,
 ) -> "az.InferenceData | xr.Dataset":
@@ -1008,7 +1009,7 @@ def load_equity_coordinates_from_db(
         SELECT column_alias
         FROM {schema}.equities_schema_metadata
         WHERE role IN ('id', 'categorical')
-        AND column_alias IN ('ticker', 'isin', 'name', 'sector', 'industry', 'country', 'exchange')
+        AND column_alias IN ('ticker', 'isin', 'name', 'region', 'sector', 'industry', 'country', 'exchange','unit','size_class','style_class')
         ORDER BY column_alias
     """)
 
@@ -1129,13 +1130,13 @@ def summarize_inference_data(idata: Any) -> dict[str, Any]:
 
 
 def build_resampled_technical_inference_data(
-        equities_df: pd.DataFrame,
-        freq: str = "1ME",
-        prior_return_mean: float = 0.08,
-        prior_return_std: float = 0.20,
-        n_posterior_samples: int = 4000,
-        n_chains: int = 4,
-        random_seed: int = 42,
+    equities_df: pd.DataFrame,
+    freq: str = "1ME",
+    prior_return_mean: float = 0.08,
+    prior_return_std: float = 0.20,
+    n_posterior_samples: int = 4000,
+    n_chains: int = 8,
+    random_seed: int = 42,
 ) -> "az.InferenceData | xr.Dataset | None":
     """
     Build ArviZ InferenceData from resampled technical return posteriors.
@@ -1218,6 +1219,7 @@ class IdentifierCoordinates:
     trading_countries: np.ndarray = field(default_factory=lambda: np.array([]))
     regions: np.ndarray = field(default_factory=lambda: np.array([]))
     exchanges: np.ndarray = field(default_factory=lambda: np.array([]))
+    units: np.ndarray = field(default_factory=lambda: np.array([]))
     style_classes: np.ndarray = field(default_factory=lambda: np.array([]))
     size_classes: np.ndarray = field(default_factory=lambda: np.array([]))
     fy_end_dates: np.ndarray = field(default_factory=lambda: np.array([]))
@@ -1260,8 +1262,7 @@ class IdentifierCoordinates:
             tickers=tickers, isins=_col("isin"), names=_col("name"),
             sectors=_col("sector"), industries=_col("industry"),
             countries=_col("country"), trading_countries=_col("trading_country"),
-            regions=_col("region"), exchanges=_col("exchange"),
-            style_classes=_col("style_class"), size_classes=_col("size_class"),
+            regions=_col("region"), exchanges=_col("exchange"),units=_col("unit"),size_classes=_col("size_class"),style_classes=_col("style_class"),
             fy_end_dates=_col("fy_end_date"), next_earnings=_col("next_earnings"),
         )
 
@@ -1541,7 +1542,7 @@ def build_feature_view_inference_data(
     view_name: str,
     df: pd.DataFrame,
     n_posterior_samples: int = 4000,
-    n_chains: int = 4,
+    n_chains: int = 8,
     random_seed: int = 42,
 ) -> "az.InferenceData | xr.Dataset":
     """

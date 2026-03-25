@@ -234,7 +234,7 @@ class TestModelRunnerSignatures(unittest.TestCase):
 
     def test_pt_accepts_use_historical_targets_false(self):
         df = _make_sample_df()
-        result = run_price_target_achievement(df, use_historical_targets=False)
+        result = run_price_target_achievement(df,use_historical_targets=False)
         self.assertIsInstance(result, pd.DataFrame)
 
     def test_kalman_accepts_use_historical_targets_false(self):

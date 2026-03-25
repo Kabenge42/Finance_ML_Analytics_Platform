@@ -288,7 +288,7 @@ class TestRunPriceTargetAchievement(unittest.TestCase):
         mock_instance.analyze_dataframe.return_value = _make_pt_df(5)
         mock_model_cls.return_value = mock_instance
         df = _make_equities_df(5)
-        result = run_price_target_achievement(df, use_historical_targets=False)
+        result = run_price_target_achievement(df,use_historical_targets=False)
         self.assertIsInstance(result, pd.DataFrame)
 
 

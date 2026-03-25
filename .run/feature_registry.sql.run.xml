@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="feature_registry.sql" type="DatabaseScript" focusToolWindowBeforeRun="true" nameIsGenerated="true">
+    <script-file value="$PROJECT_DIR$/feature_registry.sql" />
+    <script-mode>FILE</script-mode>
+    <data-source id="3091f81a-c800-413c-b86b-f760950418f7" namespace="database/&quot;postgres&quot;/schema/&quot;public&quot;" />
+    <method v="2" />
+  </configuration>
+</component>

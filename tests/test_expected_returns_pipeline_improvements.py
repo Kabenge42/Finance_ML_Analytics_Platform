@@ -136,19 +136,14 @@ class TestHierarchicalMcmcMultiLevel:
 
     def test_levels_contain_available_columns(self, multi_level_df):
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
-        result = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region", "sector", "industry"],
-        )
+        result = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct",
+                                               group_cols=["region", "sector", "industry"])
         for col in ["region", "sector", "industry"]:
             assert col in result["levels"], f"Missing level: {col}"
 
     def test_group_results_have_required_keys(self, multi_level_df):
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
-        result = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region"],
-        )
+        result = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct", group_cols=["region"])
         for group_name, group_data in result["levels"]["region"].items():
             for key in ["raw_mean", "posterior_mean", "shrinkage", "ci_95",
                         "prob_positive", "samples", "n_obs", "shrinkage_target"]:
@@ -156,10 +151,7 @@ class TestHierarchicalMcmcMultiLevel:
 
     def test_shrinkage_between_zero_and_one(self, multi_level_df):
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
-        result = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region", "sector"],
-        )
+        result = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct", group_cols=["region", "sector"])
         for level_name, level_data in result["levels"].items():
             for group_name, group_info in level_data.items():
                 assert 0 < group_info["shrinkage"] < 1, (
@@ -184,11 +176,7 @@ class TestHierarchicalMcmcMultiLevel:
         })
         df = pd.concat([df, small_rows], ignore_index=True)
 
-        result = hierarchical_mcmc_multi_level(
-            df, "expected_upside_pct",
-            group_cols=["region"],
-            min_group_size=3,
-        )
+        result = hierarchical_mcmc_multi_level(df, "expected_upside_pct", group_cols=["region"], min_group_size=3)
         regions = result["levels"].get("region", {})
         if "Asia" in regions and "North America" in regions:
             assert regions["Asia"]["shrinkage"] < regions["North America"]["shrinkage"]
@@ -211,10 +199,7 @@ class TestHierarchicalMcmcMultiLevel:
     def test_nested_shrinkage_uses_parent_mean(self, multi_level_df):
         """Industry should shrink toward sector mean, not global mean."""
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
-        result = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["sector", "industry"],
-        )
+        result = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct", group_cols=["sector", "industry"])
         # Check that industry groups have shrinkage_target != global mean
         global_mean = result["global"]["mean"]
         sector_level = result["levels"].get("sector", {})
@@ -257,14 +242,10 @@ class TestHierarchicalMcmcMultiLevel:
 
     def test_custom_shrinkage_strength(self, multi_level_df):
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
-        result_low = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region"], shrinkage_strength=1.0,
-        )
-        result_high = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region"], shrinkage_strength=100.0,
-        )
+        result_low = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct", group_cols=["region"],
+                                                   shrinkage_strength=1.0)
+        result_high = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct", group_cols=["region"],
+                                                    shrinkage_strength=100.0)
         # Higher shrinkage_strength → lower shrinkage values
         for region in result_low["levels"]["region"]:
             if region in result_high["levels"]["region"]:
@@ -274,10 +255,8 @@ class TestHierarchicalMcmcMultiLevel:
     def test_samples_shape(self, multi_level_df):
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
         n_samples = 5000
-        result = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region"], n_samples=n_samples,
-        )
+        result = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct", group_cols=["region"],
+                                               n_samples=n_samples)
         for group_data in result["levels"]["region"].values():
             assert group_data["samples"].shape == (n_samples,)
 
@@ -350,12 +329,9 @@ class TestMultiLevelMcmcIntegration:
     def test_end_to_end_with_realistic_data(self, multi_level_df):
         """Full pipeline: multi-level MCMC produces usable cross-level summary."""
         from finance_ml.analytics.statistical_analysis import hierarchical_mcmc_multi_level
-        result = hierarchical_mcmc_multi_level(
-            multi_level_df, "expected_upside_pct",
-            group_cols=["region", "country", "sector", "industry"],
-            min_group_size=20,
-            shrinkage_strength=10.0,
-        )
+        result = hierarchical_mcmc_multi_level(multi_level_df, "expected_upside_pct",
+                                               group_cols=["region", "country", "sector", "industry"],
+                                               min_group_size=20, shrinkage_strength=10.0)
         assert "global" in result
         assert "levels" in result
         assert "cross_level_summary" in result
